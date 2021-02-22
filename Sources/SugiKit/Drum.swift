@@ -14,7 +14,7 @@ public struct DrumSource: Codable {
     }
     
     public var data: ByteArray {
-        var d = ByteArray()
+        var buf = ByteArray()
         
         // Encode wave number as two bytes
         let waveNumberString = String(waveNumber, radix: 2).pad(with: "0", toLength: 8)
@@ -24,14 +24,15 @@ public struct DrumSource: Codable {
         let restIndex = waveNumberString.index(after: waveNumberString.startIndex)
         let lowByte = Byte(waveNumberString.suffix(from: restIndex), radix: 2)!
         
-        d.append(highByte)
-        d.append(lowByte)
+        buf.append(contentsOf: [
+            highByte,
+            lowByte,
+            Byte(decay),
+            Byte(tune),
+            Byte(level)
+        ])
         
-        d.append(Byte(decay))
-        d.append(Byte(tune))
-        d.append(Byte(level))
-        
-        return d
+        return buf
     }
 }
 
@@ -136,32 +137,31 @@ public struct DrumNote: Codable {
     }
     
     public var data: ByteArray {
-        var d = ByteArray()
+        var buf = ByteArray()
         
         let (source1WaveHigh, source1WaveLow) = encodeWaveNumber(waveNumber: source1.waveNumber)
         let (source2WaveHigh, source2WaveLow) = encodeWaveNumber(waveNumber: source2.waveNumber)
-        d.append(source1WaveHigh)
-        d.append(source2WaveHigh)
-        d.append(source1WaveLow)
-        d.append(source2WaveLow)
-
-        d.append(Byte(source1.decay))
-        d.append(Byte(source2.decay))
-
-        d.append(Byte(source1.tune))
-        d.append(Byte(source2.tune))
-
-        d.append(Byte(source1.level))
-        d.append(Byte(source2.level))
+        buf.append(contentsOf: [
+            source1WaveHigh,
+            source2WaveHigh,
+            source1WaveLow,
+            source2WaveLow,
+            Byte(source1.decay),
+            Byte(source2.decay),
+            Byte(source1.tune),
+            Byte(source2.tune),
+            Byte(source1.level),
+            Byte(source2.level)
+        ])
                 
-        return d
+        return buf
     }
     
     public var systemExclusiveData: ByteArray {
-        var d = ByteArray()
-        d.append(contentsOf: self.data)
-        d.append(checksum(bytes: data))
-        return d
+        var buf = ByteArray()
+        buf.append(contentsOf: self.data)
+        buf.append(checksum(bytes: data))
+        return buf
     }
 }
 
@@ -213,24 +213,18 @@ public struct Drum: Codable {
     }
     
     public var data: ByteArray {
-        var d = ByteArray()
+        var buf = ByteArray()
         
-        d.append(Byte(channel - 1))
-        d.append(Byte(volume))
-        d.append(Byte(velocityDepth))
+        buf.append(contentsOf: [
+            Byte(channel - 1),
+            Byte(volume),
+            Byte(velocityDepth),
+            0, 0, 0, 0, 0, 0  // dummy bytes
+        ])
 
-        // insert dummy bytes
-        d.append(0)
-        d.append(0)
-        d.append(0)
-        d.append(0)
-        d.append(0)
-        d.append(0)
-        d.append(0)
-
-        self.notes.forEach { d.append(contentsOf: $0.systemExclusiveData) }
+        self.notes.forEach { buf.append(contentsOf: $0.systemExclusiveData) }
         
-        return d
+        return buf
     }
 
     public var systemExclusiveData: ByteArray {

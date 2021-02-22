@@ -1,9 +1,10 @@
 import Foundation
 
+/// Represents a full bank with 64 singles, 64 multis, drum, and 32 effects.
 public struct Bank: Codable {
-    static let singlePatchCount = 64
-    static let multiPatchCount = 64
-    static let effectPatchCount = 32
+    public static let singlePatchCount = 64
+    public static let multiPatchCount = 64
+    public static let effectPatchCount = 32
     
     public var singles: [SinglePatch]
     public var multis: [MultiPatch]
@@ -101,19 +102,6 @@ public struct Bank: Codable {
 
         return buffer
     }
-    
-    /*
-    public var systemExclusiveData: Data {
-        var d = Data()
-        
-        singles.forEach { d.append($0.systemExclusiveData) }
-        multis.forEach { d.append($0.systemExclusiveData) }
-        d.append(drum.systemExclusiveData)
-        effects.forEach { d.append($0.systemExclusiveData) }
-        
-        return d
-    }
-    */
     
     public static func nameForPatch(_ n: Int) -> String {
         let patchesPerBank = 16

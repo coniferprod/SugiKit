@@ -2,13 +2,6 @@ import XCTest
 @testable import SugiKit
 
 final class SugiKitTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(SugiKit().text, "Hello, World!")
-    }
-
     func testDecodeWaveNumber() {
         let note = DrumNote()
 
@@ -24,8 +17,25 @@ final class SugiKitTests: XCTestCase {
         XCTAssertEqual(lowByte, 0x7f)
 
     }
+    
+    func testWaveName() {
+        let wave = Wave(number: 10)
+        XCTAssertEqual(wave.name, "SAW 1")
+    }
+    
+    func testNoteName() {
+        XCTAssertEqual(Source.noteName(for: 60), "C4")
+    }
+    
+    func testKeyNumber() {
+        XCTAssertEqual(Source.keyNumber(for: "C4"), 60)
+    }
+    
+    func testEmptyBankCreation() {
+        let bank = Bank()
+        XCTAssertEqual(bank.singles.count, Bank.singlePatchCount)
+        XCTAssertEqual(bank.multis.count, Bank.multiPatchCount)
+        XCTAssertEqual(bank.effects.count, Bank.effectPatchCount)
 
-    static var allTests = [
-        ("testExample", testExample),
-    ]
+    }
 }

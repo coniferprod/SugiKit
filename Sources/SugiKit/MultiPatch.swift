@@ -1,5 +1,6 @@
 import Foundation
 
+/// Represents one section of a multi patch.
 public struct MultiSection: Codable {
     public static let dataSize = 8
     
@@ -203,6 +204,7 @@ public struct MultiSection: Codable {
     }
 }
 
+/// Represents a multi patch.
 public struct MultiPatch: Codable {
     static let dataSize = 77
     static let sectionCount = 8

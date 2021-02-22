@@ -20,17 +20,17 @@ public struct FilterEnvelope: Codable, Equatable {
         release = r
     }
     
-    public var data: Data {
-        get {
-            var d = Data()
-            
-            d.append(Byte(attack))
-            d.append(Byte(decay))
-            d.append(Byte(sustain + 50))
-            d.append(Byte(release))
+    public var data: ByteArray {
+        var buf = ByteArray()
+        
+        buf.append(contentsOf: [
+            Byte(attack),
+            Byte(decay),
+            Byte(sustain + 50),
+            Byte(release)
+        ])
 
-            return d
-        }
+        return buf
     }
 }
 
@@ -127,28 +127,23 @@ public struct Filter: Codable, Equatable {
     }
     
     public var data: ByteArray {
-        get {
-            var d = ByteArray()
-            
-            d.append(Byte(cutoff))
-            
-            // s104/105
-            var s104 = Byte(resonance)
-            if isLfoModulatingCutoff {
-                s104.setBit(3)
-            }
-            d.append(s104)
-            
-            d.append(contentsOf: cutoffModulation.data)
-            
-            d.append(Byte(envelopeDepth + 50))
-            d.append(Byte(envelopeVelocityDepth + 50))
-            
-            d.append(contentsOf: envelope.data)
-            
-            d.append(contentsOf: timeModulation.data)
-            
-            return d
+        var buf = ByteArray()
+        
+        buf.append(Byte(cutoff))
+        
+        // s104/105
+        var s104 = Byte(resonance)
+        if isLfoModulatingCutoff {
+            s104.setBit(3)
         }
+        buf.append(s104)
+        
+        buf.append(contentsOf: cutoffModulation.data)
+        buf.append(Byte(envelopeDepth + 50))
+        buf.append(Byte(envelopeVelocityDepth + 50))
+        buf.append(contentsOf: envelope.data)
+        buf.append(contentsOf: timeModulation.data)
+
+        return buf
     }
 }

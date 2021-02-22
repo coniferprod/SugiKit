@@ -1,3 +1,3 @@
 struct SugiKit {
-    var text = "Hello, World!"
+    var text = "SugiKit"
 }

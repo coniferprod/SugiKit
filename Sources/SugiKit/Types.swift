@@ -3,59 +3,6 @@ import Foundation
 public typealias Byte = UInt8
 public typealias ByteArray = [Byte]
 
-/*
-@propertyWrapper
-struct StringRepresentation<T: LosslessStringConvertible> {
-    private var value: T?
-    
-    var wrappedValue: T? {
-        get { return value }
-        set { value = newValue }
-    }
-}
-
-extension StringRepresentation: Codable {
-    init(from decoder: Decoder) throws {
-        let string = try? String(from: decoder)
-        value = string.flatMap(T.init)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        if let value = value {
-            try "\(value)".encode(to: encoder)
-        } else {
-            // encodes to null, or {} if commented
-            try Optional<String>.none.encode(to: encoder)
-        }
-    }
-}
-
-extension KeyedDecodingContainer {
-    func decode<T>(_ type: StringRepresentation <T?>.Type, forKey key: Self.Key) throws -> StringRepresentation <T?> where T : Decodable {
-        return try decodeIfPresent(type, forKey: key) ?? StringRepresentation <T?>(wrappedValue: nil)
-    }
-}
-*/
-
-// The @Clamping property wrapper appears courtesy of NSHipster:
-// https://nshipster.com/propertywrapper/
-@propertyWrapper
-public struct Clamping<Value: Comparable> {
-    var value: Value
-    let range: ClosedRange<Value>
-
-    init(initialValue value: Value, _ range: ClosedRange<Value>) {
-        precondition(range.contains(value))
-        self.value = value
-        self.range = range
-    }
-    
-    public var wrappedValue: Value {
-        get { value }
-        set { value = min(max(range.lowerBound, newValue), range.upperBound) }
-    }
-}
-
 let headerLength = 8
 
 let singlePatchCount = 64
@@ -295,7 +242,7 @@ public struct LevelModulation: Codable, Equatable {
     // this private property determines the allowed values
     private let range = -50...50
     
-    // but we don't want the range to end up in the JSON repr
+    // but we don't want the range to end up in the JSON representation
     private enum CodingKeys: String, CodingKey {
         case velocityDepth, pressureDepth, keyScalingDepth
     }
@@ -321,16 +268,15 @@ public struct LevelModulation: Codable, Equatable {
         keyScalingDepth = 0
     }
     
-    public var data: Data {
-        get {
-            var d = Data()
+    public var data: ByteArray {
+        var buf = ByteArray()
+        buf.append(contentsOf: [
+            Byte(self.velocityDepth + 50),
+            Byte(self.pressureDepth + 50),
+            Byte(self.keyScalingDepth + 50)
+        ])
             
-            d.append(Byte(self.velocityDepth + 50))
-            d.append(Byte(self.pressureDepth + 50))
-            d.append(Byte(self.keyScalingDepth + 50))
-
-            return d
-        }
+        return buf
     }
 }
 
@@ -345,15 +291,15 @@ public struct TimeModulation: Codable, Equatable {
         keyScaling = 0
     }
     
-    public var data: Data {
-        get {
-            var d = Data()
-            
-            d.append(Byte(self.attackVelocity + 50))
-            d.append(Byte(self.releaseVelocity + 50))
-            d.append(Byte(self.keyScaling + 50))
-
-            return d
-        }
+    public var data: ByteArray {
+        var buf = ByteArray()
+        
+        buf.append(contentsOf: [
+            Byte(self.attackVelocity + 50),
+            Byte(self.releaseVelocity + 50),
+            Byte(self.keyScaling + 50)
+        ])
+        
+        return buf
     }
 }

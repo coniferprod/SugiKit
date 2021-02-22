@@ -21,11 +21,9 @@ public struct AmplifierEnvelope: Codable, Equatable {
     }
     
     public var data: ByteArray {
-        get {
-            var d = ByteArray()
-            [attack, decay, sustain, release].forEach { d.append(Byte($0)) }
-            return d
-        }
+        var buf = ByteArray()
+        [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
+        return buf
     }
 }
 
@@ -39,22 +37,9 @@ public struct Amplifier: Codable, Equatable {
     
     public init() {
         level = 100
-        
-        envelope = AmplifierEnvelope()
-        envelope.attack = 0
-        envelope.decay = 50
-        envelope.sustain = 0
-        envelope.release = 50
-
+        envelope = AmplifierEnvelope(attack: 0, decay: 50, sustain: 0, release: 50)
         levelModulation = LevelModulation()
-        levelModulation.velocityDepth = 0
-        levelModulation.pressureDepth = 0
-        levelModulation.keyScalingDepth = 0
-
         timeModulation = TimeModulation()
-        timeModulation.attackVelocity = 0
-        timeModulation.releaseVelocity = 0
-        timeModulation.keyScaling = 0
     }
     
     public init(d: ByteArray) {
@@ -119,16 +104,14 @@ public struct Amplifier: Codable, Equatable {
         self.timeModulation.keyScaling = Int(b) - 50
     }
     
-    public var data: Data {
-        get {
-            var d = Data()
+    public var data: ByteArray {
+        var buf = ByteArray()
             
-            d.append(Byte(level))
-            d.append(contentsOf: self.envelope.data)
-            d.append(self.levelModulation.data)
-            d.append(self.timeModulation.data)
+        buf.append(Byte(level))
+        buf.append(contentsOf: self.envelope.data)
+        buf.append(contentsOf: self.levelModulation.data)
+        buf.append(contentsOf: self.timeModulation.data)
 
-            return d
-        }
+        return buf
     }
 }

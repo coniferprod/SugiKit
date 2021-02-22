@@ -1,5 +1,6 @@
 import Foundation
 
+/// Represents one source in a single patch.
 public struct Source: Codable {
     static let dataSize = 18
 
@@ -94,52 +95,50 @@ public struct Source: Codable {
     }
     
     var data: ByteArray {
-        get {
-            var d = ByteArray()
-                        
-            d.append(Byte(delay))
-            
-            // s34/s35/s36/s37 wave select h and ks
-            let number = self.oscillator.waveNumber - 1  // bring into range 0~255
-            let waveNumberString = "\(number, radix: .binary, prefix: false, toWidth: 9)"
-            //print("wave number = '\(waveNumberString)' or \(number)")
-            let ksCurve = keyScalingCurve.rawValue - 1
-            var s34 = Byte(ksCurve) << 4
-            if waveNumberString.starts(with: "1") {
-                s34.setBit(0)
-            }
-            d.append(s34)
-            
-            // s38/s39/s40/s41 wave select l
-            let restIndex = waveNumberString.index(after: waveNumberString.startIndex)
-            let s38 = Byte(waveNumberString.suffix(from: restIndex), radix: 2)!
-            d.append(s38)
+        var buf = ByteArray()
+                    
+        buf.append(Byte(delay))
         
-            // s42/s43/s44/s45 key track and coarse
-            var s42 = Byte(self.oscillator.coarse + 24)  // bring into 0~48
-            if self.oscillator.keyTrack {
-                s42.setBit(6)
-            }
-            d.append(s42)
-            
-            // s46/s47/s48/s49
-            d.append(Byte(Source.keyNumber(for: self.oscillator.fixedKey)))
-            
-            // s50/s51/s52/s53
-            d.append(Byte(self.oscillator.fine + 50))
-            
-            // s54/s55/s56/s57 vel curve, vib/a.bend, prs/freq
-            var s54 = Byte(velocityCurve.rawValue - 1) << 2
-            if self.oscillator.vibrato {
-                s54.setBit(1)
-            }
-            if self.oscillator.pressureFrequency {
-                s54.setBit(0)
-            }
-            d.append(Byte(s54))
-            
-            return d
+        // s34/s35/s36/s37 wave select h and ks
+        let number = self.oscillator.waveNumber - 1  // bring into range 0~255
+        let waveNumberString = "\(number, radix: .binary, prefix: false, toWidth: 9)"
+        //print("wave number = '\(waveNumberString)' or \(number)")
+        let ksCurve = keyScalingCurve.rawValue - 1
+        var s34 = Byte(ksCurve) << 4
+        if waveNumberString.starts(with: "1") {
+            s34.setBit(0)
         }
+        buf.append(s34)
+        
+        // s38/s39/s40/s41 wave select l
+        let restIndex = waveNumberString.index(after: waveNumberString.startIndex)
+        let s38 = Byte(waveNumberString.suffix(from: restIndex), radix: 2)!
+        buf.append(s38)
+    
+        // s42/s43/s44/s45 key track and coarse
+        var s42 = Byte(self.oscillator.coarse + 24)  // bring into 0~48
+        if self.oscillator.keyTrack {
+            s42.setBit(6)
+        }
+        buf.append(s42)
+        
+        // s46/s47/s48/s49
+        buf.append(Byte(Source.keyNumber(for: self.oscillator.fixedKey)))
+        
+        // s50/s51/s52/s53
+        buf.append(Byte(self.oscillator.fine + 50))
+        
+        // s54/s55/s56/s57 vel curve, vib/a.bend, prs/freq
+        var s54 = Byte(velocityCurve.rawValue - 1) << 2
+        if self.oscillator.vibrato {
+            s54.setBit(1)
+        }
+        if self.oscillator.pressureFrequency {
+            s54.setBit(0)
+        }
+        buf.append(Byte(s54))
+        
+        return buf
     }
     
     public static func noteName(for key: Int) -> String {

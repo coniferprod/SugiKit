@@ -34,15 +34,19 @@ public struct SystemExclusiveHeader {
         self.substatus2 = d[7]
     }
     
-    public var data: Data {
-        var d = Data()
-        d.append(self.manufacturerID)
-        d.append(self.channel)
-        d.append(self.function)
-        d.append(self.group)
-        d.append(self.machineID)
-        d.append(self.substatus1)
-        d.append(self.substatus2)
-        return d
+    public var data: ByteArray {
+        var buf = ByteArray()
+        
+        buf.append(contentsOf: [
+            self.manufacturerID,
+            self.channel,
+            self.function,
+            self.group,
+            self.machineID,
+            self.substatus1,
+            self.substatus2
+        ])
+        
+        return buf
     }
 }

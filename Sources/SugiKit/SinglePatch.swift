@@ -1,5 +1,6 @@
 import Foundation
 
+/// Represents a single patch.
 public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConvertible {
     static let dataSize = 131
     static let sourceCount = 4

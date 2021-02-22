@@ -1,6 +1,6 @@
 import Foundation
 
-// Effect type is defined as a value in the range 1...16
+/// Type of effect.
 public enum EffectType: String, Codable, CaseIterable {
     case undefined
     case reverb1
@@ -50,16 +50,17 @@ public struct SubmixSettings: Codable {
     public var send2: Int
     
     public var data: ByteArray {
-        var d = ByteArray()
+        var buf = ByteArray()
         
-        d.append(Byte(self.pan + 8))
-        d.append(Byte(self.send1))
-        d.append(Byte(self.send2))
+        buf.append(Byte(self.pan + 8))
+        buf.append(Byte(self.send1))
+        buf.append(Byte(self.send2))
         
-        return d
+        return buf
     }
 }
 
+/// Represents an effect patch.
 public struct EffectPatch: Codable {
     static let dataSize = 35
     
@@ -87,9 +88,6 @@ public struct EffectPatch: Codable {
     }
     
     public init(bytes buffer: ByteArray) {
-        var offset = 0
-        var data = ByteArray(buffer)
-        
         // Parse later, just init for now
         effectType = .reverb1
         param1 = 0
@@ -108,22 +106,19 @@ public struct EffectPatch: Codable {
     }
     
     public var data: ByteArray {
-        var d = ByteArray()
+        var buf = ByteArray()
         
-        d.append(Byte(effectType.index!))
-        d.append(Byte(param1))
-        d.append(Byte(param2))
-        d.append(Byte(param3))
-        d.append(0)
-        d.append(0)
-        d.append(0)
-        d.append(0)
-        d.append(0)
-        d.append(0)
+        buf.append(contentsOf: [
+            Byte(effectType.index!),
+            Byte(param1),
+            Byte(param2),
+            Byte(param3),
+            0, 0, 0, 0, 0, 0
+        ])
 
-        self.submixes.forEach { d.append(contentsOf: $0.data) }
+        self.submixes.forEach { buf.append(contentsOf: $0.data) }
     
-        return d
+        return buf
     }
     
     public var systemExclusiveData: ByteArray {
