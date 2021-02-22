@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "SugiKit",
     platforms: [
-        .macOS(.v10_15),
+        .macOS(.v10_10),
         .iOS(.v13),
     ],
     products: [
