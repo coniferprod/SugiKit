@@ -52,69 +52,37 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         filter2 = Filter()
     }
     
+    /// Initializes a single patch from system exclusive data.
     public init(bytes buffer: ByteArray) {
         var offset = 0
+        var b: Byte = 0
+        var index = 0
 
         var data = ByteArray(buffer)
         self.name = String(bytes: data[..<SinglePatch.nameLength], encoding: .ascii) ?? ""
-
-        // Do the rest of the SysEx parsing later, just init for now
-        
-        volume = 90
-        effect = 1
-        submix = .a
-        
-        sourceMode = .normal
-        polyphonyMode = .poly1
-        am12 = false
-        am34 = false
-                
-        benderRange = 0
-        pressFreq = 0
-        wheelAssign = .cutoff
-        wheelDepth = 0
-        autoBend = AutoBendSettings()
-        vibrato = VibratoSettings()
-        lfo = LFOSettings()
-        sources = [Source(), Source(), Source(), Source()]
-        sourceMutes = [true, true, true, true]  // 0=mute, 1=not mute
-        filter1 = Filter()
-        filter2 = Filter()
-
-    }
-    
-    /// Initializes a single patch from system exclusive data.
-    public init(_ d: Data) {
-        var offset: Int = 0
-        var b: Byte = 0
-        var index: Int = 0
-        
-        self.name = String(data: d.subdata(in: offset ..< offset + SinglePatch.nameLength), encoding: .ascii) ?? ""
         offset += SinglePatch.nameLength
-        //print("name = '\(self.name)'")
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.volume = Int(b)
-        //print("volume = \(self.volume)")
-        
+
         // effect = s11 bits 0...4
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         //print("effect byte s11 = 0x\(String(b, radix: 16))")
         let effectPatch = Int(b & 0b00011111) + 1  // mask out top three bits just in case, then bring into range 1~32
         self.effect = effectPatch // use range 1~32 when storing the value, 0~31 in SysEx data
         //print("effect = \(self.effect)")
-        
+
         // output select = s12 bits 0...2
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         let submixIndex = Int(b & 0b00000111) // should now have a value 0~7
         self.submix = SubmixType(index: submixIndex)!
         //print("submix = \(self.submix)")
-        
+
         // source mode = s13 bits 0...1
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         
         index = Int(b.bitField(start: 0, end: 2))
@@ -130,7 +98,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.am34 = b.isBitSet(5)
         //print("AM 3>4 = \(self.am34)")
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.sourceMutes = [ // 0/mute, 1/not mute
             !b.isBitSet(0),
@@ -143,7 +111,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         index = Int(b.bitField(start: 4, end: 6))
         self.vibrato.shape = LFOShapeType(index: index)!
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         // Pitch bend = s15 bits 0...3
             self.benderRange = Int(b.bitField(start: 0, end: 4))
@@ -154,92 +122,92 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.wheelAssign = WheelAssignType(index: index)!
         //print("wheel assign = \(self.wheelAssign)")
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         // Vibrato speed = s16 bits 0...6
         //self.vibrato.speed = Int(b & 0x7f)
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         // Wheel depth = s17 bits 0...6
         self.wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
         //print("wheel depth = \(self.wheelDepth)")
         
         self.autoBend = AutoBendSettings()
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.autoBend.time = Int(b & 0x7f)
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.autoBend.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.autoBend.keyScalingTime = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.autoBend.velocityDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.vibrato.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.vibrato.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
      
         self.lfo = LFOSettings()
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         index = Int(b & 0x03)
         self.lfo.shape = LFOShapeType(index: index)!
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.lfo.speed = Int(b & 0x7f)
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.lfo.delay = Int(b & 0x7f)
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.lfo.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.lfo.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         self.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
-        let sourceBytes = d.subdata(in: offset ..< offset + 28)
+        let sourceBytes = ByteArray(buffer[offset ..< offset + 28])
         let sourceData: [ByteArray] = [
-            SinglePatch.everyNthByte(d: sourceBytes.bytes, n: 4, start: 0),
-            SinglePatch.everyNthByte(d: sourceBytes.bytes, n: 4, start: 1),
-            SinglePatch.everyNthByte(d: sourceBytes.bytes, n: 4, start: 2),
-            SinglePatch.everyNthByte(d: sourceBytes.bytes, n: 4, start: 3)
+            everyNthByte(d: sourceBytes, n: 4, start: 0),
+            everyNthByte(d: sourceBytes, n: 4, start: 1),
+            everyNthByte(d: sourceBytes, n: 4, start: 2),
+            everyNthByte(d: sourceBytes, n: 4, start: 3),
         ]
 
         self.sources = [
             Source(bytes: sourceData[0]),
             Source(bytes: sourceData[1]),
             Source(bytes: sourceData[2]),
-            Source(bytes: sourceData[3])
+            Source(bytes: sourceData[3]),
         ]
         
         offset += 28
         
-        let amplifierBytes = d.subdata(in: offset ..< offset + 44)
+        let amplifierBytes = ByteArray(buffer[offset ..< offset + 44])
         let amplifierData: [ByteArray] = [
-            SinglePatch.everyNthByte(d: amplifierBytes.bytes, n: 4, start: 0),
-            SinglePatch.everyNthByte(d: amplifierBytes.bytes, n: 4, start: 1),
-            SinglePatch.everyNthByte(d: amplifierBytes.bytes, n: 4, start: 2),
-            SinglePatch.everyNthByte(d: amplifierBytes.bytes, n: 4, start: 3)
+            everyNthByte(d: amplifierBytes, n: 4, start: 0),
+            everyNthByte(d: amplifierBytes, n: 4, start: 1),
+            everyNthByte(d: amplifierBytes, n: 4, start: 2),
+            everyNthByte(d: amplifierBytes, n: 4, start: 3),
         ]
         offset += 44
         
@@ -247,35 +215,23 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             self.sources[index].amplifier = Amplifier(d: data)
         }
         
-        let filterBytes = d.subdata(in: offset ..< offset + 28)
+        let filterBytes = ByteArray(buffer[offset ..< offset + 28])
         let filterData: [ByteArray] = [
-            SinglePatch.everyNthByte(d: filterBytes.bytes, n: 2, start: 0),
-            SinglePatch.everyNthByte(d: filterBytes.bytes, n: 2, start: 1),
+            everyNthByte(d: filterBytes, n: 2, start: 0),
+            everyNthByte(d: filterBytes, n: 2, start: 1),
         ]
         offset += 28
         
         self.filter1 = Filter(d: filterData[0])
-        self.filter2 = Filter(d: filterData[1])        
+        self.filter2 = Filter(d: filterData[1])
         
-        b = d[offset]
+        b = buffer[offset]
         
         // "Check sum value (s130) is the sum of the A5H and s0 ~ s129".
         //print("incoming checksum = \(b)")
         //self.incomingChecksum = b   // store the checksum as we got it from SysEx
     }
-    
-    private static func everyNthByte(d: [Byte], n: Int, start: Int) -> [Byte] {
-        var result = [Byte]()
         
-        for i in 0 ..< d.count {
-            if i % n == 0 {
-                result.append(d[i + start])
-            }
-        }
-        
-        return result
-    }
-    
     public var data: ByteArray {
         var d = ByteArray()
         

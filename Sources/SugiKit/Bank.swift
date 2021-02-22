@@ -19,31 +19,25 @@ public struct Bank: Codable {
     }
     
     public init(bytes buffer: ByteArray) {
-        singles = Array(repeating: SinglePatch(), count: Bank.singlePatchCount)
-        multis = Array(repeating: MultiPatch(), count: Bank.multiPatchCount)
-        drum = Drum()
-        effects = Array(repeating: EffectPatch(), count: Bank.effectPatchCount)
-
-        guard buffer.count == allPatchDataLength else {
-            print("Buffer is the wrong size, initialized bank with defaults")
-            return
-        }
+        singles = [SinglePatch]()
+        multis = [MultiPatch]()
+        effects = [EffectPatch]()
 
         var offset = 0
         var data = ByteArray(buffer)
         data.removeFirst(SystemExclusiveHeader.dataSize)  // eat the header
         offset += SystemExclusiveHeader.dataSize  // but maintain an offset so we know where we are
         
-        for i in 0 ..< Bank.singlePatchCount {
+        for _ in 0 ..< Bank.singlePatchCount {
             let singleData = ByteArray(data[..<SinglePatch.dataSize])
-            singles[i] = SinglePatch(bytes: singleData)
+            singles.append(SinglePatch(bytes: singleData))
             data.removeFirst(SinglePatch.dataSize)
             offset += SinglePatch.dataSize
         }
         
-        for i in 0 ..< Bank.multiPatchCount {
+        for _ in 0 ..< Bank.multiPatchCount {
             let multiData = ByteArray(data[..<MultiPatch.dataSize])
-            multis[i] = MultiPatch(bytes: multiData)
+            multis.append(MultiPatch(bytes: multiData))
             data.removeFirst(MultiPatch.dataSize)
             offset += MultiPatch.dataSize
         }
@@ -52,43 +46,12 @@ public struct Bank: Codable {
         data.removeFirst(Drum.dataSize)
         offset += Drum.dataSize
         
-        for i in 0 ..< Bank.effectPatchCount {
+        for _ in 0 ..< Bank.effectPatchCount {
             let effectData = ByteArray(data[..<EffectPatch.dataSize])
-            effects[i] = EffectPatch(bytes: effectData)
+            effects.append(EffectPatch(bytes: effectData))
             data.removeFirst(EffectPatch.dataSize)
             offset += EffectPatch.dataSize
         }
-    }
-    
-    public init(_ data: Data) {
-        singles = Array(repeating: SinglePatch(), count: Bank.singlePatchCount)
-        multis = Array(repeating: MultiPatch(), count: Bank.multiPatchCount)
-        drum = Drum()
-        effects = Array(repeating: EffectPatch(), count: Bank.effectPatchCount)
-        
-        var offset = SystemExclusiveHeader.dataSize
-        
-        for i in 0 ..< Bank.singlePatchCount {
-            let singleData = data.subdata(in: offset ..< offset + SinglePatch.dataSize)
-            singles[i] = SinglePatch(singleData)
-            offset += SinglePatch.dataSize
-        }
-
-        for i in 0 ..< Bank.multiPatchCount {
-            let multiData = data.subdata(in: offset ..< offset + MultiPatch.dataSize)
-            multis[i] = MultiPatch(multiData)
-            offset += MultiPatch.dataSize
-        }
-        
-        drum = Drum(bytes: ByteArray(data.subdata(in: offset ..< offset + Drum.dataSize)))
-        offset += Drum.dataSize
-        
-        for i in 0 ..< Bank.effectPatchCount {
-            let effectData = data.subdata(in: offset ..< offset + EffectPatch.dataSize)
-            effects[i] = EffectPatch(bytes: ByteArray(effectData))
-            offset += EffectPatch.dataSize
-        }
-        
     }
     
     /// Returns the System Exclusive data for the bank. Each section has its own checksum.

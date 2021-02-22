@@ -268,3 +268,15 @@ public func patchName(patchNumber: Int, patchCount: Int = 16) -> String {
     let patchIndex = (patchNumber % patchCount) + 1
     return "\(bankLetter)-\(patchIndex)"
 }
+
+public func everyNthByte(d: ByteArray, n: Int, start: Int) -> ByteArray {
+    var result = ByteArray()
+    
+    for i in 0 ..< d.count {
+        if i % n == 0 {
+            result.append(d[i + start])
+        }
+    }
+    
+    return result
+}
