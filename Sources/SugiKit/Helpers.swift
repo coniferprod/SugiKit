@@ -1,11 +1,5 @@
 import Foundation
 
-extension CaseIterable where Self: Equatable {
-    var index: Self.AllCases.Index? {
-        return Self.allCases.firstIndex { self == $0 }
-    }
-}
-
 extension String {
     /// Pads the string from left using `with` to `length`.
     public func pad(with character: String, toLength length: Int) -> String {
