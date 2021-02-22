@@ -65,7 +65,7 @@ public struct Source: Codable {
         d.removeFirst()
         let key = Int(b & 0x7f)
         // convert key value to key name
-        self.oscillator.fixedKey = Source.noteName(for: key)
+        self.oscillator.fixedKey = noteName(for: key)
         //self.oscillator.fixedKey = KeyType(key: Int(b & 0x7f))
         //print("fixed key = \(self.oscillator.fixedKey)")
 
@@ -123,7 +123,7 @@ public struct Source: Codable {
         buf.append(s42)
         
         // s46/s47/s48/s49
-        buf.append(Byte(Source.keyNumber(for: self.oscillator.fixedKey)))
+        buf.append(Byte(keyNumber(for: self.oscillator.fixedKey)))
         
         // s50/s51/s52/s53
         buf.append(Byte(self.oscillator.fine + 50))
@@ -139,42 +139,5 @@ public struct Source: Codable {
         buf.append(Byte(s54))
         
         return buf
-    }
-    
-    public static func noteName(for key: Int) -> String {
-        let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-        let octave = key / 12 - 1
-        let name = noteNames[key % 12];
-        return "\(name)\(octave)"
-    }
-    
-    public static func keyNumber(for name: String) -> Int {
-        let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-
-        var i = 0
-        var notePart = ""
-        var octavePart = ""
-        while i < name.count {
-            let c = name[i ..< i + 1]
-            if c == "C" || c == "D" || c == "E" || c == "F" || c == "G" || c == "A" || c == "B" {
-                notePart += c
-            }
-            if c == "#" {
-                notePart += c
-            }
-            if c == "-" {
-                octavePart += c
-            }
-            if c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" || c == "6" || c == "7" || c == "8" || c == "9" {
-                octavePart += c
-            }
-            i += 1
-        }
-
-        if let octave = Int(octavePart), let noteIndex = names.firstIndex(where: { $0 == notePart }) {
-            return (octave + 1) * 12 + noteIndex
-        }
-
-        return 0
     }
 }

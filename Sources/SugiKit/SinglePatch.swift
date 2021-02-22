@@ -434,11 +434,4 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         
         return lines.joined(separator: "\n")
     }
-    
-    public static func getPatchName(patchNumber: Int, patchCount: Int = 16) -> String {
-        let bankIndex = patchNumber / patchCount
-        let bankLetter = ["A", "B", "C", "D"][bankIndex]
-        let patchIndex = (patchNumber % patchCount) + 1
-        return "\(bankLetter)-\(patchIndex)"
-    }
 }

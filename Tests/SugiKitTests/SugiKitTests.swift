@@ -24,11 +24,11 @@ final class SugiKitTests: XCTestCase {
     }
     
     func testNoteName() {
-        XCTAssertEqual(Source.noteName(for: 60), "C4")
+        XCTAssertEqual(noteName(for: 60), "C4")
     }
     
     func testKeyNumber() {
-        XCTAssertEqual(Source.keyNumber(for: "C4"), 60)
+        XCTAssertEqual(keyNumber(for: "C4"), 60)
     }
     
     func testEmptyBankCreation() {

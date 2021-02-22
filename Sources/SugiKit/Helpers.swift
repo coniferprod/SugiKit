@@ -230,3 +230,47 @@ extension String {
         return String(self[start ..< end])
     }
 }
+
+public func noteName(for key: Int) -> String {
+    let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+    let octave = key / 12 - 1
+    let name = noteNames[key % 12];
+    return "\(name)\(octave)"
+}
+
+public func keyNumber(for name: String) -> Int {
+    let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+    var i = 0
+    var notePart = ""
+    var octavePart = ""
+    while i < name.count {
+        let c = name[i ..< i + 1]
+        if c == "C" || c == "D" || c == "E" || c == "F" || c == "G" || c == "A" || c == "B" {
+            notePart += c
+        }
+        if c == "#" {
+            notePart += c
+        }
+        if c == "-" {
+            octavePart += c
+        }
+        if c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" || c == "6" || c == "7" || c == "8" || c == "9" {
+            octavePart += c
+        }
+        i += 1
+    }
+
+    if let octave = Int(octavePart), let noteIndex = names.firstIndex(where: { $0 == notePart }) {
+        return (octave + 1) * 12 + noteIndex
+    }
+
+    return 0
+}
+
+public func patchName(patchNumber: Int, patchCount: Int = 16) -> String {
+    let bankIndex = patchNumber / patchCount
+    let bankLetter = ["A", "B", "C", "D"][bankIndex]
+    let patchIndex = (patchNumber % patchCount) + 1
+    return "\(bankLetter)-\(patchIndex)"
+}
