@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Oscillator: Codable {
+public struct Oscillator: Codable, CustomStringConvertible {
     public var waveNumber: Int
     public var keyTrack:  Bool
     public var coarse: Int  // -24~+24
@@ -17,5 +17,18 @@ public struct Oscillator: Codable {
         fixedKey = "C4"
         pressureFrequency = true
         vibrato = true
+    }
+    
+    public var description: String {
+        var lines = [String]()
+        
+        let waveName = Wave(number: waveNumber).name
+        lines.append("Wave = \(waveNumber)  \(waveName)")
+        lines.append("Key track = \(keyTrack)")
+        lines.append("Coarse = \(coarse)  Fine = \(fine)")
+        lines.append("Fixed key = \(fixedKey)")
+        lines.append("Pressure freq. = \(pressureFrequency)")
+        lines.append("Vibrato = \(vibrato)")
+        return lines.joined(separator: "\n")
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents one source in a single patch.
-public struct Source: Codable {
+public struct Source: Codable, CustomStringConvertible {
     static let dataSize = 18
 
     public var delay: Int // 0~100
@@ -139,5 +139,15 @@ public struct Source: Codable {
         buf.append(Byte(s54))
         
         return buf
+    }
+    
+    public var description: String {
+        var lines = [String]()
+        lines.append("Delay = \(delay)")
+        lines.append("Velocity curve = \(velocityCurve)")
+        lines.append("Key scaling curve = \(keyScalingCurve)")
+        lines.append("Oscillator = \(oscillator)")
+        lines.append("Amplifier = \(amplifier)")
+        return lines.joined(separator: "\n")
     }
 }

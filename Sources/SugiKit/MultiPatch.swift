@@ -35,39 +35,50 @@ public struct MultiSection: Codable {
     public init(bytes buffer: ByteArray) {
         var offset = 0
         var b: Byte = 0
-        var data = ByteArray(buffer)
 
-        singlePatchNumber = Int(data.first!)
+        b = buffer[offset]
         offset += 1
-        data.removeFirst()
+        singlePatchNumber = Int(b)
 
+        b = buffer[offset]
+        offset += 1
         zone = ZoneType()
-        zone.low = Int(data[0])
-        zone.high = Int(data[1])
-        data.removeFirst(2)
-        offset += 2
-
-        b = data.first! & 0x1f
-        channel = Int(b) + 1
+        zone.low = Int(b)
+        
+        b = buffer[offset]
         offset += 1
-        data.removeFirst()
-        let vs = (b & 0b00110000) >> 4
+        zone.high = Int(b)
+        
+        // channel, velocity switch, and section mute are all in M15
+        b = buffer[offset]
+        offset += 1
+
+        //print("multi M15 = \(b.toHex(digits: 2))")
+        
+        //channel = Int(b & 0x1F) + 1
+        channel = Int(b.bitField(start: 0, end: 4) + 1)
+
+        //let vs = (b & 0b00110000) >> 4
+        let vs = b.bitField(start: 4, end: 6)
         switch vs {
-        case 1:
+        case 0:
             velocitySwitch = .soft
-        case 2:
+        case 1:
             velocitySwitch = .loud
+        case 2:
+            velocitySwitch = .all
         default:
             velocitySwitch = .all
         }
         
         isMuted = b.isBitSet(6)
         
-        b = data.first!
+        // M16: out select and mode
+        b = buffer[offset]
         offset += 1
-        data.removeFirst()
-        let os = b & 0b00000111
-        switch os {
+
+        let outSelect = b & 0b00000111
+        switch outSelect {
         case 1:
             submix = .b
         case 2:
@@ -96,112 +107,19 @@ public struct MultiSection: Codable {
             playMode = .keyboard
         }
 
-        level = Int(data.first!)
-        offset += 1
-        data.removeFirst()
-
-        transpose = Int(data.first!) - 24
-        offset += 1
-        data.removeFirst()
-
-        tune = Int(data.first!) - 50
-        offset += 1
-    }
-    
-    public init(_ d: Data) {
-        var offset: Int = 0
-        var b: Byte = 0
-
-        b = d[offset]
-        offset += 1
-        singlePatchNumber = Int(b)
-        
-        b = d[offset]
-        offset += 1
-        zone = ZoneType()
-        zone.low = Int(b)
-        
-        b = d[offset]
-        offset += 1
-        zone.high = Int(b)
-        
-        b = d[offset]
-        offset += 1
-        
-        channel = Int(b & 0x1F) + 1
-        let vs = (b & 0b00110000) >> 4
-        if vs == 0 {
-            velocitySwitch = .all
-        }
-        else if vs == 1 {
-            velocitySwitch = .soft
-        }
-        else if vs == 2 {
-            velocitySwitch = .loud
-        }
-        else {
-            velocitySwitch = .all
-        }
-        
-        isMuted = b.isBitSet(6)
-        
-        b = d[offset]
-        offset += 1
-        let os = (b & 0b00000111)
-        if os == 0 {
-            submix = .a
-        }
-        else if os == 1 {
-            submix = .b
-        }
-        else if os == 2 {
-            submix = .c
-        }
-        else if os == 3 {
-            submix = .d
-        }
-        else if os == 4 {
-            submix = .e
-        }
-        else if os == 5 {
-            submix = .f
-        }
-        else if os == 6 {
-            submix = .g
-        }
-        else if os == 7 {
-            submix = .h
-        }
-        else {
-            submix = .a
-        }
-        
-        let mode = (b & 0b00011000) >> 3
-        if mode == 0 {
-            playMode = .keyboard
-        }
-        else if mode == 1 {
-            playMode = .midi
-        }
-        else if mode == 2 {
-            playMode = .mix
-        }
-        else {
-            playMode = .keyboard
-        }
-        
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         level = Int(b)
         
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         transpose = Int(b) - 24
         
-        b = d[offset]
+        b = buffer[offset]
         offset += 1
         tune = Int(b) - 50
     }
+    
 }
 
 /// Represents a multi patch.
@@ -228,45 +146,24 @@ public struct MultiPatch: Codable {
     
     public init(bytes buffer: ByteArray) {
         var offset = 0
-
-        var data = ByteArray(buffer)
-        
-        self.name = String(bytes: data[..<MultiPatch.nameLength], encoding: .ascii) ?? String(repeating: " ", count: MultiPatch.nameLength)
-        offset += MultiPatch.nameLength
-
-        self.volume = Int(data.first!)
-        offset += 1
-        data.removeFirst()
-
-        self.effect = Int(data.first! + 1) // bring 0~31 to 1~32
-        offset += 1
-        data.removeFirst()
-        
-        for _ in 0 ..< MultiPatch.sectionCount {
-            let sectionData = ByteArray(data[..<MultiSection.dataSize])
-            sections.append(MultiSection(bytes: sectionData))
-            data.removeFirst(MultiSection.dataSize)
-            offset += MultiSection.dataSize
-        }
-    }
-    
-    public init(_ d: Data) {
-        var offset: Int = 0
         var b: Byte = 0
-        
-        self.name = String(data: d.subdata(in: offset ..< offset + MultiPatch.nameLength), encoding: .ascii) ?? ""
+
+        self.name = String(bytes: buffer[..<MultiPatch.nameLength], encoding: .ascii) ?? String(repeating: " ", count: MultiPatch.nameLength)
         offset += MultiPatch.nameLength
 
-        b = d[offset]
+        //print("\(self.name):\n\(buffer.hexDump)")
+        
+        b = buffer[offset]
         offset += 1
         self.volume = Int(b)
-        
-        b = d[offset]
+
+        b = buffer[offset]
         offset += 1
-        self.effect = Int(b + 1)  // bring 0~31 to 1~32
+        self.effect = Int(b + 1) // bring 0~31 to 1~32
         
         for _ in 0 ..< MultiPatch.sectionCount {
-            sections.append(MultiSection(d.subdata(in: offset ..< offset + MultiSection.dataSize)))
+            let sectionData = ByteArray(buffer[offset ..< offset + MultiSection.dataSize])
+            sections.append(MultiSection(bytes: sectionData))
             offset += MultiSection.dataSize
         }
     }

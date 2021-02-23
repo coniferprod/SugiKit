@@ -2,9 +2,9 @@ import Foundation
 
 public struct DrumSource: Codable {
     public var waveNumber: Int
-    public var decay: Int
-    public var tune: Int
-    public var level: Int
+    public var decay: Int // 0~100
+    public var tune: Int // 0~100 / 0~+/50
+    public var level: Int // 0~99
     
     public init() {
         waveNumber = 97  // KICK
@@ -64,7 +64,7 @@ public struct DrumNote: Codable {
         source2 = DrumSource()
         
         // S1 wave select MSB
-        let s1High = b
+        let s1High = b.bitField(start: 0, end: 1)
 
         // S2 wave select MSB
         b = buffer[offset]
@@ -97,12 +97,12 @@ public struct DrumNote: Codable {
         // S1 tune
         b = buffer[offset]
         offset += 1
-        source1.tune = Int(b)
+        source1.tune = Int(b) - 50
 
         // S2 tune
         b = buffer[offset]
         offset += 1
-        source2.tune = Int(b)
+        source2.tune = Int(b) - 50
 
         // S1 level
         b = buffer[offset]
@@ -118,15 +118,14 @@ public struct DrumNote: Codable {
     }
     
     public func decodeWaveNumber(msb: Byte, lsb: Byte) -> Int {
-        let high = msb.bitField(start: 0, end: 1)
-        let low = lsb
-        let binaryString = high.toBinary() + low.toBinary()
-        return Int(binaryString, radix: 2)!
+        let binaryString = msb.toBinary() + lsb.toBinary().pad(with: "0", toLength: 7)
+        return Int(binaryString, radix: 2)! + 1 // bring into 1~256
     }
 
     public func encodeWaveNumber(waveNumber: Int) -> (Byte, Byte) {
-        // Encode wave number as two bytes
-        let waveNumberString = String(source1.waveNumber, radix: 2).pad(with: "0", toLength: 8)
+        let number = waveNumber - 1  // bring into range 0...255
+        // Encode wave number as two bytes. First convert the number to binary with eight bits, zero-padded from the left if necessary.
+        let waveNumberString = String(number, radix: 2).pad(with: "0", toLength: 8)
         // First byte is just the top bit
         let highByte = Byte(waveNumberString.prefix(1), radix: 2)!
         // Second byte is all the rest
@@ -171,7 +170,7 @@ public struct Drum: Codable {
 
     public var channel: Byte  // store 0...15 as 1...16
     public var volume: Int  // 0~100
-    public var velocityDepth: Int  // 0~100
+    public var velocityDepth: Int  // 0~100, but actually -50...+50
     public var notes: [DrumNote]
     
     public init() {
@@ -189,26 +188,28 @@ public struct Drum: Codable {
         var offset = 0
         var b: Byte = 0
 
-        var data = ByteArray(buffer)
-        
-        self.channel = data.first!
+        b = buffer[offset]
+        self.channel = b + 1
         offset += 1
-        data.removeFirst()
 
-        self.volume = Int(data.first!)
+        b = buffer[offset]
         offset += 1
-        data.removeFirst()
+        self.volume = Int(b)
         
-        self.velocityDepth = Int(data.first!)
+        b = buffer[offset]
         offset += 1
-        data.removeFirst()
-        
-        data.removeFirst(7)  // remove the dummy bytes
+        // DRUM velocity depth is actually -50...+50
+        self.velocityDepth = Int(b) - 50  // adjust from 0~100
+
+        offset += 7 // skip past the dummy bytes
+        offset += 1 // and the checksum
         
         notes = [DrumNote]()
-        for _ in 0..<Drum.drumNoteCount {
-            notes.append(DrumNote(bytes: ByteArray(data.prefix(DrumNote.dataSize))))
-            data.removeFirst(DrumNote.dataSize)
+        for i in 0..<Drum.drumNoteCount {
+            let noteBytes = ByteArray(buffer[offset ..< offset + DrumNote.dataSize])
+            notes.append(DrumNote(bytes: noteBytes))
+            //print("drum note \(i):\n\(noteBytes.hexDump)")
+            offset += DrumNote.dataSize
         }
     }
     

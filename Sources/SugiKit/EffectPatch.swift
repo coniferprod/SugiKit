@@ -44,10 +44,81 @@ public enum EffectType: String, Codable, CaseIterable {
     }
 }
 
-public struct SubmixSettings: Codable {
+public struct EffectName {
+    public var name: String
+    public var parameters: [String]
+}
+
+public let effectParameterNames: [EffectType: EffectName] = [
+    .undefined: EffectName(
+        name: "unknown",
+        parameters: ["unknown", "unknown", "unknown"]),
+    .reverb1: EffectName(
+        name: "Reverb 1",
+        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+    .reverb2: EffectName(
+        name: "Reverb 2",
+        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+    .reverb3: EffectName(
+        name: "Reverb 3",
+        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+    .reverb4: EffectName(
+        name: "Reverb 4",
+        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+    .gateReverb: EffectName(
+        name: "Gate Reverb",
+        parameters: ["Pre. Delay", "Gate Time", "Tone"]),
+    .reverseGate: EffectName(
+        name: "Reverse Gate",
+        parameters: ["Pre. Delay", "Gate Time", "Tone"]),
+    .normalDelay: EffectName(
+        name: "Normal Delay",
+        parameters: ["Feed back", "Tone", "Delay"]),
+    .stereoPanpotDelay: EffectName(
+        name: "Stereo Panpot Delay",
+        parameters: ["Feed back", "L/R Delay", "Delay"]),
+    .chorus: EffectName(
+        name: "Chorus",
+        parameters: ["Width", "Feed back", "Rate"]),
+    .overdrivePlusFlanger: EffectName(
+        name: "Overdrive + Flanger",
+        parameters: ["Drive", "Fl. Type", "1-2 Bal"]),
+    .overdrivePlusNormalDelay: EffectName(
+        name: "Overdrive + Normal Delay",
+        parameters: ["Drive", "Delay Time", "1-2 Bal"]),
+    .overdrivePlusReverb: EffectName(
+        name: "Overdrive + Reverb",
+        parameters: ["Drive", "Rev. Type", "1-2 Bal"]),
+    .normalDelayPlusNormalDelay: EffectName(
+        name: "Normal Delay + Normal Delay",
+        parameters: ["Delay1", "Delay2", "1-2 Bal"]),
+    .normalDelayPlusStereoPanpotDelay: EffectName(
+        name: "Normal Delay + Stereo Pan.Delay",
+        parameters: ["Delay1", "Delay2", "1-2 Bal"]),
+    .chorusPlusNormalDelay: EffectName(
+        name: "Chorus + Normal Delay",
+        parameters: ["Chorus", "Delay", "1-2 Bal"]),
+    .chorusPlusStereoPanpotDelay: EffectName(
+        name: "Chorus + Stereo Pan Delay",
+        parameters: ["Chorus", "Delay", "1-2 Bal"]),
+]
+
+public struct SubmixSettings: Codable, CustomStringConvertible {
     public var pan: Int  // 0~15 / 0~+/-7 (K4)
-    public var send1: Int
-    public var send2: Int
+    public var send1: Int  // 0~99
+    public var send2: Int  // 0~99
+    
+    public init() {
+        self.pan = 0
+        self.send1 = 0
+        self.send2 = 0
+    }
+    
+    public init(pan: Int, send1: Int, send2: Int) {
+        self.pan = pan
+        self.send1 = send1
+        self.send2 = send2
+    }
     
     public var data: ByteArray {
         var buf = ByteArray()
@@ -58,16 +129,21 @@ public struct SubmixSettings: Codable {
         
         return buf
     }
+    
+    public var description: String {
+        return "Pan=\(pan) Send1=\(send1) Send2=\(send2)"
+    }
 }
 
 /// Represents an effect patch.
-public struct EffectPatch: Codable {
+public struct EffectPatch: Codable, CustomStringConvertible {
     static let dataSize = 35
+    static let submixCount = 8
     
     public var effectType: EffectType
-    public var param1: Int
-    public var param2: Int
-    public var param3: Int
+    public var param1: Int  // 0~7
+    public var param2: Int  // 0~7
+    public var param3: Int  // 0~31
     public var submixes: [SubmixSettings]
     
     public init() {
@@ -88,21 +164,43 @@ public struct EffectPatch: Codable {
     }
     
     public init(bytes buffer: ByteArray) {
-        // Parse later, just init for now
-        effectType = .reverb1
-        param1 = 0
-        param2 = 3
-        param3 = 16
-        submixes = [
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50)
-        ]
+        var offset = 0
+        var b: Byte = 0
+
+        print("effect:\n\(buffer.hexDump)")
+        
+        b = buffer[offset]
+        offset += 1
+        effectType = EffectType(index: Int(b + 1))!
+        
+        b = buffer[offset]
+        offset += 1
+        param1 = Int(b)
+        
+        b = buffer[offset]
+        offset += 1
+        param2 = Int(b)
+        
+        b = buffer[offset]
+        offset += 1
+        param3 = Int(b)
+        
+        offset += 6 // skip dummy bytes
+        
+        self.submixes = [SubmixSettings]()
+        for _ in 0..<EffectPatch.submixCount {
+            let pan = Int(buffer[offset]) - 7
+            offset += 1
+
+            let send1 = Int(buffer[offset])
+            offset += 1
+
+            let send2 = Int(buffer[offset])
+            offset += 1
+
+            let submix = SubmixSettings(pan: pan, send1: send1, send2: send2)
+            submixes.append(submix)
+        }
     }
     
     public var data: ByteArray {
@@ -127,5 +225,17 @@ public struct EffectPatch: Codable {
         buf.append(contentsOf: d)
         buf.append(checksum(bytes: d))
         return buf
+    }
+    
+    public var description: String {
+        var lines = [String]()
+        if let name = effectParameterNames[self.effectType] {
+            lines.append("\(name.name): \(name.parameters[0])=\(self.param1)  \(name.parameters[1])=\(self.param2)  \(name.parameters[2])=\(self.param3)")
+        }
+        for (index, submix) in submixes.enumerated() {
+            let submixType = SubmixType(index: index)!
+            lines.append("  \(submixType.rawValue.uppercased()): \(submix)")
+        }
+        return lines.joined(separator: "\n")
     }
 }

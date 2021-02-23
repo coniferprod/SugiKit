@@ -159,6 +159,23 @@ extension Data {
     }
 }
 
+extension ByteArray {
+    public var hexDump: String {
+        var s = ""
+        var count = 1
+        for b in self {
+            s += b.toHex(digits: 2) + " "
+            count += 1
+            if count == 8 {
+                s += "\n"
+                count = 1
+            }
+        }
+        return s
+
+    }
+}
+
 extension Double {
     /// Rounds the double to decimal places value
     public func rounded(toPlaces places:Int) -> Double {

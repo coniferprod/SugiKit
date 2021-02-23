@@ -388,6 +388,14 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
 
         lines.append("\(autoBend)")
         
+        for (index, source) in sources.enumerated() {
+            if !activeSources[index] {  // this source is muted
+                continue
+            }
+            
+            lines.append(source.description)
+        }
+        
         return lines.joined(separator: "\n")
     }
 }

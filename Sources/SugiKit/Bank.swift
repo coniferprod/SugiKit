@@ -42,7 +42,9 @@ public struct Bank: Codable {
             offset += MultiPatch.dataSize
         }
 
-        drum = Drum(bytes: ByteArray(data[..<Drum.dataSize]))
+        let drumBytes = ByteArray(data[..<Drum.dataSize])
+        //print("drum:\n\(drumBytes.hexDump)")
+        drum = Drum(bytes: drumBytes)
         data.removeFirst(Drum.dataSize)
         offset += Drum.dataSize
         
