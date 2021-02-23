@@ -16,7 +16,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
     public var am12: Bool
     public var am34: Bool
         
-    public var sourceMutes: [Bool]
+    public var activeSources: [Bool]  // true if source is active, false if not
     public var benderRange: Int  // 0~12 in semitones
     public var pressFreq: Int // 0~100 (±50)
     public var wheelAssign: WheelAssignType
@@ -47,7 +47,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         vibrato = VibratoSettings()
         lfo = LFOSettings()
         sources = [Source(), Source(), Source(), Source()]
-        sourceMutes = [true, true, true, true]  // 0=mute, 1=not mute
+        activeSources = [true, true, true, true] // all sources active
         filter1 = Filter()
         filter2 = Filter()
     }
@@ -58,7 +58,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         var b: Byte = 0
         var index = 0
 
-        var data = ByteArray(buffer)
+        let data = ByteArray(buffer)
         self.name = String(bytes: data[..<SinglePatch.nameLength], encoding: .ascii) ?? ""
         offset += SinglePatch.nameLength
 
@@ -100,7 +100,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
 
         b = buffer[offset]
         offset += 1
-        self.sourceMutes = [ // 0/mute, 1/not mute
+        self.activeSources = [ // 0/mute, 1/not mute
             !b.isBitSet(0),
             !b.isBitSet(1),
             !b.isBitSet(2),
@@ -125,7 +125,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         b = buffer[offset]
         offset += 1
         // Vibrato speed = s16 bits 0...6
-        //self.vibrato.speed = Int(b & 0x7f)
+        self.vibrato.speed = Int(b & 0x7f)
 
         b = buffer[offset]
         offset += 1
@@ -264,7 +264,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         
         // s14
         var s14: Byte = Byte(vibrato.shape.index!) << 4
-        for (i, sm) in sourceMutes.enumerated() {
+        for (i, sm) in activeSources.enumerated() {
             if sm {
                 s14.setBit(i)
             }
@@ -376,7 +376,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         lines.append("AM3>4 = \(am34)")
         
         var muteString = ""
-        for (index, element) in sourceMutes.enumerated() {
+        for (index, element) in activeSources.enumerated() {
             muteString += element ? String(index + 1) : "-"
         }
         lines.append("Sources = \(muteString)")
