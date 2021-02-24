@@ -167,7 +167,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
         var offset = 0
         var b: Byte = 0
 
-        print("effect:\n\(buffer.hexDump)")
+        //print("effect:\n\(buffer.hexDump)")
         
         b = buffer[offset]
         offset += 1
