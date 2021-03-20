@@ -36,22 +36,18 @@ public struct MultiSection: Codable {
         var offset = 0
         var b: Byte = 0
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         singlePatchNumber = Int(b)
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         zone = ZoneType()
         zone.low = Int(b)
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         zone.high = Int(b)
         
         // channel, velocity switch, and section mute are all in M15
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
 
         //print("multi M15 = \(b.toHex(digits: 2))")
         
@@ -74,8 +70,7 @@ public struct MultiSection: Codable {
         isMuted = b.isBitSet(6)
         
         // M16: out select and mode
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
 
         let outSelect = b & 0b00000111
         switch outSelect {
@@ -107,19 +102,15 @@ public struct MultiSection: Codable {
             playMode = .keyboard
         }
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         level = Int(b)
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         transpose = Int(b) - 24
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         tune = Int(b) - 50
     }
-    
 }
 
 /// Represents a multi patch.
@@ -153,12 +144,10 @@ public struct MultiPatch: Codable {
 
         //print("\(self.name):\n\(buffer.hexDump)")
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.volume = Int(b)
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.effect = Int(b + 1) // bring 0~31 to 1~32
         
         for _ in 0 ..< MultiPatch.sectionCount {

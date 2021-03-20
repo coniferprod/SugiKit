@@ -61,68 +61,54 @@ public struct Filter: Codable, Equatable {
         var offset: Int = 0
         var b: Byte = 0
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.cutoff = Int(b)
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.resonance = Int(b & 0x07)  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
         self.isLfoModulatingCutoff = b.isBitSet(3)
 
         self.cutoffModulation = LevelModulation()
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.cutoffModulation.velocityDepth = Int(b & 0x7f) - 50
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.cutoffModulation.pressureDepth = Int(b & 0x7f) - 50
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.cutoffModulation.keyScalingDepth = Int(b & 0x7f) - 50
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.envelopeDepth = Int(b & 0x7f) - 50
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.envelopeVelocityDepth = Int(b & 0x7f) - 50
         
         var e = FilterEnvelope()
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.attack = Int(b & 0x7f)
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.decay = Int(b & 0x7f)
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.sustain = Int(b & 0x7f) - 50  // error in manual and SysEx: actually -50~+50, not 0~100
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.release = Int(b & 0x7f)
         
         self.envelope = e
         
         self.timeModulation = TimeModulation()
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.timeModulation.attackVelocity = Int(b & 0x7f) - 50
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.timeModulation.releaseVelocity = Int(b & 0x7f) - 50
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.timeModulation.keyScaling = Int(b & 0x7f) - 50
     }
     

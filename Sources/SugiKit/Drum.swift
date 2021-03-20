@@ -55,8 +55,7 @@ public struct DrumNote: Codable {
         var b: Byte = 0
 
         // Submix / out select is actually bits 4-6 of the first byte
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         let submixValue = Int(b.bitField(start: 4, end: 7))
         submix = SubmixType(index: submixValue)!
         
@@ -67,51 +66,42 @@ public struct DrumNote: Codable {
         let s1High = b.bitField(start: 0, end: 1)
 
         // S2 wave select MSB
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         let s2High = b
         
         // S1 wave select LSB
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         let s1Low = b
         
         // S2 wave select LSB
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         let s2Low = b
 
         source1.waveNumber = decodeWaveNumber(msb: s1High, lsb: s1Low)
         source2.waveNumber = decodeWaveNumber(msb: s2High, lsb: s2Low)
 
         // S1 decay
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         source1.decay = Int(b)
 
         // S2 decay
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         source2.decay = Int(b)
 
         // S1 tune
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         source1.tune = Int(b) - 50
 
         // S2 tune
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         source2.tune = Int(b) - 50
 
         // S1 level
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         source1.level = Int(b)
 
         // S2 level
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         source2.level = Int(b)
 
         // last byte is checksum
@@ -188,16 +178,13 @@ public struct Drum: Codable {
         var offset = 0
         var b: Byte = 0
 
-        b = buffer[offset]
+        b = buffer.next(&offset)
         self.channel = b + 1
-        offset += 1
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.volume = Int(b)
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         // DRUM velocity depth is actually -50...+50
         self.velocityDepth = Int(b) - 50  // adjust from 0~100
 

@@ -46,26 +46,21 @@ public struct Amplifier: Codable, Equatable {
         var offset: Int = 0
         var b: Byte = 0
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.level = Int(b)
 
         var e = AmplifierEnvelope()
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.attack = Int(b)
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.decay = Int(b)
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.sustain = Int(b)
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         e.release = Int(b)
     
         self.envelope = e
@@ -77,30 +72,24 @@ public struct Amplifier: Codable, Equatable {
 
         self.levelModulation = LevelModulation()
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.levelModulation.velocityDepth = Int(b) - 50
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.levelModulation.pressureDepth = Int(b) - 50
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.levelModulation.keyScalingDepth = Int(b) - 50
         
         self.timeModulation = TimeModulation()
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.timeModulation.attackVelocity = Int(b) - 50
         
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.timeModulation.releaseVelocity = Int(b) - 50
 
-        b = d[offset]
-        offset += 1
+        b = d.next(&offset)
         self.timeModulation.keyScaling = Int(b) - 50
     }
     

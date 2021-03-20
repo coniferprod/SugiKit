@@ -62,28 +62,24 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.name = String(bytes: data[..<SinglePatch.nameLength], encoding: .ascii) ?? ""
         offset += SinglePatch.nameLength
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.volume = Int(b)
 
         // effect = s11 bits 0...4
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         //print("effect byte s11 = 0x\(String(b, radix: 16))")
         let effectPatch = Int(b & 0b00011111) + 1  // mask out top three bits just in case, then bring into range 1~32
         self.effect = effectPatch // use range 1~32 when storing the value, 0~31 in SysEx data
         //print("effect = \(self.effect)")
 
         // output select = s12 bits 0...2
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         let submixIndex = Int(b & 0b00000111) // should now have a value 0~7
         self.submix = SubmixType(index: submixIndex)!
         //print("submix = \(self.submix)")
 
         // source mode = s13 bits 0...1
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         
         index = Int(b.bitField(start: 0, end: 2))
         self.sourceMode = SourceModeType(index: index)!
@@ -98,8 +94,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.am34 = b.isBitSet(5)
         //print("AM 3>4 = \(self.am34)")
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.activeSources = [ // 0/mute, 1/not mute
             !b.isBitSet(0),
             !b.isBitSet(1),
@@ -111,8 +106,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         index = Int(b.bitField(start: 4, end: 6))
         self.vibrato.shape = LFOShapeType(index: index)!
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         // Pitch bend = s15 bits 0...3
             self.benderRange = Int(b.bitField(start: 0, end: 4))
         //print("bender range = \(self.benderRange)")
@@ -122,67 +116,53 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.wheelAssign = WheelAssignType(index: index)!
         //print("wheel assign = \(self.wheelAssign)")
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         // Vibrato speed = s16 bits 0...6
         self.vibrato.speed = Int(b & 0x7f)
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         // Wheel depth = s17 bits 0...6
         self.wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
         //print("wheel depth = \(self.wheelDepth)")
         
         self.autoBend = AutoBendSettings()
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.autoBend.time = Int(b & 0x7f)
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.autoBend.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.autoBend.keyScalingTime = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.autoBend.velocityDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.vibrato.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.vibrato.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
      
         self.lfo = LFOSettings()
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         index = Int(b & 0x03)
         self.lfo.shape = LFOShapeType(index: index)!
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.lfo.speed = Int(b & 0x7f)
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.lfo.delay = Int(b & 0x7f)
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.lfo.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.lfo.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         self.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
         let sourceBytes = ByteArray(buffer[offset ..< offset + 28])
@@ -225,8 +205,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.filter1 = Filter(d: filterData[0])
         self.filter2 = Filter(d: filterData[1])
         
-        b = buffer[offset]
-        
+        b = buffer.next(&offset)
+
         // "Check sum value (s130) is the sum of the A5H and s0 ~ s129".
         //print("incoming checksum = \(b)")
         //self.incomingChecksum = b   // store the checksum as we got it from SysEx

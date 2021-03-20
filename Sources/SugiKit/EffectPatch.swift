@@ -169,34 +169,30 @@ public struct EffectPatch: Codable, CustomStringConvertible {
 
         //print("effect:\n\(buffer.hexDump)")
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         effectType = EffectType(index: Int(b + 1))!
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         param1 = Int(b)
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         param2 = Int(b)
         
-        b = buffer[offset]
-        offset += 1
+        b = buffer.next(&offset)
         param3 = Int(b)
         
         offset += 6 // skip dummy bytes
         
         self.submixes = [SubmixSettings]()
         for _ in 0..<EffectPatch.submixCount {
-            let pan = Int(buffer[offset]) - 7
-            offset += 1
+            b = buffer.next(&offset)
+            let pan = Int(b) - 7
 
-            let send1 = Int(buffer[offset])
-            offset += 1
+            b = buffer.next(&offset)
+            let send1 = Int(b)
 
-            let send2 = Int(buffer[offset])
-            offset += 1
+            b = buffer.next(&offset)
+            let send2 = Int(b)
 
             let submix = SubmixSettings(pan: pan, send1: send1, send2: send2)
             submixes.append(submix)

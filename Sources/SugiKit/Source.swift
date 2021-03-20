@@ -23,33 +23,24 @@ public struct Source: Codable, CustomStringConvertible {
         var b: Byte = 0
         var index: Int = 0
         
-        var d = ByteArray(buffer)
-        
-        delay = Int(d.first! & 0x7f)
-        offset += 1
-        d.removeFirst()
+        b = buffer.next(&offset)
+        delay = Int(b & 0x7f)
 
-        b = d.first!
-        offset += 1
-        d.removeFirst()
+        b = buffer.next(&offset)
 
         // KS curve = bits 4...6
         index = Int(b.bitField(start: 4, end: 7))
         keyScalingCurve = KeyScalingCurveType.allCases[index]
         //print("KS curve = \(keyScalingCurve)")
-        
-        let b2: Byte = d.first!
-        offset += 1
-        d.removeFirst()
+
+        let b2 = buffer.next(&offset)
         
         oscillator = Oscillator()
         
         self.oscillator.waveNumber = Source.extractWaveNumber(highByte: b, lowByte: b2)
         //print("wave = \(self.oscillator.waveNumber)")
 
-        b = d.first!
-        offset += 1
-        d.removeFirst()
+        b = buffer.next(&offset)
         
         // Here the MIDI implementation's SysEx format is a little unclear.
         // My interpretation is that the low six bits are the coarse value,
@@ -60,24 +51,18 @@ public struct Source: Codable, CustomStringConvertible {
         self.oscillator.coarse = Int((b & 0x3f)) - 24  // 00 ~ 48 to ±24
         //print("coarse = \(self.oscillator.coarse)")
         
-        b = d.first!
-        offset += 1
-        d.removeFirst()
+        b = buffer.next(&offset)
         let key = Int(b & 0x7f)
         // convert key value to key name
         self.oscillator.fixedKey = noteName(for: key)
         //self.oscillator.fixedKey = KeyType(key: Int(b & 0x7f))
         //print("fixed key = \(self.oscillator.fixedKey)")
 
-        b = d.first!
-        offset += 1
-        d.removeFirst()
+        b = buffer.next(&offset)
         self.oscillator.fine = Int((b & 0x7f)) - 50
         //print("fine = \(self.oscillator.fine)")
 
-        b = d.first!
-        offset += 1
-        d.removeFirst()
+        b = buffer.next(&offset)
         self.oscillator.pressureFrequency = b.isBitSet(0)
         self.oscillator.vibrato = b.isBitSet(1)
         index = Int((b >> 2) & 0x07)
