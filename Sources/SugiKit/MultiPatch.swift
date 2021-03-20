@@ -139,7 +139,7 @@ public struct MultiPatch: Codable {
         var offset = 0
         var b: Byte = 0
 
-        self.name = String(bytes: buffer[..<MultiPatch.nameLength], encoding: .ascii) ?? String(repeating: " ", count: MultiPatch.nameLength)
+        self.name = String(bytes: buffer.slice(from: offset, length: MultiPatch.nameLength), encoding: .ascii) ?? String(repeating: " ", count: MultiPatch.nameLength)
         offset += MultiPatch.nameLength
 
         //print("\(self.name):\n\(buffer.hexDump)")
@@ -151,7 +151,7 @@ public struct MultiPatch: Codable {
         self.effect = Int(b + 1) // bring 0~31 to 1~32
         
         for _ in 0 ..< MultiPatch.sectionCount {
-            let sectionData = ByteArray(buffer[offset ..< offset + MultiSection.dataSize])
+            let sectionData = buffer.slice(from: offset, length: MultiSection.dataSize)
             sections.append(MultiSection(bytes: sectionData))
             offset += MultiSection.dataSize
         }

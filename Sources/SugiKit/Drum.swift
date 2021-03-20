@@ -193,7 +193,7 @@ public struct Drum: Codable {
         
         notes = [DrumNote]()
         for i in 0..<Drum.drumNoteCount {
-            let noteBytes = ByteArray(buffer[offset ..< offset + DrumNote.dataSize])
+            let noteBytes = buffer.slice(from: offset, length: DrumNote.dataSize)
             notes.append(DrumNote(bytes: noteBytes))
             //print("drum note \(i):\n\(noteBytes.hexDump)")
             offset += DrumNote.dataSize

@@ -58,8 +58,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         var b: Byte = 0
         var index = 0
 
-        let data = ByteArray(buffer)
-        self.name = String(bytes: data[..<SinglePatch.nameLength], encoding: .ascii) ?? ""
+        self.name = String(bytes: buffer.slice(from: offset, length: SinglePatch.nameLength), encoding: .ascii) ?? ""
         offset += SinglePatch.nameLength
 
         b = buffer.next(&offset)

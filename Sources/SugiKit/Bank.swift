@@ -24,34 +24,28 @@ public struct Bank: Codable {
         effects = [EffectPatch]()
 
         var offset = 0
-        var data = ByteArray(buffer)
-        data.removeFirst(SystemExclusiveHeader.dataSize)  // eat the header
-        offset += SystemExclusiveHeader.dataSize  // but maintain an offset so we know where we are
+        offset += SystemExclusiveHeader.dataSize  // skip the SysEx header
         
         for _ in 0 ..< Bank.singlePatchCount {
-            let singleData = ByteArray(data[..<SinglePatch.dataSize])
+            let singleData = buffer.slice(from: offset, length: SinglePatch.dataSize)
             singles.append(SinglePatch(bytes: singleData))
-            data.removeFirst(SinglePatch.dataSize)
             offset += SinglePatch.dataSize
         }
         
         for _ in 0 ..< Bank.multiPatchCount {
-            let multiData = ByteArray(data[..<MultiPatch.dataSize])
+            let multiData = buffer.slice(from: offset, length: MultiPatch.dataSize)
             multis.append(MultiPatch(bytes: multiData))
-            data.removeFirst(MultiPatch.dataSize)
             offset += MultiPatch.dataSize
         }
 
-        let drumBytes = ByteArray(data[..<Drum.dataSize])
+        let drumBytes = buffer.slice(from: offset, length: Drum.dataSize)
         //print("drum:\n\(drumBytes.hexDump)")
         drum = Drum(bytes: drumBytes)
-        data.removeFirst(Drum.dataSize)
         offset += Drum.dataSize
         
         for _ in 0 ..< Bank.effectPatchCount {
-            let effectData = ByteArray(data[..<EffectPatch.dataSize])
+            let effectData = buffer.slice(from: offset, length: EffectPatch.dataSize)
             effects.append(EffectPatch(bytes: effectData))
-            data.removeFirst(EffectPatch.dataSize)
             offset += EffectPatch.dataSize
         }
     }
