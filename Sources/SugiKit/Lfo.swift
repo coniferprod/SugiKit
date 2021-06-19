@@ -1,6 +1,6 @@
 import Foundation
 
-public enum LFOShapeType: String, Codable, CaseIterable {
+public enum LFOShape: String, Codable, CaseIterable {
     case triangle
     case sawtooth
     case square
@@ -18,7 +18,7 @@ public enum LFOShapeType: String, Codable, CaseIterable {
 }
 
 public struct VibratoSettings: Codable {
-    public var shape: LFOShapeType
+    public var shape: LFOShape
     public var speed: Int  // 0~100
     public var depth: Int  // -50+~50
     public var pressureDepth: Int  // -50+~+50
@@ -32,7 +32,7 @@ public struct VibratoSettings: Codable {
 }
 
 public struct LFOSettings: Codable {
-    public var shape: LFOShapeType
+    public var shape: LFOShape
     public var speed: Int
     public var delay: Int
     public var depth: Int  // -50~+50

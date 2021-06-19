@@ -1,7 +1,7 @@
 import Foundation
 
 /// Type of effect.
-public enum EffectType: String, Codable, CaseIterable {
+public enum Effect: String, Codable, CaseIterable {
     case undefined
     case reverb1
     case reverb2
@@ -42,6 +42,65 @@ public enum EffectType: String, Codable, CaseIterable {
         default: return nil
         }
     }
+    
+    public struct Name: Codable {
+        public var name: String
+        public var parameters: [String]
+    }
+    
+    public static let names = [Name]([
+        Name(
+            name: "unknown",
+            parameters: ["unknown", "unknown", "unknown"]),
+        Name(
+            name: "Reverb 1",
+            parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+        Name(
+            name: "Reverb 2",
+            parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+        Name(
+            name: "Reverb 3",
+            parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+        Name(
+            name: "Reverb 4",
+            parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
+        Name(
+            name: "Gate Reverb",
+            parameters: ["Pre. Delay", "Gate Time", "Tone"]),
+        Name(
+            name: "Reverse Gate",
+            parameters: ["Pre. Delay", "Gate Time", "Tone"]),
+        Name(
+            name: "Normal Delay",
+            parameters: ["Feed back", "Tone", "Delay"]),
+        Name(
+            name: "Stereo Panpot Delay",
+            parameters: ["Feed back", "L/R Delay", "Delay"]),
+        Name(
+            name: "Chorus",
+            parameters: ["Width", "Feed back", "Rate"]),
+        Name(
+            name: "Overdrive + Flanger",
+            parameters: ["Drive", "Fl. Type", "1-2 Bal"]),
+        Name(
+            name: "Overdrive + Normal Delay",
+            parameters: ["Drive", "Delay Time", "1-2 Bal"]),
+        Name(
+            name: "Overdrive + Reverb",
+            parameters: ["Drive", "Rev. Type", "1-2 Bal"]),
+        Name(
+            name: "Normal Delay + Normal Delay",
+            parameters: ["Delay1", "Delay2", "1-2 Bal"]),
+        Name(
+            name: "Normal Delay + Stereo Pan.Delay",
+            parameters: ["Delay1", "Delay2", "1-2 Bal"]),
+        Name(
+            name: "Chorus + Normal Delay",
+            parameters: ["Chorus", "Delay", "1-2 Bal"]),
+        Name(
+            name: "Chorus + Stereo Pan Delay",
+            parameters: ["Chorus", "Delay", "1-2 Bal"]),
+    ])
 }
 
 public struct EffectName {
@@ -49,7 +108,7 @@ public struct EffectName {
     public var parameters: [String]
 }
 
-public let effectParameterNames: [EffectType: EffectName] = [
+public let effectParameterNames: [Effect: EffectName] = [
     .undefined: EffectName(
         name: "unknown",
         parameters: ["unknown", "unknown", "unknown"]),
@@ -140,14 +199,14 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     static let dataSize = 35
     static let submixCount = 8
     
-    public var effectType: EffectType
+    public var effect: Effect
     public var param1: Int  // 0~7
     public var param2: Int  // 0~7
     public var param3: Int  // 0~31
     public var submixes: [SubmixSettings]
     
     public init() {
-        effectType = .reverb1
+        effect = .reverb1
         param1 = 0
         param2 = 3
         param3 = 16
@@ -170,7 +229,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
         //print("effect:\n\(buffer.hexDump)")
         
         b = buffer.next(&offset)
-        effectType = EffectType(index: Int(b + 1))!
+        effect = Effect(index: Int(b + 1))!
         
         b = buffer.next(&offset)
         param1 = Int(b)
@@ -202,7 +261,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     public var data: ByteArray {
         var buf = ByteArray()
         
-        [effectType.index!, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
+        [effect.index!, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
             buf.append(Byte($0))
         }
         
@@ -221,12 +280,12 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     
     public var description: String {
         var lines = [String]()
-        if let name = effectParameterNames[self.effectType] {
+        if let name = effectParameterNames[self.effect] {
             lines.append("\(name.name): \(name.parameters[0])=\(self.param1)  \(name.parameters[1])=\(self.param2)  \(name.parameters[2])=\(self.param3)")
         }
-        for (index, submix) in submixes.enumerated() {
+        for (index, submixSettings) in submixes.enumerated() {
             let submix = Submix(index: index)!
-            lines.append("  \(submix.rawValue.uppercased()): \(submix)")
+            lines.append("  \(submix.rawValue.uppercased()): \(submixSettings)")
         }
         return lines.joined(separator: "\n")
     }

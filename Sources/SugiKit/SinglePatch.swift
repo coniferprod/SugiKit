@@ -105,7 +105,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         
         self.vibrato = VibratoSettings()
         index = Int(b.bitField(start: 4, end: 6))
-        self.vibrato.shape = LFOShapeType(index: index)!
+        self.vibrato.shape = LFOShape(index: index)!
 
         b = buffer.next(&offset)
         // Pitch bend = s15 bits 0...3
@@ -149,7 +149,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
 
         b = buffer.next(&offset)
         index = Int(b & 0x03)
-        self.lfo.shape = LFOShapeType(index: index)!
+        self.lfo.shape = LFOShape(index: index)!
 
         b = buffer.next(&offset)
         self.lfo.speed = Int(b & 0x7f)

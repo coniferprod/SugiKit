@@ -27,6 +27,9 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "SugiKitTests",
-            dependencies: ["SugiKit"]),
+            dependencies: ["SugiKit"],
+            resources: [
+                .copy("Resources")
+            ]),
     ]
 )
