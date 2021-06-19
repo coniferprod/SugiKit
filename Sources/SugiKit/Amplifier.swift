@@ -1,6 +1,6 @@
 import Foundation
 
-public struct AmplifierEnvelope: Codable, Equatable {
+public struct AmplifierEnvelope: Codable, Equatable, CustomStringConvertible {
     public var attack: Int
     public var decay: Int
     public var sustain: Int
@@ -25,9 +25,13 @@ public struct AmplifierEnvelope: Codable, Equatable {
         [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
         return buf
     }
+    
+    public var description: String {
+        return "A=\(attack) D=\(decay) S=\(sustain) R=\(release)"
+    }
 }
 
-public struct Amplifier: Codable, Equatable {
+public struct Amplifier: Codable, Equatable, CustomStringConvertible {
     static let dataSize = 11
     
     public var level: Int
@@ -42,25 +46,25 @@ public struct Amplifier: Codable, Equatable {
         timeModulation = TimeModulation()
     }
     
-    public init(d: ByteArray) {
+    public init(bytes buffer: ByteArray) {
         var offset: Int = 0
         var b: Byte = 0
         
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         self.level = Int(b)
 
         var e = AmplifierEnvelope()
         
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         e.attack = Int(b)
         
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         e.decay = Int(b)
         
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         e.sustain = Int(b)
         
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         e.release = Int(b)
     
         self.envelope = e
@@ -72,24 +76,24 @@ public struct Amplifier: Codable, Equatable {
 
         self.levelModulation = LevelModulation()
 
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         self.levelModulation.velocityDepth = Int(b) - 50
 
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         self.levelModulation.pressureDepth = Int(b) - 50
         
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         self.levelModulation.keyScalingDepth = Int(b) - 50
         
         self.timeModulation = TimeModulation()
 
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         self.timeModulation.attackVelocity = Int(b) - 50
         
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         self.timeModulation.releaseVelocity = Int(b) - 50
 
-        b = d.next(&offset)
+        b = buffer.next(&offset)
         self.timeModulation.keyScaling = Int(b) - 50
     }
     
@@ -102,5 +106,9 @@ public struct Amplifier: Codable, Equatable {
         buf.append(contentsOf: self.timeModulation.data)
 
         return buf
+    }
+    
+    public var description: String {
+        return "Env=\(self.envelope) LevelMod=\(self.levelModulation) TimeMod=\(self.timeModulation)"
     }
 }

@@ -9,22 +9,23 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
     public var name: String  // name (10 characters)
     public var volume: Int  // volume 0~100
     public var effect: Int  // effect patch number 1~32 (in SysEx 0~31)
-    public var submix: SubmixType // A...H
+    public var submix: Submix // A...H
         
-    public var sourceMode: SourceModeType
-    public var polyphonyMode: PolyphonyModeType
+    public var sourceMode: SourceMode
+    public var polyphonyMode: PolyphonyMode
     public var am12: Bool
     public var am34: Bool
         
     public var activeSources: [Bool]  // true if source is active, false if not
     public var benderRange: Int  // 0~12 in semitones
     public var pressFreq: Int // 0~100 (±50)
-    public var wheelAssign: WheelAssignType
+    public var wheelAssign: WheelAssign
     public var wheelDepth: Int  // -50 ... +50
     public var autoBend: AutoBendSettings  // this is portamento
     public var vibrato: VibratoSettings
     public var lfo: LFOSettings
     public var sources: [Source]
+    public var amplifiers: [Amplifier]
     public var filter1: Filter
     public var filter2: Filter
 
@@ -48,6 +49,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         lfo = LFOSettings()
         sources = [Source(), Source(), Source(), Source()]
         activeSources = [true, true, true, true] // all sources active
+        amplifiers = [Amplifier(), Amplifier(), Amplifier(), Amplifier()]
         filter1 = Filter()
         filter2 = Filter()
     }
@@ -74,18 +76,18 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         // output select = s12 bits 0...2
         b = buffer.next(&offset)
         let submixIndex = Int(b & 0b00000111) // should now have a value 0~7
-        self.submix = SubmixType(index: submixIndex)!
+        self.submix = Submix(index: submixIndex)!
         //print("submix = \(self.submix)")
 
         // source mode = s13 bits 0...1
         b = buffer.next(&offset)
         
         index = Int(b.bitField(start: 0, end: 2))
-        self.sourceMode = SourceModeType(index: index)!
+        self.sourceMode = SourceMode(index: index)!
         //print("source mode = \(self.sourceMode)")
         
         index = Int(b.bitField(start: 2, end: 4))
-        self.polyphonyMode = PolyphonyModeType(index: index)!
+        self.polyphonyMode = PolyphonyMode(index: index)!
         //print("polyphony mode = \(self.polyphonyMode)")
         
         self.am12 = b.isBitSet(4)
@@ -112,7 +114,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         
         // Wheel assign = s15 bits 4...5
             index = Int(b.bitField(start: 4, end: 6))
-        self.wheelAssign = WheelAssignType(index: index)!
+        self.wheelAssign = WheelAssign(index: index)!
         //print("wheel assign = \(self.wheelAssign)")
 
         b = buffer.next(&offset)
@@ -171,14 +173,12 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             everyNthByte(d: sourceBytes, n: 4, start: 2),
             everyNthByte(d: sourceBytes, n: 4, start: 3),
         ]
-
         self.sources = [
             Source(bytes: sourceData[0]),
             Source(bytes: sourceData[1]),
             Source(bytes: sourceData[2]),
             Source(bytes: sourceData[3]),
         ]
-        
         offset += 28
         
         let amplifierBytes = ByteArray(buffer[offset ..< offset + 44])
@@ -188,12 +188,14 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             everyNthByte(d: amplifierBytes, n: 4, start: 2),
             everyNthByte(d: amplifierBytes, n: 4, start: 3),
         ]
+        self.amplifiers = [
+            Amplifier(bytes: amplifierData[0]),
+            Amplifier(bytes: amplifierData[1]),
+            Amplifier(bytes: amplifierData[2]),
+            Amplifier(bytes: amplifierData[3]),
+        ]
         offset += 44
-        
-        for (index, data) in amplifierData.enumerated() {
-            self.sources[index].amplifier = Amplifier(d: data)
-        }
-        
+
         let filterBytes = ByteArray(buffer[offset ..< offset + 28])
         let filterData: [ByteArray] = [
             everyNthByte(d: filterBytes, n: 2, start: 0),
@@ -259,17 +261,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         // s17
         d.append(Byte(wheelDepth + 50))
         
-        // s18
-        d.append(Byte(autoBend.time))
-        
-        // s19
-        d.append(Byte(autoBend.depth + 50))
-        
-        // s20
-        d.append(Byte(autoBend.keyScalingTime + 50))
-        
-        // s21
-        d.append(Byte(autoBend.velocityDepth + 50))
+        d.append(contentsOf: autoBend.data)  // s18 ... s21
         
         // s22
         d.append(Byte(vibrato.pressureDepth + 50))
@@ -277,21 +269,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         // s23
         d.append(Byte(vibrato.depth + 50))
 
-        // s24
-        d.append(Byte(lfo.shape.index!))
-
-        // s25
-        d.append(Byte(lfo.speed))
-
-        // s26
-        d.append(Byte(lfo.delay))
+        d.append(contentsOf: lfo.data)  // s24 ... s28
         
-        // s27
-        d.append(Byte(lfo.depth + 50))
-
-        // s28
-        d.append(Byte(lfo.pressureDepth + 50))
-
         // s29
         d.append(Byte(pressFreq + 50))
 
@@ -303,7 +282,6 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         let s2data = sources[1].data
         let s3data = sources[2].data
         let s4data = sources[3].data
-        //print("source 1 data length = \(s1data.count)")
         for i in 0 ..< s1data.count {
             d.append(s1data[i])
             d.append(s2data[i])
@@ -311,11 +289,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             d.append(s4data[i])
         }
 
-        let amp1Data = sources[0].amplifier.data
-        let amp2Data = sources[1].amplifier.data
-        let amp3Data = sources[2].amplifier.data
-        let amp4Data = sources[3].amplifier.data
-        //print("amp 1 data length = \(amp1Data.count)")
+        let amp1Data = amplifiers[0].data
+        let amp2Data = amplifiers[1].data
+        let amp3Data = amplifiers[2].data
+        let amp4Data = amplifiers[3].data
         for i in 0 ..< Amplifier.dataSize {
             d.append(amp1Data[i])
             d.append(amp2Data[i])
@@ -325,7 +302,6 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         
         let f1Data = filter1.data
         let f2Data = filter2.data
-        //print("filter 1 data length = \(f1Data.count)")
         for i in 0 ..< f1Data.count {
             d.append(f1Data[i])
             d.append(f2Data[i])
@@ -373,6 +349,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             }
             
             lines.append(source.description)
+        }
+        
+        for (_, amplifier) in amplifiers.enumerated() {
+            lines.append(amplifier.description)
         }
         
         return lines.joined(separator: "\n")

@@ -45,4 +45,14 @@ public struct LFOSettings: Codable {
         depth = 0
         pressureDepth = 0
     }
+    
+    public var data: ByteArray {
+        var buf = ByteArray()
+        
+        [shape.index!, speed, delay, depth + 50, pressureDepth + 50].forEach {
+            buf.append(Byte($0))
+        }
+        
+        return buf
+    }
 }

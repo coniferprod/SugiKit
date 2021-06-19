@@ -5,12 +5,12 @@ public struct MultiSection: Codable {
     public static let dataSize = 8
     
     public var singlePatchNumber: Int  // 0~63 / A-1 ~ D-16
-    public var zone: ZoneType  // 0~127 / C-2 ~G8
+    public var zone: Zone  // 0~127 / C-2 ~G8
     public var channel: Int  // 0...15 / 1...16
-    public var velocitySwitch: VelocitySwitchType
+    public var velocitySwitch: VelocitySwitch
     public var isMuted: Bool
-    public var submix: SubmixType
-    public var playMode: PlayModeType
+    public var submix: Submix
+    public var playMode: PlayMode
     public var level: Int  // 0~100
     public var transpose: Int  // 0~48 / +/- 24
     public var tune: Int  // 0~100 / +/- 50
@@ -18,7 +18,7 @@ public struct MultiSection: Codable {
     public init() {
         singlePatchNumber = 0
         
-        zone = ZoneType()
+        zone = Zone()
         zone.high = 0
         zone.low = 127
         
@@ -40,7 +40,7 @@ public struct MultiSection: Codable {
         singlePatchNumber = Int(b)
 
         b = buffer.next(&offset)
-        zone = ZoneType()
+        zone = Zone()
         zone.low = Int(b)
         
         b = buffer.next(&offset)

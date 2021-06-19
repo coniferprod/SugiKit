@@ -9,14 +9,14 @@ extension CaseIterable where Self: Equatable {
     }
 }
 
-public enum PatchType: String, CaseIterable {
+public enum PatchKind: String, CaseIterable {
     case single
     case multi
     case effect
     case drum
 }
 
-public enum VelocityCurveType: Int, Codable, CaseIterable {
+public enum VelocityCurve: Int, Codable, CaseIterable {
     case curve1 = 1
     case curve2
     case curve3
@@ -41,7 +41,7 @@ public enum VelocityCurveType: Int, Codable, CaseIterable {
     }
 }
 
-public enum KeyScalingCurveType: Int, Codable, CaseIterable {
+public enum KeyScalingCurve: Int, Codable, CaseIterable {
     case curve1 = 1
     case curve2
     case curve3
@@ -66,31 +66,10 @@ public enum KeyScalingCurveType: Int, Codable, CaseIterable {
     }
 }
 
-public struct KeyType: Codable {
-    var key: Int // 0~115 / C-1~G8
-    var name: String {
-        get {
-            let number = key
-            let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-            let octave = number / 12 - 1
-            let name = noteNames[number % 12];
-            return "\(name)\(octave)"
-        }
-    }
-    
-    public init() {
-        key = 0
-    }
-    
-    public init(key: Int) {
-        self.key = key
-    }
-}
-
-public struct ZoneType: Codable {
+public struct Zone: Codable {
     public var low: Int
     public var high: Int
-    public var velocitySwitch: VelocitySwitchType
+    public var velocitySwitch: VelocitySwitch
     
     public init() {
         low = 0
@@ -99,7 +78,7 @@ public struct ZoneType: Codable {
     }
 }
 
-public enum PlayModeType: String, Codable, CaseIterable {
+public enum PlayMode: String, Codable, CaseIterable {
     case keyboard
     case midi
     case mix
@@ -114,7 +93,7 @@ public enum PlayModeType: String, Codable, CaseIterable {
     }
 }
 
-public enum VelocitySwitchType: String, Codable, CaseIterable {
+public enum VelocitySwitch: String, Codable, CaseIterable {
     case soft
     case loud
     case all
@@ -129,7 +108,7 @@ public enum VelocitySwitchType: String, Codable, CaseIterable {
     }
 }
 
-public enum SubmixType: String, Codable, CaseIterable {
+public enum Submix: String, Codable, CaseIterable {
     case a = "a"
     case b = "b"
     case c = "c"
@@ -154,7 +133,7 @@ public enum SubmixType: String, Codable, CaseIterable {
     }
 }
 
-public enum SourceModeType: String, Codable, CaseIterable {
+public enum SourceMode: String, Codable, CaseIterable {
     case normal
     case twin
     case double
@@ -169,7 +148,7 @@ public enum SourceModeType: String, Codable, CaseIterable {
     }
 }
 
-public enum PolyphonyModeType: String, Codable, CaseIterable {
+public enum PolyphonyMode: String, Codable, CaseIterable {
     case poly1
     case poly2
     case solo1
@@ -186,7 +165,7 @@ public enum PolyphonyModeType: String, Codable, CaseIterable {
     }
 }
 
-public enum WheelAssignType: String, Codable, CaseIterable {
+public enum WheelAssign: String, Codable, CaseIterable {
     case vibrato
     case lfo
     case cutoff
@@ -214,12 +193,22 @@ public struct AutoBendSettings: Codable, CustomStringConvertible {
         velocityDepth = 0
     }
     
+    public var data: ByteArray {
+        var buf = ByteArray()
+        
+        [time, depth + 50, keyScalingTime + 50, velocityDepth + 50].forEach {
+            buf.append(Byte($0))
+        }
+        
+        return buf
+    }
+
     public var description: String {
         return "Auto bend settings: time = \(time), depth = \(depth), KS time = \(keyScalingTime), vel depth = \(velocityDepth)"
     }
 }
 
-public struct LevelModulation: Codable, Equatable {
+public struct LevelModulation: Codable, Equatable, CustomStringConvertible {
     // this private property determines the allowed values
     private let range = -50...50
     
@@ -259,9 +248,13 @@ public struct LevelModulation: Codable, Equatable {
             
         return buf
     }
+    
+    public var description: String {
+        return "Vel.depth=\(velocityDepth) Prs.depth=\(pressureDepth) KSDepth=\(keyScalingDepth)"
+    }
 }
 
-public struct TimeModulation: Codable, Equatable {
+public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
     public var attackVelocity: Int
     public var releaseVelocity: Int
     public var keyScaling: Int
@@ -282,5 +275,61 @@ public struct TimeModulation: Codable, Equatable {
         ])
         
         return buf
+    }
+    
+    public var description: String {
+        return "AtkVel=\(attackVelocity) RelVel=\(releaseVelocity) KS=\(keyScaling)"
+    }
+}
+
+public struct FixedKey: Codable, Equatable, CustomStringConvertible {
+    public var key: Byte
+    
+    public static let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+    
+    public static func noteName(for key: Int) -> String {
+        let octave = key / 12 - 1
+        let name = FixedKey.noteNames[key % 12];
+        return "\(name)\(octave)"
+    }
+
+    public static func keyNumber(for name: String) -> Int {
+        let notes = CharacterSet(charactersIn: "CDEFGAB")
+        
+        var i = 0
+        var notePart = ""
+        var octavePart = ""
+        while i < name.count {
+            let c = name[i ..< i + 1]
+            
+            let isNote = c.unicodeScalars.allSatisfy { notes.contains($0) }
+            if isNote {
+                notePart += c
+            }
+     
+            if c == "#" {
+                notePart += c
+            }
+            if c == "-" {
+                octavePart += c
+            }
+            
+            let isDigit = c.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
+            if isDigit {
+                octavePart += c
+            }
+
+            i += 1
+        }
+
+        if let octave = Int(octavePart), let noteIndex = FixedKey.noteNames.firstIndex(where: { $0 == notePart }) {
+            return (octave + 1) * 12 + noteIndex
+        }
+
+        return 0
+    }
+
+    public var description: String {
+        return FixedKey.noteName(for: Int(self.key))
     }
 }

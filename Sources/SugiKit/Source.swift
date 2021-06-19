@@ -5,17 +5,27 @@ public struct Source: Codable, CustomStringConvertible {
     static let dataSize = 18
 
     public var delay: Int // 0~100
-    public var velocityCurve: VelocityCurveType
-    public var keyScalingCurve: KeyScalingCurveType
-    public var oscillator: Oscillator
-    public var amplifier: Amplifier
+    public var wave: Wave
+    public var keyTrack:  Bool
+    public var coarse: Int  // -24~+24
+    public var fine: Int  // -50~+50
+    public var fixedKey: FixedKey  // key represents C-1 to G8
+    public var pressureFrequency: Bool
+    public var vibrato: Bool
+    public var velocityCurve: VelocityCurve
+    public var keyScalingCurve: KeyScalingCurve
     
     public init() {
         delay = 0
+        wave = Wave(number: 10)
+        keyTrack = true
+        coarse = 0
+        fine = 0
+        fixedKey = FixedKey(key: Byte(FixedKey.keyNumber(for: "C4")))
+        pressureFrequency = true
+        vibrato = true
         velocityCurve = .curve1
         keyScalingCurve = .curve1
-        oscillator = Oscillator()
-        amplifier = Amplifier()
     }
     
     public init(bytes buffer: ByteArray) {
@@ -23,22 +33,25 @@ public struct Source: Codable, CustomStringConvertible {
         var b: Byte = 0
         var index: Int = 0
         
+        // s30/s31/s32/s33
         b = buffer.next(&offset)
         delay = Int(b & 0x7f)
 
+        // s34/s35/s36/s37
         b = buffer.next(&offset)
-
-        // KS curve = bits 4...6
+        
+        // This byte has the wave select high bit in b0,
+        // and KS curve = bits 4...6
         index = Int(b.bitField(start: 4, end: 7))
-        keyScalingCurve = KeyScalingCurveType.allCases[index]
+        keyScalingCurve = KeyScalingCurve.allCases[index]
         //print("KS curve = \(keyScalingCurve)")
 
+        // This byte has the wave select low value 0~127 in bits 0...6
         let b2 = buffer.next(&offset)
         
-        oscillator = Oscillator()
-        
-        self.oscillator.waveNumber = Source.extractWaveNumber(highByte: b, lowByte: b2)
-        //print("wave = \(self.oscillator.waveNumber)")
+        let waveNumber = Wave.numberFrom(highByte: b, lowByte: b2)
+
+        wave = Wave(number: waveNumber)
 
         b = buffer.next(&offset)
         
@@ -46,37 +59,21 @@ public struct Source: Codable, CustomStringConvertible {
         // My interpretation is that the low six bits are the coarse value,
         // and b6 is the key tracking bit (b7 is zero).
         
-        self.oscillator.keyTrack = b.isBitSet(6)
-        //print("key track = \(self.oscillator.keyTrack)")
-        self.oscillator.coarse = Int((b & 0x3f)) - 24  // 00 ~ 48 to ±24
-        //print("coarse = \(self.oscillator.coarse)")
+        keyTrack = b.isBitSet(6)
+        coarse = Int((b & 0x3f)) - 24  // 00 ~ 48 to ±24
         
         b = buffer.next(&offset)
-        let key = Int(b & 0x7f)
-        // convert key value to key name
-        self.oscillator.fixedKey = noteName(for: key)
-        //self.oscillator.fixedKey = KeyType(key: Int(b & 0x7f))
-        //print("fixed key = \(self.oscillator.fixedKey)")
+        let key = b & 0x7f
+        fixedKey = FixedKey(key: key)
 
         b = buffer.next(&offset)
-        self.oscillator.fine = Int((b & 0x7f)) - 50
-        //print("fine = \(self.oscillator.fine)")
+        fine = Int((b & 0x7f)) - 50
 
         b = buffer.next(&offset)
-        self.oscillator.pressureFrequency = b.isBitSet(0)
-        self.oscillator.vibrato = b.isBitSet(1)
-        index = Int((b >> 2) & 0x07)
-        velocityCurve = VelocityCurveType.allCases[index]
-        
-        self.amplifier = Amplifier()  // filled in by single patch parsing
-    }
-    
-    static func extractWaveNumber(highByte: Byte, lowByte: Byte) -> Int {
-        //print("highByte = 0x\(String(highByte, radix: 16)), lowByte = 0x\(String(lowByte, radix: 16))")
-        let high = Int(highByte & 0x01)
-        let low = Int(lowByte & 0x7f)
-        //print("high = 0x\(String(high, radix: 16)), low = 0x\(String(low, radix: 16))")
-        return ((high << 7) | low) + 1
+        pressureFrequency = b.isBitSet(0)
+        vibrato = b.isBitSet(1)
+        index = Int((b >> 2) & 0b111)
+        velocityCurve = VelocityCurve.allCases[index]
     }
     
     var data: ByteArray {
@@ -85,43 +82,41 @@ public struct Source: Codable, CustomStringConvertible {
         buf.append(Byte(delay))
         
         // s34/s35/s36/s37 wave select h and ks
-        let number = self.oscillator.waveNumber - 1  // bring into range 0~255
-        let waveNumberString = "\(number, radix: .binary, prefix: false, toWidth: 9)"
-        //print("wave number = '\(waveNumberString)' or \(number)")
-        let ksCurve = keyScalingCurve.rawValue - 1
-        var s34 = Byte(ksCurve) << 4
-        if waveNumberString.starts(with: "1") {
+        let ksCurve = keyScalingCurve.rawValue - 1  // bring KS curve to range 0~7
+        var s34 = Byte(ksCurve) << 4  // shift it to the top four bits
+
+        let ws = wave.select
+        if ws.high == .one {
             s34.setBit(0)
         }
         buf.append(s34)
         
         // s38/s39/s40/s41 wave select l
-        let restIndex = waveNumberString.index(after: waveNumberString.startIndex)
-        let s38 = Byte(waveNumberString.suffix(from: restIndex), radix: 2)!
+        let s38 = Byte.fromBits(bits: ws.low)
         buf.append(s38)
     
         // s42/s43/s44/s45 key track and coarse
-        var s42 = Byte(self.oscillator.coarse + 24)  // bring into 0~48
-        if self.oscillator.keyTrack {
+        var s42 = Byte(coarse + 24)  // bring into 0~48
+        if keyTrack {
             s42.setBit(6)
         }
         buf.append(s42)
         
         // s46/s47/s48/s49
-        buf.append(Byte(keyNumber(for: self.oscillator.fixedKey)))
+        buf.append(fixedKey.key)
         
         // s50/s51/s52/s53
-        buf.append(Byte(self.oscillator.fine + 50))
+        buf.append(Byte(fine + 50))  // bring into 0~100
         
         // s54/s55/s56/s57 vel curve, vib/a.bend, prs/freq
         var s54 = Byte(velocityCurve.rawValue - 1) << 2
-        if self.oscillator.vibrato {
+        if vibrato {
             s54.setBit(1)
         }
-        if self.oscillator.pressureFrequency {
+        if pressureFrequency {
             s54.setBit(0)
         }
-        buf.append(Byte(s54))
+        buf.append(s54)
         
         return buf
     }
@@ -131,8 +126,6 @@ public struct Source: Codable, CustomStringConvertible {
         lines.append("Delay = \(delay)")
         lines.append("Velocity curve = \(velocityCurve)")
         lines.append("Key scaling curve = \(keyScalingCurve)")
-        lines.append("Oscillator = \(oscillator)")
-        lines.append("Amplifier = \(amplifier)")
         return lines.joined(separator: "\n")
     }
 }

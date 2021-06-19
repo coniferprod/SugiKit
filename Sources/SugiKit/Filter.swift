@@ -22,14 +22,9 @@ public struct FilterEnvelope: Codable, Equatable {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        
-        buf.append(contentsOf: [
-            Byte(attack),
-            Byte(decay),
-            Byte(sustain + 50),
-            Byte(release)
-        ])
-
+        [attack, decay, sustain + 50, release].forEach {
+            buf.append(Byte($0))
+        }
         return buf
     }
 }

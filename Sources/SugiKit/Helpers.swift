@@ -104,11 +104,13 @@ public enum Bit: Byte, CustomStringConvertible {
     }
 }
 
+public typealias BitArray = [Bit]
+
 extension Byte {
     // Returns an array of exactly eight Bit objects, with bit #0 first
-    public var bits: [Bit] {
+    public var bits: BitArray {
         var byte = self
-        var bits = [Bit](repeating: .zero, count: 8)
+        var bits = BitArray(repeating: .zero, count: 8)
         for i in 0..<8 {
             let currentBit = byte & 0x01
             if currentBit != 0 {
@@ -122,7 +124,7 @@ extension Byte {
     
     // Returns a byte constructed from an array of Bit objects, with bit #0 first.
     // If the array has less than eight bits, pad it with zero bits from the left.
-    public static func fromBits(bits: [Bit]) -> Byte {
+    public static func fromBits(bits: BitArray) -> Byte {
         var myBits = bits
         
         //print("initially myBits has \(myBits.count) Bit elements")

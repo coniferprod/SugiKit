@@ -1,6 +1,12 @@
 import Foundation
 
-public struct Wave: Codable {
+// In SysEx, the wave select for a source is divided into wave select high and low like this:
+// - wave select h is one bit x
+// - wave select l is seven bits wwwwwww
+// - the combined wave number is xwwwwwww 0~255
+public typealias WaveSelect = (high: Bit, low: BitArray)
+
+public struct Wave: Codable, CustomStringConvertible {
     public static var names = [
         "(not used)",  // just to bring the index in line with the one-based wave number
         
@@ -284,5 +290,32 @@ public struct Wave: Codable {
     
     public init(number: Int) {
         self.number = number
+    }
+    
+    // Extracts the 8-bit wave number from the high and low bits and brings it to range 1~256.
+    public static func numberFrom(highByte: Byte, lowByte: Byte) -> Int {
+        //print("highByte = 0x\(String(highByte, radix: 16)), lowByte = 0x\(String(lowByte, radix: 16))")
+        let high = Int(highByte & 0x01)  // `wave select h` is b0 of s34/s35/s36/s37
+        let low = Int(lowByte & 0x7f)    // `wave select l` is bits 0...6 of s38/s39/s40/s41
+        //print("high = 0x\(String(high, radix: 16)), low = 0x\(String(low, radix: 16))")
+        // Combine the h and l to one 8-bit value and make it 1~256
+        return ((high << 7) | low) + 1
+    }
+    
+    public var select: WaveSelect {
+        let waveNumber = Byte(self.number - 1)  // bring into range 0~255 for SysEx
+        
+        var highBit: Bit = .zero
+        if waveNumber.isBitSet(0) {
+            highBit = .one
+        }
+        
+        let lowBits = BitArray(waveNumber.bits.reversed().suffix(from: 1))
+        
+        return (high: highBit, low: lowBits)
+    }
+    
+    public var description: String {
+        return "\(self.number) \(self.name)"
     }
 }

@@ -202,14 +202,10 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     public var data: ByteArray {
         var buf = ByteArray()
         
-        buf.append(contentsOf: [
-            Byte(effectType.index!),
-            Byte(param1),
-            Byte(param2),
-            Byte(param3),
-            0, 0, 0, 0, 0, 0
-        ])
-
+        [effectType.index!, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
+            buf.append(Byte($0))
+        }
+        
         self.submixes.forEach { buf.append(contentsOf: $0.data) }
     
         return buf
@@ -229,8 +225,8 @@ public struct EffectPatch: Codable, CustomStringConvertible {
             lines.append("\(name.name): \(name.parameters[0])=\(self.param1)  \(name.parameters[1])=\(self.param2)  \(name.parameters[2])=\(self.param3)")
         }
         for (index, submix) in submixes.enumerated() {
-            let submixType = SubmixType(index: index)!
-            lines.append("  \(submixType.rawValue.uppercased()): \(submix)")
+            let submix = Submix(index: index)!
+            lines.append("  \(submix.rawValue.uppercased()): \(submix)")
         }
         return lines.joined(separator: "\n")
     }

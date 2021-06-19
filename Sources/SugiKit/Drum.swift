@@ -40,7 +40,7 @@ public struct DrumSource: Codable {
 public struct DrumNote: Codable {
     public static let dataSize = 11
     
-    public var submix: SubmixType
+    public var submix: Submix
     public var source1: DrumSource
     public var source2: DrumSource
     
@@ -57,7 +57,7 @@ public struct DrumNote: Codable {
         // Submix / out select is actually bits 4-6 of the first byte
         b = buffer.next(&offset)
         let submixValue = Int(b.bitField(start: 4, end: 7))
-        submix = SubmixType(index: submixValue)!
+        submix = Submix(index: submixValue)!
         
         source1 = DrumSource()
         source2 = DrumSource()

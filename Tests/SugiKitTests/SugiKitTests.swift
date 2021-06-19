@@ -157,9 +157,7 @@ final class SinglePatchTests: XCTestCase {
     // Test DCA parameters
     func testAmplifierParameters() {
         let single = bank!.singles[0]
-        let source = single.sources[0]
-        
-        let amp = source.amplifier
+        let amp = single.amplifiers[0]
         XCTAssertEqual(amp.level, 75)
         
         let env = amp.envelope
@@ -171,9 +169,7 @@ final class SinglePatchTests: XCTestCase {
     
     func testAmplifierModulationParameters() {
         let single = bank!.singles[0]
-        let source = single.sources[0]
-        
-        let amp = source.amplifier
+        let amp = single.amplifiers[0]
         let levelMod = amp.levelModulation
         XCTAssertEqual(levelMod.velocityDepth, 15)
         XCTAssertEqual(levelMod.pressureDepth, 0)
@@ -224,14 +220,13 @@ final class SinglePatchTests: XCTestCase {
     func testOscillatorParameters() {
         let single = bank!.singles[0]
         let source = single.sources[0]
-        let osc = source.oscillator
-        XCTAssertEqual(osc.waveNumber, 19)
-        XCTAssertEqual(osc.keyTrack, true)
-        XCTAssertEqual(osc.coarse, -12)
-        XCTAssertEqual(osc.fine, -6)
-        XCTAssertEqual(osc.fixedKey, "C-1")
-        XCTAssertEqual(osc.pressureFrequency, false)
-        XCTAssertEqual(osc.vibrato, true)
+        XCTAssertEqual(source.wave.number, 19)
+        XCTAssertEqual(source.keyTrack, true)
+        XCTAssertEqual(source.coarse, -12)
+        XCTAssertEqual(source.fine, -6)
+        XCTAssertEqual(source.fixedKey.description, "C-1")
+        XCTAssertEqual(source.pressureFrequency, false)
+        XCTAssertEqual(source.vibrato, true)
     }
     
     // Test LFO parameters
@@ -312,7 +307,7 @@ final class MultiPatchTests: XCTestCase {
         let channel = Int(b.bitField(start: 0, end: 4) + 1)
         let vs = b.bitField(start: 4, end: 6)
         print("vs = \(vs.toHex(digits: 2))")
-        var velocitySwitch: VelocitySwitchType = .all
+        var velocitySwitch: VelocitySwitch = .all
         switch vs {
         case 0:
             velocitySwitch = .soft
@@ -481,5 +476,24 @@ final class EffectPatchTests: XCTestCase {
         let actual = effect.description
         XCTAssertEqual(actual, expected)
 
+    }
+}
+
+final class WaveTests: XCTestCase {
+    func testWaveNumber() {
+        let wave = Wave(number: 96)
+        XCTAssertEqual(wave.number, 96)
+    }
+    
+    func testWaveNumberFromSystemExclusive() {
+        let highByte: Byte = 0b00000001
+        let lowByte: Byte = 0x7f
+        let number = Wave.numberFrom(highByte: highByte, lowByte: lowByte)
+        XCTAssertEqual(number, 256)
+    }
+    
+    func testWaveName() {
+        let wave = Wave(number: 1)
+        XCTAssertEqual(wave.name, "SIN 1ST")
     }
 }
