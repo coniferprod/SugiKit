@@ -48,11 +48,13 @@ public struct LFOSettings: Codable {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        
         [shape.index!, speed, delay, depth + 50, pressureDepth + 50].forEach {
             buf.append(Byte($0))
         }
-        
         return buf
     }
+    
+    // Another way of implementing the `data` property would be something like this:
+    // `return [Byte(shape.index!), Byte(speed), Byte(delay), Byte(depth + 50), Byte(pressureDepth + 50)]`
+    // but that is riddled with typecasts to `Byte`.
 }

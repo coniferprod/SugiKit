@@ -155,14 +155,14 @@ public struct MultiPatch: Codable {
     static let nameLength = 10
 
     public var name: String
-    public var volume: Int  // 0~99
+    public var volume: Int  // 0~100 (from correction sheet, not 0~99)
     public var effect: Int  // 0~31/1~32
     
     public var sections = [MultiSection]()
     
     public init() {
         name = "Multi     "
-        volume = 99
+        volume = 100
         effect = 1
         
         for _ in 0 ..< MultiPatch.sectionCount {

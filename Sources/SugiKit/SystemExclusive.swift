@@ -35,9 +35,7 @@ public struct SystemExclusiveHeader {
     }
     
     public var data: ByteArray {
-        var buf = ByteArray()
-        
-        buf.append(contentsOf: [
+        return [
             self.manufacturerID,
             self.channel,
             self.function,
@@ -45,8 +43,6 @@ public struct SystemExclusiveHeader {
             self.machineID,
             self.substatus1,
             self.substatus2
-        ])
-        
-        return buf
+        ]
     }
 }

@@ -165,7 +165,7 @@ public let effectParameterNames: [Effect: EffectName] = [
 public struct SubmixSettings: Codable, CustomStringConvertible {
     public var pan: Int  // 0~15 / 0~+/-7 (K4)
     public var send1: Int  // 0~99
-    public var send2: Int  // 0~99
+    public var send2: Int  // 0~100 (from correction sheet, not 0~99)
     
     public init() {
         self.pan = 0
@@ -180,13 +180,7 @@ public struct SubmixSettings: Codable, CustomStringConvertible {
     }
     
     public var data: ByteArray {
-        var buf = ByteArray()
-        
-        buf.append(Byte(self.pan + 8))
-        buf.append(Byte(self.send1))
-        buf.append(Byte(self.send2))
-        
-        return buf
+        return [Byte(pan + 8), Byte(send1), Byte(send2)]
     }
     
     public var description: String {
@@ -260,13 +254,10 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        
         [effect.index!, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
             buf.append(Byte($0))
         }
-        
         self.submixes.forEach { buf.append(contentsOf: $0.data) }
-    
         return buf
     }
     

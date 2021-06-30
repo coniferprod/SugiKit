@@ -4,7 +4,7 @@ public struct DrumSource: Codable {
     public var waveNumber: Int
     public var decay: Int // 0~100
     public var tune: Int // 0~100 / 0~+/50
-    public var level: Int // 0~99
+    public var level: Int // 0~100 (from correction sheet, not 0~99)
     
     public init() {
         waveNumber = 97  // KICK
