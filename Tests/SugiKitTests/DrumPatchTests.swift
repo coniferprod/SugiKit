@@ -13,17 +13,17 @@ final class DrumPatchTests: XCTestCase {
     
     func testVolume() {
         let drum = bank!.drum
-        XCTAssertEqual(drum.volume, 100)
+        XCTAssertEqual(drum.common.volume, 100)
     }
     
     func testChannel() {
         let drum = bank!.drum
-        XCTAssertEqual(drum.channel, 10)
+        XCTAssertEqual(drum.common.channel, 10)
     }
 
     func testVelocityDepth() {
         let drum = bank!.drum
-        XCTAssertEqual(drum.velocityDepth, 50)
+        XCTAssertEqual(drum.common.velocityDepth, 50)
     }
     
     func testNoteParameters() {

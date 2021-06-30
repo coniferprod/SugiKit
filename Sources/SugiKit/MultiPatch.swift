@@ -6,7 +6,7 @@ public struct MultiSection: Codable {
     
     public var singlePatchNumber: Int  // 0~63 / A-1 ~ D-16
     public var zone: Zone  // 0~127 / C-2 ~G8
-    public var channel: Int  // 0...15 / 1...16
+    public var channel: Byte  // 0...15 / 1...16
     public var velocitySwitch: VelocitySwitch
     public var isMuted: Bool
     public var submix: Submix
@@ -51,8 +51,7 @@ public struct MultiSection: Codable {
 
         //print("multi M15 = \(b.toHex(digits: 2))")
         
-        //channel = Int(b & 0x1F) + 1
-        channel = Int(b.bitField(start: 0, end: 4) + 1)
+        channel = b.bitField(start: 0, end: 4) + 1
 
         //let vs = (b & 0b00110000) >> 4
         let vs = b.bitField(start: 4, end: 6)
@@ -111,6 +110,42 @@ public struct MultiSection: Codable {
         b = buffer.next(&offset)
         tune = Int(b) - 50
     }
+    
+    public var data: ByteArray {
+        var d = ByteArray()
+        
+        // M12
+        d.append(Byte(singlePatchNumber))
+        
+        // M13
+        d.append(Byte(zone.low))
+        
+        // M14
+        d.append(Byte(zone.high))
+        
+        // M15
+        var m15 = channel - 1
+        m15 |= Byte(velocitySwitch.index!) << 4
+        if isMuted {
+            m15.setBit(6)
+        }
+        d.append(m15)
+        
+        // M16
+        var m16: Byte = Byte(submix.index!)
+        m16 |= Byte(playMode.index!) << 3
+
+        // M17
+        d.append(Byte(level))
+        
+        // M18
+        d.append(Byte(transpose + 24))
+        
+        // M19
+        d.append(Byte(tune + 50))
+        
+        return d
+    }
 }
 
 /// Represents a multi patch.
@@ -158,7 +193,24 @@ public struct MultiPatch: Codable {
     }
     
     public var data: ByteArray {
-        return ByteArray(repeating: 0, count: MultiPatch.dataSize)  // TODO: use real data
+        var d = ByteArray()
+        
+        // M0...M9 = name
+        for codeUnit in name.utf8 {
+            d.append(codeUnit)
+        }
+        
+        // M10
+        d.append(Byte(volume))
+        
+        // M11
+        d.append(Byte(effect - 1)) // 1~32 to 0~31
+        
+        for section in sections {
+            d.append(contentsOf: section.data)
+        }
+        
+        return d
     }
     
     public var systemExclusiveData: ByteArray {

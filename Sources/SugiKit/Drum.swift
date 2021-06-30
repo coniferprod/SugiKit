@@ -154,24 +154,19 @@ public struct DrumNote: Codable {
     }
 }
 
-public struct Drum: Codable {
-    public static let dataSize = 682
-    public static let drumNoteCount = 61
+public struct DrumCommon: Codable {
+    public static let dataSize = 11
 
-    public var channel: Byte  // store 0...15 as 1...16
-    public var volume: Int  // 0~100
-    public var velocityDepth: Int  // 0~100, but actually -50...+50
-    public var notes: [DrumNote]
-    
+    public var channel: Byte  // drm rcv ch, store 0...15 as 1...16
+    public var volume: Int  // drm vol, 0~100
+    public var velocityDepth: Int  // drm vel depth, 0~100 but actually -50...+50
+    public var commonChecksum: Byte
+
     public init() {
         channel = 1
         volume = 100
         velocityDepth = 0
-        
-        notes = [DrumNote]()
-        for _ in 0..<Drum.drumNoteCount {
-            notes.append(DrumNote())
-        }
+        commonChecksum = 0x00
     }
     
     public init(bytes buffer: ByteArray) {
@@ -187,9 +182,50 @@ public struct Drum: Codable {
         b = buffer.next(&offset)
         // DRUM velocity depth is actually -50...+50
         self.velocityDepth = Int(b) - 50  // adjust from 0~100
+        
+        b = buffer.next(&offset)
+        self.commonChecksum = b  // save the original checksum from SysEx for now
+    }
+    
+    public var data: ByteArray {
+        var buf = ByteArray()
+        
+        var data = ByteArray()
+        data.append(contentsOf: [
+            channel - 1,
+            Byte(volume),
+            Byte(velocityDepth),
+            0, 0, 0, 0, 0, 0,  // dummy bytes
+        ])
+        buf.append(contentsOf: data)
+        buf.append(checksum(bytes: data))
 
-        offset += 7 // skip past the dummy bytes
-        offset += 1 // and the checksum
+        return buf
+    }
+}
+
+public struct Drum: Codable {
+    public static let dataSize = 682
+    public static let drumNoteCount = 61
+
+    public var common: DrumCommon
+    public var notes: [DrumNote]
+    
+    public init() {
+        common = DrumCommon()
+        
+        notes = [DrumNote]()
+        for _ in 0..<Drum.drumNoteCount {
+            notes.append(DrumNote())
+        }
+    }
+    
+    public init(bytes buffer: ByteArray) {
+        var offset = 0
+        var b: Byte = 0
+        
+        common = DrumCommon(bytes: buffer.slice(from: offset, length: DrumCommon.dataSize))
+        offset += DrumCommon.dataSize
         
         notes = [DrumNote]()
         for i in 0..<Drum.drumNoteCount {
@@ -202,16 +238,8 @@ public struct Drum: Codable {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        
-        buf.append(contentsOf: [
-            Byte(channel - 1),
-            Byte(volume),
-            Byte(velocityDepth),
-            0, 0, 0, 0, 0, 0  // dummy bytes
-        ])
-
+        buf.append(contentsOf: self.common.data)
         self.notes.forEach { buf.append(contentsOf: $0.systemExclusiveData) }
-        
         return buf
     }
 
