@@ -1,36 +1,36 @@
 import Foundation
 
-public struct FilterEnvelope: Codable, Equatable {
-    public var attack: Int
-    public var decay: Int
-    public var sustain: Int  // -50~+50, in SysEx 0~100
-    public var release: Int
-    
-    public init() {
-        attack = 0
-        decay = 0
-        sustain = 0
-        release = 0
-    }
-
-    public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
-        attack = a
-        decay = d
-        sustain = s
-        release = r
-    }
-    
-    public var data: ByteArray {
-        var buf = ByteArray()
-        [attack, decay, sustain + 50, release].forEach {
-            buf.append(Byte($0))
-        }
-        return buf
-    }
-}
-
 public struct Filter: Codable, Equatable {
-    static let dataSize = 14
+    public struct Envelope: Codable, Equatable {
+        public var attack: Int
+        public var decay: Int
+        public var sustain: Int  // -50~+50, in SysEx 0~100
+        public var release: Int
+        
+        public init() {
+            attack = 0
+            decay = 0
+            sustain = 0
+            release = 0
+        }
+
+        public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
+            attack = a
+            decay = d
+            sustain = s
+            release = r
+        }
+        
+        public var data: ByteArray {
+            var buf = ByteArray()
+            [attack, decay, sustain + 50, release].forEach {
+                buf.append(Byte($0))
+            }
+            return buf
+        }
+    }
+
+    public static let dataSize = 14
     
     public var cutoff: Int
     public var resonance: Int
@@ -38,7 +38,7 @@ public struct Filter: Codable, Equatable {
     public var isLfoModulatingCutoff: Bool
     public var envelopeDepth: Int
     public var envelopeVelocityDepth: Int
-    public var envelope: FilterEnvelope
+    public var envelope: Envelope
     public var timeModulation: TimeModulation
     
     public init() {
@@ -48,7 +48,7 @@ public struct Filter: Codable, Equatable {
         isLfoModulatingCutoff = false
         envelopeDepth = 0
         envelopeVelocityDepth = 0
-        envelope = FilterEnvelope(attack: 0, decay: 50, sustain: 0, release: 50)
+        envelope = Envelope(attack: 0, decay: 50, sustain: 0, release: 50)
         timeModulation = TimeModulation()
     }
     
@@ -80,7 +80,7 @@ public struct Filter: Codable, Equatable {
         b = d.next(&offset)
         self.envelopeVelocityDepth = Int(b & 0x7f) - 50
         
-        var e = FilterEnvelope()
+        var e = Envelope()
         
         b = d.next(&offset)
         e.attack = Int(b & 0x7f)

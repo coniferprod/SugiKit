@@ -21,9 +21,9 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
     public var pressFreq: Int // 0~100 (±50)
     public var wheelAssign: WheelAssign
     public var wheelDepth: Int  // -50 ... +50
-    public var autoBend: AutoBendSettings  // this is portamento
-    public var vibrato: VibratoSettings
-    public var lfo: LFOSettings
+    public var autoBend: AutoBend
+    public var vibrato: Vibrato
+    public var lfo: LFO
     public var sources: [Source]
     public var amplifiers: [Amplifier]
     public var filter1: Filter
@@ -44,9 +44,9 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         pressFreq = 0
         wheelAssign = .cutoff
         wheelDepth = 0
-        autoBend = AutoBendSettings()
-        vibrato = VibratoSettings()
-        lfo = LFOSettings()
+        autoBend = AutoBend()
+        vibrato = Vibrato()
+        lfo = LFO()
         sources = [Source(), Source(), Source(), Source()]
         activeSources = [true, true, true, true] // all sources active
         amplifiers = [Amplifier(), Amplifier(), Amplifier(), Amplifier()]
@@ -103,9 +103,9 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             !b.isBitSet(3)
         ]
         
-        self.vibrato = VibratoSettings()
+        self.vibrato = Vibrato()
         index = Int(b.bitField(start: 4, end: 6))
-        self.vibrato.shape = LFOShape(index: index)!
+        self.vibrato.shape = LFO.Shape(index: index)!
 
         b = buffer.next(&offset)
         // Pitch bend = s15 bits 0...3
@@ -126,7 +126,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
         //print("wheel depth = \(self.wheelDepth)")
         
-        self.autoBend = AutoBendSettings()
+        self.autoBend = AutoBend()
         b = buffer.next(&offset)
         self.autoBend.time = Int(b & 0x7f)
 
@@ -145,11 +145,11 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         b = buffer.next(&offset)
         self.vibrato.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
      
-        self.lfo = LFOSettings()
+        self.lfo = LFO()
 
         b = buffer.next(&offset)
         index = Int(b & 0x03)
-        self.lfo.shape = LFOShape(index: index)!
+        self.lfo.shape = LFO.Shape(index: index)!
 
         b = buffer.next(&offset)
         self.lfo.speed = Int(b & 0x7f)

@@ -1,47 +1,47 @@
 import Foundation
 
-public struct AmplifierEnvelope: Codable, Equatable, CustomStringConvertible {
-    public var attack: Int
-    public var decay: Int
-    public var sustain: Int
-    public var release: Int
-    
-    public init() {
-        attack = 0
-        decay = 0
-        sustain = 0
-        release = 0
-    }
-    
-    public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
-        attack = a
-        decay = d
-        sustain = s
-        release = r
-    }
-    
-    public var data: ByteArray {
-        var buf = ByteArray()
-        [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
-        return buf
-    }
-    
-    public var description: String {
-        return "A=\(attack) D=\(decay) S=\(sustain) R=\(release)"
-    }
-}
-
 public struct Amplifier: Codable, Equatable, CustomStringConvertible {
+    public struct Envelope: Codable, Equatable, CustomStringConvertible {
+        public var attack: Int
+        public var decay: Int
+        public var sustain: Int
+        public var release: Int
+        
+        public init() {
+            attack = 0
+            decay = 0
+            sustain = 0
+            release = 0
+        }
+        
+        public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
+            attack = a
+            decay = d
+            sustain = s
+            release = r
+        }
+        
+        public var data: ByteArray {
+            var buf = ByteArray()
+            [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
+            return buf
+        }
+        
+        public var description: String {
+            return "A=\(attack) D=\(decay) S=\(sustain) R=\(release)"
+        }
+    }
+
     static let dataSize = 11
     
     public var level: Int
-    public var envelope: AmplifierEnvelope
+    public var envelope: Envelope
     public var levelModulation: LevelModulation
     public var timeModulation: TimeModulation
     
     public init() {
         level = 100
-        envelope = AmplifierEnvelope(attack: 0, decay: 50, sustain: 0, release: 50)
+        envelope = Envelope(attack: 0, decay: 50, sustain: 0, release: 50)
         levelModulation = LevelModulation()
         timeModulation = TimeModulation()
     }
@@ -53,7 +53,7 @@ public struct Amplifier: Codable, Equatable, CustomStringConvertible {
         b = buffer.next(&offset)
         self.level = Int(b)
 
-        var e = AmplifierEnvelope()
+        var e = Envelope()
         
         b = buffer.next(&offset)
         e.attack = Int(b)

@@ -103,65 +103,6 @@ public enum Effect: String, Codable, CaseIterable {
     ])
 }
 
-public struct EffectName {
-    public var name: String
-    public var parameters: [String]
-}
-
-public let effectParameterNames: [Effect: EffectName] = [
-    .undefined: EffectName(
-        name: "unknown",
-        parameters: ["unknown", "unknown", "unknown"]),
-    .reverb1: EffectName(
-        name: "Reverb 1",
-        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
-    .reverb2: EffectName(
-        name: "Reverb 2",
-        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
-    .reverb3: EffectName(
-        name: "Reverb 3",
-        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
-    .reverb4: EffectName(
-        name: "Reverb 4",
-        parameters: ["Pre. Delay", "Rev. Time", "Tone"]),
-    .gateReverb: EffectName(
-        name: "Gate Reverb",
-        parameters: ["Pre. Delay", "Gate Time", "Tone"]),
-    .reverseGate: EffectName(
-        name: "Reverse Gate",
-        parameters: ["Pre. Delay", "Gate Time", "Tone"]),
-    .normalDelay: EffectName(
-        name: "Normal Delay",
-        parameters: ["Feed back", "Tone", "Delay"]),
-    .stereoPanpotDelay: EffectName(
-        name: "Stereo Panpot Delay",
-        parameters: ["Feed back", "L/R Delay", "Delay"]),
-    .chorus: EffectName(
-        name: "Chorus",
-        parameters: ["Width", "Feed back", "Rate"]),
-    .overdrivePlusFlanger: EffectName(
-        name: "Overdrive + Flanger",
-        parameters: ["Drive", "Fl. Type", "1-2 Bal"]),
-    .overdrivePlusNormalDelay: EffectName(
-        name: "Overdrive + Normal Delay",
-        parameters: ["Drive", "Delay Time", "1-2 Bal"]),
-    .overdrivePlusReverb: EffectName(
-        name: "Overdrive + Reverb",
-        parameters: ["Drive", "Rev. Type", "1-2 Bal"]),
-    .normalDelayPlusNormalDelay: EffectName(
-        name: "Normal Delay + Normal Delay",
-        parameters: ["Delay1", "Delay2", "1-2 Bal"]),
-    .normalDelayPlusStereoPanpotDelay: EffectName(
-        name: "Normal Delay + Stereo Pan.Delay",
-        parameters: ["Delay1", "Delay2", "1-2 Bal"]),
-    .chorusPlusNormalDelay: EffectName(
-        name: "Chorus + Normal Delay",
-        parameters: ["Chorus", "Delay", "1-2 Bal"]),
-    .chorusPlusStereoPanpotDelay: EffectName(
-        name: "Chorus + Stereo Pan Delay",
-        parameters: ["Chorus", "Delay", "1-2 Bal"]),
-]
-
 public struct SubmixSettings: Codable, CustomStringConvertible {
     public var pan: Int  // 0~15 / 0~+/-7 (K4)
     public var send1: Int  // 0~99
@@ -271,9 +212,8 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     
     public var description: String {
         var lines = [String]()
-        if let name = effectParameterNames[self.effect] {
-            lines.append("\(name.name): \(name.parameters[0])=\(self.param1)  \(name.parameters[1])=\(self.param2)  \(name.parameters[2])=\(self.param3)")
-        }
+        let name = Effect.names[self.effect.index!]
+        lines.append("\(name.name): \(name.parameters[0])=\(self.param1)  \(name.parameters[1])=\(self.param2)  \(name.parameters[2])=\(self.param3)")
         for (index, submixSettings) in submixes.enumerated() {
             let submix = Submix(index: index)!
             lines.append("  \(submix.rawValue.uppercased()): \(submixSettings)")

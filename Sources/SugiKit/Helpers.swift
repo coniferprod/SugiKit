@@ -27,17 +27,17 @@ extension Byte {
     
     public func bitField(start: Int, end: Int) -> Byte {
         guard start >= 0 else {
-            print("bit field start must not be negative")
+            print("bit field start must not be negative", standardError)
             return 0
         }
         
         guard end >= 0 else {
-            print("bit field end must not be negative")
+            print("bit field end must not be negative", standardError)
             return 0
         }
         
         guard end < 8 else {
-            print("not enough bits to cover bit field end \(end)")
+            print("not enough bits to cover bit field end \(end)", standardError)
             return 0
         }
 
@@ -49,33 +49,33 @@ extension Byte {
         return byte
     }
     
-    // Returns the value of the bits from start to end-1 (zero-based bit positions counted from the right)
+    /// Returns the value of the bits from start to end-1 (zero-based bit positions counted from the right)
     public func bitFieldWithShift(start: Int, end: Int) -> Byte {
         guard start >= 0 else {
-            print("bit field start must not be negative")
+            print("bit field start must not be negative", standardError)
             return 0
         }
         
         guard end >= 0 else {
-            print("bit field end must not be negative")
+            print("bit field end must not be negative", standardError)
             return 0
         }
         
         guard end < 8 else {
-            print("not enough bits to cover bit field end \(end)")
+            print("not enough bits to cover bit field end \(end)", standardError)
             return 0
         }
 
-        print("getting bit field from \(start) to \(end)")
+        //print("getting bit field from \(start) to \(end)")
         
         // shift the bits we want to the bottom of the byte
         let allBits = self >> start
-        print("shifted right by \(start) to get \(allBits)")
+        //print("shifted right by \(start) to get \(allBits)")
         
         let length = end - start
-        print("length is \(length)")
+        //print("length is \(length)")
         let fieldBits = allBits & (1 << length)
-        print("allBits & (1 << length) = \(allBits) & (1 << \(length)) = \(allBits) & \(1 << length) = \(fieldBits)")
+        //print("allBits & (1 << length) = \(allBits) & (1 << \(length)) = \(allBits) & \(1 << length) = \(fieldBits)")
         return fieldBits
     }
 }
@@ -107,7 +107,7 @@ public enum Bit: Byte, CustomStringConvertible {
 public typealias BitArray = [Bit]
 
 extension Byte {
-    // Returns an array of exactly eight Bit objects, with bit #0 first
+    /// Returns an array of exactly eight Bit objects, with bit #0 first
     public var bits: BitArray {
         var byte = self
         var bits = BitArray(repeating: .zero, count: 8)
@@ -122,8 +122,8 @@ extension Byte {
         return bits
     }
     
-    // Returns a byte constructed from an array of Bit objects, with bit #0 first.
-    // If the array has less than eight bits, pad it with zero bits from the left.
+    /// Returns a byte constructed from an array of Bit objects, with bit #0 first.
+    /// If the array has less than eight bits, pad it with zero bits from the left.
     public static func fromBits(bits: BitArray) -> Byte {
         var myBits = bits
         

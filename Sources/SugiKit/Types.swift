@@ -180,7 +180,7 @@ public enum WheelAssign: String, Codable, CaseIterable {
     }
 }
 
-public struct AutoBendSettings: Codable, CustomStringConvertible {
+public struct AutoBend: Codable, CustomStringConvertible {
     public var time: Int
     public var depth: Int
     public var keyScalingTime: Int

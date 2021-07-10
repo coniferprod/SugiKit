@@ -3,14 +3,14 @@ import XCTest
 
 final class SugiKitTests: XCTestCase {
     func testDecodeWaveNumber() {
-        let note = DrumNote()
+        let note = Drum.Note()
 
         let msb: Byte = 0x70
         XCTAssertEqual(note.decodeWaveNumber(msb: msb.bitField(start: 0, end: 1), lsb: 0x60), 97)
     }
 
     func testEncodeWaveNumber() {
-        let note = DrumNote()
+        let note = Drum.Note()
 
         let (highByte, lowByte) = note.encodeWaveNumber(waveNumber: 97)
         XCTAssertEqual(highByte, 0x00)
