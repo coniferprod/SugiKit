@@ -10,6 +10,7 @@ extension CaseIterable where Self: Equatable {
 }
 
 public enum PatchKind: String, CaseIterable {
+    case unknown
     case single
     case multi
     case effect

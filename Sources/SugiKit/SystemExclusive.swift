@@ -50,9 +50,18 @@ public struct SystemExclusiveHeader {
 // The Kawai K4 can emit many kinds of System Exclusive dumps,
 // with data for one or many singles, multis, etc.
 public enum SystemExclusiveKind {
-    case all(ByteArray)
-    case oneSingle(ByteArray)
-    case oneMulti(ByteArray)
+    case all(Bool, ByteArray)
+    
+    // Int: number for single A-1 ~ D-16
+    // Bool: true if internal, false if external
+    // ByteArray: the raw data
+    case oneSingle(Int, Bool, ByteArray)
+    
+    // Int: number for multi A-1 ~ D-16
+    // Bool: true if internal, false if external
+    // ByteArray: the raw data
+    case oneMulti(Int, Bool, ByteArray)
+    
     case drum(ByteArray)
     case oneEffect(ByteArray)
     case blockSingle(ByteArray)
@@ -66,8 +75,39 @@ public enum SystemExclusiveKind {
         let headerData = data.slice(from: 0, length: SystemExclusiveHeader.dataSize)
         let header = SystemExclusiveHeader(d: headerData)
         
-        // TODO: determine the kind from the header
+        // The raw data is everything after the header, not including the very last byte
+        let length = data.count - SystemExclusiveHeader.dataSize - 1
+        let rawData = data.slice(from: SystemExclusiveHeader.dataSize, length: length)
         
-        return nil
+        // Seems like the only way to tell apart one single/multi data dump and
+        // one drum/effect data dump is the substatus1 byte in the header.
+        // Singles and multis: internal substatus1 = 0x00, external substatus1 = 0x02
+        // Drum and effect: internal substatus1 = 0x01, external substatus2 = 0x03
+
+        // Currently we only reliably identify an "all patch data dump".
+        switch header.function {
+        case 0x20:  // one patch data dump
+            switch header.substatus1 {
+            case 0...63:
+                return .oneSingle(Int(header.substatus1), header.substatus2 == 0x00, rawData)
+            case 64...127:
+                return .oneMulti(Int(header.substatus1 - 64), header.substatus2 == 0x00, rawData)
+            default:
+                return nil
+            }
+        case 0x21:  // block data dump
+            switch header.substatus2 {
+            case 0x00:
+                return .blockSingle(rawData)
+            case 0x40:
+                return .blockMulti(rawData)
+            default:
+                return nil
+            }
+        case 0x22:  // all data dump
+            return .all(header.substatus2 == 0x00, rawData)
+        default:
+            return nil
+        }
     }
 }
