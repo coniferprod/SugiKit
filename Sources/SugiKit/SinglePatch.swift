@@ -58,115 +58,115 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
     public init(bytes buffer: ByteArray) {
         var offset = 0
         var b: Byte = 0
-        var index = 0
+        var index = 0  // reused for enumerated types
 
-        self.name = String(bytes: buffer.slice(from: offset, length: SinglePatch.nameLength), encoding: .ascii) ?? ""
+        //print("Single patch bytes: \n\(buffer.hexDump)")
+        
+        name = String(bytes: buffer.slice(from: offset, length: SinglePatch.nameLength), encoding: .ascii) ?? ""
         offset += SinglePatch.nameLength
 
         b = buffer.next(&offset)
-        self.volume = Int(b)
+        volume = Int(b)
 
         // effect = s11 bits 0...4
         b = buffer.next(&offset)
         //print("effect byte s11 = 0x\(String(b, radix: 16))")
-        let effectPatch = Int(b & 0b00011111) + 1  // mask out top three bits just in case, then bring into range 1~32
-        self.effect = effectPatch // use range 1~32 when storing the value, 0~31 in SysEx data
-        //print("effect = \(self.effect)")
+        effect = Int(b & 0b00011111) + 1  // mask out top three bits just in case, then bring into range 1~32
 
         // output select = s12 bits 0...2
         b = buffer.next(&offset)
-        let submixIndex = Int(b & 0b00000111) // should now have a value 0~7
-        self.submix = Submix(index: submixIndex)!
-        //print("submix = \(self.submix)")
+        index = Int(b & 0b00000111) // should now have a value 0~7
+        if let sm = Submix(index: index) {
+            submix = sm
+        }
+        else {
+            submix = .a
+            print("\(#function): Value out of range for submix: \(index). Using default value ('\(submix)').", standardError)
+        }
 
         // source mode = s13 bits 0...1
         b = buffer.next(&offset)
         
         index = Int(b.bitField(start: 0, end: 2))
-        self.sourceMode = SourceMode(index: index)!
-        //print("source mode = \(self.sourceMode)")
-        
+        if let smode = SourceMode(index: index) {
+            sourceMode = smode
+        }
+        else {
+            sourceMode = .normal
+            print("\(#file):\(#line): \(#function): Value out of range for source mode: \(index). Using default value ('\(sourceMode)').", standardError)
+        }
+
         index = Int(b.bitField(start: 2, end: 4))
-        self.polyphonyMode = PolyphonyMode(index: index)!
-        //print("polyphony mode = \(self.polyphonyMode)")
+        if let pmode = PolyphonyMode(index: index) {
+            polyphonyMode = pmode
+        }
+        else {
+            polyphonyMode = .poly1
+            print("Value out of range for polyphony mode: \(index). Using default value ('\(polyphonyMode)').", standardError)
+        }
         
-        self.am12 = b.isBitSet(4)
+        am12 = b.isBitSet(4)
         //print("AM 1>2 = \(self.am12)")
-        self.am34 = b.isBitSet(5)
+        am34 = b.isBitSet(5)
         //print("AM 3>4 = \(self.am34)")
 
         b = buffer.next(&offset)
-        self.activeSources = [ // 0/mute, 1/not mute
+        activeSources = [ // 0/mute, 1/not mute
             !b.isBitSet(0),
             !b.isBitSet(1),
             !b.isBitSet(2),
             !b.isBitSet(3)
         ]
         
-        self.vibrato = Vibrato()
-        index = Int(b.bitField(start: 4, end: 6))
-        self.vibrato.shape = LFO.Shape(index: index)!
+        // Collect the bytes that make up the vibrato settings.
+        // First byte comes from bits 4...5 of s14.
+        var vibratoBytes = ByteArray()
+        vibratoBytes.append(b.bitField(start: 4, end: 6))
 
-        b = buffer.next(&offset)
+        b = buffer.next(&offset)  // s15
         // Pitch bend = s15 bits 0...3
-            self.benderRange = Int(b.bitField(start: 0, end: 4))
-        //print("bender range = \(self.benderRange)")
+        benderRange = Int(b.bitField(start: 0, end: 4))
+        print("bender range = \(benderRange)")
         
         // Wheel assign = s15 bits 4...5
-            index = Int(b.bitField(start: 4, end: 6))
-        self.wheelAssign = WheelAssign(index: index)!
-        //print("wheel assign = \(self.wheelAssign)")
+        index = Int(b.bitField(start: 4, end: 6))
+        if let wa = WheelAssign(index: index) {
+            wheelAssign = wa
+        }
+        else {
+            wheelAssign = .cutoff
+            print("Value out of range for wheel assign: \(index). Using default value ('\(wheelAssign)').", standardError)
+        }
 
-        b = buffer.next(&offset)
-        // Vibrato speed = s16 bits 0...6
-        self.vibrato.speed = Int(b & 0x7f)
+        b = buffer.next(&offset)  // s16
+        vibratoBytes.append(b)
 
-        b = buffer.next(&offset)
+        b = buffer.next(&offset)  // s17
         // Wheel depth = s17 bits 0...6
-        self.wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
+        wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
         //print("wheel depth = \(self.wheelDepth)")
         
-        self.autoBend = AutoBend()
-        b = buffer.next(&offset)
-        self.autoBend.time = Int(b & 0x7f)
-
-        b = buffer.next(&offset)
-        self.autoBend.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
-
-        b = buffer.next(&offset)
-        self.autoBend.keyScalingTime = Int((b & 0x7f)) - 50 // 0~100 to ±50
-
-        b = buffer.next(&offset)
-        self.autoBend.velocityDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        // s18 ... s21
+        autoBend = AutoBend(bytes: buffer.slice(from: offset, length: AutoBend.dataSize))
+        offset += AutoBend.dataSize
         
-        b = buffer.next(&offset)
-        self.vibrato.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = buffer.next(&offset)  // s22
+        vibratoBytes.append(b)
 
-        b = buffer.next(&offset)
-        self.vibrato.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = buffer.next(&offset)  // s23
+        vibratoBytes.append(b)
      
-        self.lfo = LFO()
-
-        b = buffer.next(&offset)
-        index = Int(b & 0x03)
-        self.lfo.shape = LFO.Shape(index: index)!
-
-        b = buffer.next(&offset)
-        self.lfo.speed = Int(b & 0x7f)
-
-        b = buffer.next(&offset)
-        self.lfo.delay = Int(b & 0x7f)
-
-        b = buffer.next(&offset)
-        self.lfo.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
-
-        b = buffer.next(&offset)
-        self.lfo.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        // Finally we have all the vibrato bytes
+        vibrato = Vibrato(bytes: vibratoBytes)
+        
+        lfo = LFO(bytes: buffer.slice(from: offset, length: LFO.dataSize))
+        offset += LFO.dataSize
 
         b = buffer.next(&offset)
         self.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
-        let sourceBytes = ByteArray(buffer[offset ..< offset + 28])
+        let sourceByteCount = 28
+        let sourceBytes = ByteArray(buffer[offset ..< offset + sourceByteCount])
         let sourceData: [ByteArray] = [
             everyNthByte(d: sourceBytes, n: 4, start: 0),
             everyNthByte(d: sourceBytes, n: 4, start: 1),
@@ -179,9 +179,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             Source(bytes: sourceData[2]),
             Source(bytes: sourceData[3]),
         ]
-        offset += 28
-        
-        let amplifierBytes = ByteArray(buffer[offset ..< offset + 44])
+        offset += sourceByteCount
+
+        let amplifierByteCount = 44
+        let amplifierBytes = ByteArray(buffer[offset ..< offset + amplifierByteCount])
         let amplifierData: [ByteArray] = [
             everyNthByte(d: amplifierBytes, n: 4, start: 0),
             everyNthByte(d: amplifierBytes, n: 4, start: 1),
@@ -194,19 +195,20 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             Amplifier(bytes: amplifierData[2]),
             Amplifier(bytes: amplifierData[3]),
         ]
-        offset += 44
+        offset += amplifierByteCount
 
-        let filterBytes = ByteArray(buffer[offset ..< offset + 28])
+        let filterByteCount = 28
+        let filterBytes = ByteArray(buffer[offset ..< offset + filterByteCount])
         let filterData: [ByteArray] = [
             everyNthByte(d: filterBytes, n: 2, start: 0),
             everyNthByte(d: filterBytes, n: 2, start: 1),
         ]
-        offset += 28
+        offset += filterByteCount
         
         self.filter1 = Filter(d: filterData[0])
         self.filter2 = Filter(d: filterData[1])
         
-        b = buffer.next(&offset)
+        //b = buffer.next(&offset)
 
         // "Check sum value (s130) is the sum of the A5H and s0 ~ s129".
         //print("incoming checksum = \(b)")
@@ -221,20 +223,16 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             d.append(codeUnit)
         }
         
-        // s10
-        d.append(Byte(volume))
+        d.append(Byte(volume)) // s10
 
-        // s11
-        d.append(Byte(effect - 1)) // 1~32 to 0~31
+        d.append(Byte(effect - 1)) // s11: 1~32 to 0~31
         
-        // s12
         let submixNames = ["a", "b", "c", "d", "e", "f", "g", "h"]
         let submixIndex = submixNames.firstIndex(of: submix.rawValue)
-        d.append(Byte(submixIndex!))
+        d.append(Byte(submixIndex!))  // s12
         
-        // s13
-        var s13 = Byte(polyphonyMode.index!) << 2
-        s13 |= Byte(sourceMode.index!)
+        var s13 = Byte(polyphonyMode.index) << 2
+        s13 |= Byte(sourceMode.index)
         if am34 {
             s13.setBit(5)
         }
@@ -243,8 +241,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         }
         d.append(s13)
         
-        // s14
-        var s14: Byte = Byte(vibrato.shape.index!) << 4
+        var s14: Byte = Byte(vibrato.shape.index) << 4
         for (i, sm) in activeSources.enumerated() {
             if sm {
                 s14.setBit(i)
@@ -252,27 +249,14 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         }
         d.append(s14)
         
-        // s15
-        d.append((Byte(wheelAssign.index!) << 4) | Byte(benderRange))
-        
-        // s16
-        d.append(Byte(vibrato.speed))
-        
-        // s17
-        d.append(Byte(wheelDepth + 50))
-        
+        d.append((Byte(wheelAssign.index) << 4) | Byte(benderRange))  // s15
+        d.append(Byte(vibrato.speed)) // s16
+        d.append(Byte(wheelDepth + 50))  // s17
         d.append(contentsOf: autoBend.data)  // s18 ... s21
-        
-        // s22
-        d.append(Byte(vibrato.pressureDepth + 50))
-
-        // s23
-        d.append(Byte(vibrato.depth + 50))
-
+        d.append(Byte(vibrato.pressureDepth + 50))  // s22
+        d.append(Byte(vibrato.depth + 50))  // s23
         d.append(contentsOf: lfo.data)  // s24 ... s28
-        
-        // s29
-        d.append(Byte(pressFreq + 50))
+        d.append(Byte(pressFreq + 50))  // s29
 
         // The source data are interleaved, with one byte from each first,
         // then the second, etc. That's why they are emitted in this slightly
@@ -316,7 +300,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         let d = self.data
         buf.append(contentsOf: d)
         buf.append(checksum(bytes: d))
-        return d
+        return buf
     }
     
     public var description: String {

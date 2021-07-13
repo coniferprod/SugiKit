@@ -145,16 +145,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
         param1 = 0
         param2 = 3
         param3 = 16
-        submixes = [
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50),
-            SubmixSettings(pan: 0, send1: 50, send2: 50)
-        ]
+        submixes = Array(repeating: SubmixSettings(pan: 0, send1: 50, send2: 50), count: EffectPatch.submixCount)
     }
     
     public init(bytes buffer: ByteArray) {
@@ -195,7 +186,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        [effect.index!, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
+        [effect.index, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
             buf.append(Byte($0))
         }
         self.submixes.forEach { buf.append(contentsOf: $0.data) }
@@ -212,7 +203,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     
     public var description: String {
         var lines = [String]()
-        let name = Effect.names[self.effect.index!]
+        let name = Effect.names[self.effect.index]
         lines.append("\(name.name): \(name.parameters[0])=\(self.param1)  \(name.parameters[1])=\(self.param2)  \(name.parameters[2])=\(self.param3)")
         for (index, submixSettings) in submixes.enumerated() {
             let submix = Submix(index: index)!

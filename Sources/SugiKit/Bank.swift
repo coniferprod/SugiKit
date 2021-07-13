@@ -18,13 +18,15 @@ public struct Bank: Codable {
         effects = Array(repeating: EffectPatch(), count: Bank.effectPatchCount)
     }
     
+    /// Initializes the bank from System Exclusive data.
+    /// The byte buffer passed in must not contain the SysEx header
     public init(bytes buffer: ByteArray) {
         singles = [SinglePatch]()
         multis = [MultiPatch]()
         effects = [EffectPatch]()
 
         var offset = 0
-        offset += SystemExclusiveHeader.dataSize  // skip the SysEx header
+        //offset += SystemExclusiveHeader.dataSize  // skip the SysEx header
         
         for _ in 0 ..< Bank.singlePatchCount {
             let singleData = buffer.slice(from: offset, length: SinglePatch.dataSize)

@@ -52,6 +52,17 @@ public struct Filter: Codable, Equatable {
         timeModulation = TimeModulation()
     }
     
+    public init(cutoff: Int, resonance: Int, cutoffModulation: LevelModulation, isLfoModulatingCutoff: Bool, envelopeDepth: Int, envelopeVelocityDepth: Int, envelope: Envelope, timeModulation: TimeModulation) {
+        self.cutoff = cutoff
+        self.resonance = resonance
+        self.cutoffModulation = cutoffModulation
+        self.isLfoModulatingCutoff = isLfoModulatingCutoff
+        self.envelopeDepth = envelopeDepth
+        self.envelopeVelocityDepth = envelopeVelocityDepth
+        self.envelope = envelope
+        self.timeModulation = timeModulation
+    }
+    
     public init(d: ByteArray) {
         var offset: Int = 0
         var b: Byte = 0

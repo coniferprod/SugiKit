@@ -4,8 +4,8 @@ public typealias Byte = UInt8
 public typealias ByteArray = [Byte]
 
 extension CaseIterable where Self: Equatable {
-    var index: Self.AllCases.Index? {
-        return Self.allCases.firstIndex { self == $0 }
+    var index: Self.AllCases.Index {
+        return Self.allCases.firstIndex(of: self)!
     }
 }
 
@@ -180,7 +180,9 @@ public enum WheelAssign: String, Codable, CaseIterable {
     }
 }
 
-public struct AutoBend: Codable, CustomStringConvertible {
+public struct AutoBend: Codable, Equatable, CustomStringConvertible {
+    static let dataSize = 4
+    
     public var time: Int
     public var depth: Int
     public var keyScalingTime: Int
@@ -193,13 +195,36 @@ public struct AutoBend: Codable, CustomStringConvertible {
         velocityDepth = 0
     }
     
+    public init(time: Int, depth: Int, keyScalingTime: Int, velocityDepth: Int) {
+        self.time = time
+        self.depth = depth
+        self.keyScalingTime = keyScalingTime
+        self.velocityDepth = velocityDepth
+    }
+    
+    public init(bytes buffer: ByteArray) {
+        var offset = 0
+        var b: Byte = 0x00
+        var index = 0
+        
+        b = buffer.next(&offset)
+        time = Int(b & 0x7f)
+
+        b = buffer.next(&offset)
+        depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+
+        b = buffer.next(&offset)
+        keyScalingTime = Int((b & 0x7f)) - 50 // 0~100 to ±50
+
+        b = buffer.next(&offset)
+        velocityDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+    }
+    
     public var data: ByteArray {
         var buf = ByteArray()
-        
         [time, depth + 50, keyScalingTime + 50, velocityDepth + 50].forEach {
             buf.append(Byte($0))
         }
-        
         return buf
     }
 
@@ -238,6 +263,12 @@ public struct LevelModulation: Codable, Equatable, CustomStringConvertible {
         keyScalingDepth = 0
     }
     
+    public init(velocityDepth: Int, pressureDepth: Int, keyScalingDepth: Int) {
+        self.velocityDepth = velocityDepth
+        self.pressureDepth = pressureDepth
+        self.keyScalingDepth = keyScalingDepth
+    }
+    
     public var data: ByteArray {
         var buf = ByteArray()
         buf.append(contentsOf: [
@@ -245,7 +276,6 @@ public struct LevelModulation: Codable, Equatable, CustomStringConvertible {
             Byte(self.pressureDepth + 50),
             Byte(self.keyScalingDepth + 50)
         ])
-            
         return buf
     }
     
@@ -265,15 +295,19 @@ public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
         keyScaling = 0
     }
     
+    public init(attackVelocity: Int, releaseVelocity: Int, keyScaling: Int) {
+        self.attackVelocity = attackVelocity
+        self.releaseVelocity = releaseVelocity
+        self.keyScaling = keyScaling
+    }
+    
     public var data: ByteArray {
         var buf = ByteArray()
-        
         buf.append(contentsOf: [
             Byte(self.attackVelocity + 50),
             Byte(self.releaseVelocity + 50),
             Byte(self.keyScaling + 50)
         ])
-        
         return buf
     }
     

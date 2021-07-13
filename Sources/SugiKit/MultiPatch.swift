@@ -36,7 +36,8 @@ public struct MultiPatch: Codable {
         
         public init(bytes buffer: ByteArray) {
             var offset = 0
-            var b: Byte = 0
+            var b: Byte = 0x00
+            var index = 0  // reused for enumerations
 
             b = buffer.next(&offset)
             singlePatchNumber = Int(b)
@@ -55,17 +56,13 @@ public struct MultiPatch: Codable {
             
             channel = b.bitField(start: 0, end: 4) + 1
 
-            //let vs = (b & 0b00110000) >> 4
-            let vs = b.bitField(start: 4, end: 6)
-            switch vs {
-            case 0:
-                velocitySwitch = .soft
-            case 1:
-                velocitySwitch = .loud
-            case 2:
+            index = Int(b.bitField(start: 4, end: 6))
+            if let vs = VelocitySwitch(index: index) {
+                velocitySwitch = vs
+            }
+            else {
                 velocitySwitch = .all
-            default:
-                velocitySwitch = .all
+                print("Value out of range for velocity switch: \(index). Using default value \(velocitySwitch)", standardError)
             }
             
             isMuted = b.isBitSet(6)
@@ -73,34 +70,22 @@ public struct MultiPatch: Codable {
             // M16: out select and mode
             b = buffer.next(&offset)
 
-            let outSelect = b & 0b00000111
-            switch outSelect {
-            case 1:
-                submix = .b
-            case 2:
-                submix = .c
-            case 3:
-                submix = .d
-            case 4:
-                submix = .e
-            case 5:
-                submix = .f
-            case 6:
-                submix = .g
-            case 7:
-                submix = .h
-            default:
+            index = Int(b & 0b00000111)
+            if let sm = Submix(index: index) {
+                submix = sm
+            }
+            else {
                 submix = .a
+                print("Value out of range for submix: \(index). Using default value \(submix)", standardError)
             }
 
-            let mode = (b & 0b00011000) >> 3
-            switch mode {
-            case 1:
-                playMode = .midi
-            case 2:
-                playMode = .mix
-            default:
+            index = Int((b & 0b00011000) >> 3)
+            if let mode = PlayMode(index: index) {
+                playMode = mode
+            }
+            else {
                 playMode = .keyboard
+                print("Value out of range for submix: \(index). Using default value \(playMode)", standardError)
             }
 
             b = buffer.next(&offset)
@@ -127,15 +112,15 @@ public struct MultiPatch: Codable {
             
             // M15
             var m15 = channel - 1
-            m15 |= Byte(velocitySwitch.index!) << 4
+            m15 |= Byte(velocitySwitch.index) << 4
             if isMuted {
                 m15.setBit(6)
             }
             d.append(m15)
             
             // M16
-            var m16: Byte = Byte(submix.index!)
-            m16 |= Byte(playMode.index!) << 3
+            var m16: Byte = Byte(submix.index)
+            m16 |= Byte(playMode.index) << 3
 
             // M17
             d.append(Byte(level))
