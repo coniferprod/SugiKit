@@ -7,7 +7,7 @@ final class DrumPatchTests: XCTestCase {
     
     // Called before each test method begins
     override func setUp() {
-        self.bytes = ByteArray(a401Bytes)
+        self.bytes = a401Bytes
         self.bank = Bank(bytes: self.bytes)
     }
     
@@ -32,8 +32,8 @@ final class DrumPatchTests: XCTestCase {
         let note = drum.notes[0]  // this is the C1 drum note
         
         // hex: 70 01 60 3f 46 17 10 00 64 55
-        XCTAssertEqual(note.source1.waveNumber, 97)
-        XCTAssertEqual(note.source2.waveNumber, 192)
+        XCTAssertEqual(note.source1.wave.number, 97)
+        XCTAssertEqual(note.source2.wave.number, 192)
 
         XCTAssertEqual(note.source1.decay, 70)
         XCTAssertEqual(note.source2.decay, 23)

@@ -92,6 +92,7 @@ final class MultiPatchTests: XCTestCase {
     }
     
     // This test depends on a System Exclusive file found in the Resources directory of the test module.
+    /*
     func testMultiPatch_fromData() {
         if let patchURL = Bundle.module.url(forResource: "A401", withExtension: "SYX") {
             if let patchData = try? Data(contentsOf: patchURL) {
@@ -101,4 +102,5 @@ final class MultiPatchTests: XCTestCase {
             }
         }
     }
+    */
 }

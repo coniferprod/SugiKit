@@ -27,17 +27,17 @@ extension Byte {
     
     public func bitField(start: Int, end: Int) -> Byte {
         guard start >= 0 else {
-            print("bit field start must not be negative", standardError)
+            print("bit field start must not be negative", to: &standardError)
             return 0
         }
         
         guard end >= 0 else {
-            print("bit field end must not be negative", standardError)
+            print("bit field end must not be negative", to: &standardError)
             return 0
         }
         
         guard end < 8 else {
-            print("not enough bits to cover bit field end \(end)", standardError)
+            print("not enough bits to cover bit field end \(end)", to: &standardError)
             return 0
         }
 
@@ -52,17 +52,17 @@ extension Byte {
     /// Returns the value of the bits from start to end-1 (zero-based bit positions counted from the right)
     public func bitFieldWithShift(start: Int, end: Int) -> Byte {
         guard start >= 0 else {
-            print("bit field start must not be negative", standardError)
+            print("bit field start must not be negative", to: &standardError)
             return 0
         }
         
         guard end >= 0 else {
-            print("bit field end must not be negative", standardError)
+            print("bit field end must not be negative", to: &standardError)
             return 0
         }
         
         guard end < 8 else {
-            print("not enough bits to cover bit field end \(end)", standardError)
+            print("not enough bits to cover bit field end \(end)", to: &standardError)
             return 0
         }
 

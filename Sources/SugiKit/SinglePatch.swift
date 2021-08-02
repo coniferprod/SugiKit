@@ -81,7 +81,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         }
         else {
             submix = .a
-            print("\(#function): Value out of range for submix: \(index). Using default value ('\(submix)').", standardError)
+            print("\(#function): Value out of range for submix: \(index). Using default value ('\(submix)').", to: &standardError)
         }
 
         // source mode = s13 bits 0...1
@@ -93,7 +93,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         }
         else {
             sourceMode = .normal
-            print("\(#file):\(#line): \(#function): Value out of range for source mode: \(index). Using default value ('\(sourceMode)').", standardError)
+            print("\(#file):\(#line): \(#function): Value out of range for source mode: \(index). Using default value ('\(sourceMode)').", to: &standardError)
         }
 
         index = Int(b.bitField(start: 2, end: 4))
@@ -102,7 +102,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         }
         else {
             polyphonyMode = .poly1
-            print("Value out of range for polyphony mode: \(index). Using default value ('\(polyphonyMode)').", standardError)
+            print("Value out of range for polyphony mode: \(index). Using default value ('\(polyphonyMode)').", to: &standardError)
         }
         
         am12 = b.isBitSet(4)
@@ -126,7 +126,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         b = buffer.next(&offset)  // s15
         // Pitch bend = s15 bits 0...3
         benderRange = Int(b.bitField(start: 0, end: 4))
-        print("bender range = \(benderRange)")
+        //print("bender range = \(benderRange)", to: &standardError)
         
         // Wheel assign = s15 bits 4...5
         index = Int(b.bitField(start: 4, end: 6))
@@ -135,7 +135,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         }
         else {
             wheelAssign = .cutoff
-            print("Value out of range for wheel assign: \(index). Using default value ('\(wheelAssign)').", standardError)
+            print("Value out of range for wheel assign: \(index). Using default value ('\(wheelAssign)').", to: &standardError)
         }
 
         b = buffer.next(&offset)  // s16

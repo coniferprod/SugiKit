@@ -6,7 +6,7 @@ final class AbsorptionTests: XCTestCase {
     var bankData = ByteArray()
     
     override func setUp() {
-        
+        /*
         guard let bankURL = Bundle.module.url(forResource: "A401", withExtension: "SYX") else {
             XCTFail("Bank file not found in resources")
             return
@@ -19,6 +19,10 @@ final class AbsorptionTests: XCTestCase {
         
         let dataBytes = data.bytes
         print("Got \(dataBytes.count) bytes for bank")
+        */
+        
+        // Seems that resources still don't work in Xcode 12.5.1, so use raw bytes from A401Bytes.swift:
+        let dataBytes = a401Bytes
 
         self.bankData = dataBytes.slice(from: SystemExclusiveHeader.dataSize, length: dataBytes.count - (SystemExclusiveHeader.dataSize + 1))
         

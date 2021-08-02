@@ -1,28 +1,38 @@
 import Foundation
 
 public struct DrumSource: Codable {
-    public var waveNumber: Int
+    public var wave: Wave
     public var decay: Int // 0~100
     public var tune: Int // 0~100 / 0~+/50
     public var level: Int // 0~100 (from correction sheet, not 0~99)
     
     public init() {
-        waveNumber = 97  // KICK
-        decay = 1
+        wave = Wave(number: 97) // "KICK"
+        decay = 0
         tune = 0
         level = 100
+    }
+    
+    public init(bytes buffer: ByteArray) {
+        // s1 wave select MSB contains the out select in bits 4...6, so mask it off
+        let highByte: Byte = buffer[0] & 0b00000001
+        let lowByte = buffer[1]
+        wave = Wave(number: Wave.numberFrom(highByte: highByte, lowByte: lowByte))
+
+        decay = Int(buffer[2])
+        tune = Int(buffer[3]) - 50
+        level = Int(buffer[4])
     }
     
     public var data: ByteArray {
         var buf = ByteArray()
         
-        // Encode wave number as two bytes
-        let waveNumberString = String(waveNumber, radix: 2).pad(with: "0", toLength: 8)
-        // First byte is just the top bit
-        let highByte = Byte(waveNumberString.prefix(1), radix: 2)!
-        // Second byte is all the rest
-        let restIndex = waveNumberString.index(after: waveNumberString.startIndex)
-        let lowByte = Byte(waveNumberString.suffix(from: restIndex), radix: 2)!
+        let ws = wave.select
+
+        // Encode wave number as two bytes.
+        // First byte is just the top bit, second byte is all the rest.
+        let highByte: Byte = ws.high == .one ? 1 : 0
+        let lowByte = Byte.fromBits(bits: ws.low)
         
         buf.append(contentsOf: [
             highByte,
@@ -71,18 +81,21 @@ public struct Drum: Codable {
         }
         
         public var data: ByteArray {
-            var buf = ByteArray()
-            
-            var data = ByteArray()
-            data.append(contentsOf: [
+            return [
                 channel - 1,
                 Byte(volume),
                 Byte(velocityDepth),
-                0, 0, 0, 0, 0, 0,  // dummy bytes
-            ])
-            buf.append(contentsOf: data)
-            buf.append(checksum(bytes: data))
+                0, 0, 0, 0, 0, 0, 0 // seven dummy bytes (d03...d09)
+            ]
+        }
+        
+        public var systemExclusiveData: ByteArray {
+            var buf = ByteArray()
 
+            let theData = self.data
+            buf.append(contentsOf: theData)
+            buf.append(checksum(bytes: theData))
+            
             return buf
         }
     }
@@ -95,116 +108,52 @@ public struct Drum: Codable {
         public var source1: DrumSource
         public var source2: DrumSource
         
+        public var noteChecksum: Byte
+        
         public init() {
             submix = .a
             source1 = DrumSource()
             source2 = DrumSource()
+            noteChecksum = 0x00
         }
         
         public init(bytes buffer: ByteArray) {
-            var offset = 0
-            var b: Byte = 0
-
             // Submix / out select is actually bits 4-6 of the first byte
-            b = buffer.next(&offset)
-            let submixValue = Int(b.bitField(start: 4, end: 7))
+            let submixValue = Int(buffer[0].bitField(start: 4, end: 7))
             submix = Submix(index: submixValue)!
             
-            source1 = DrumSource()
-            source2 = DrumSource()
+            let sourceBytes = ByteArray(buffer[0...9])  // everything but the checksum
             
-            // S1 wave select MSB
-            let s1High = b.bitField(start: 0, end: 1)
-
-            // S2 wave select MSB
-            b = buffer.next(&offset)
-            let s2High = b
+            // Split the alternating bytes into their own arrays for S1 and S2
+            let source1Bytes = everyNthByte(d: sourceBytes, n: 2, start: 0)
+            let source2Bytes = everyNthByte(d: sourceBytes, n: 2, start: 1)
+                
+            // Construct the drum sources from the raw bytes
+            source1 = DrumSource(bytes: source1Bytes)
+            source2 = DrumSource(bytes: source2Bytes)
             
-            // S1 wave select LSB
-            b = buffer.next(&offset)
-            let s1Low = b
-            
-            // S2 wave select LSB
-            b = buffer.next(&offset)
-            let s2Low = b
-
-            source1.waveNumber = decodeWaveNumber(msb: s1High, lsb: s1Low)
-            source2.waveNumber = decodeWaveNumber(msb: s2High, lsb: s2Low)
-
-            // S1 decay
-            b = buffer.next(&offset)
-            source1.decay = Int(b)
-
-            // S2 decay
-            b = buffer.next(&offset)
-            source2.decay = Int(b)
-
-            // S1 tune
-            b = buffer.next(&offset)
-            source1.tune = Int(b) - 50
-
-            // S2 tune
-            b = buffer.next(&offset)
-            source2.tune = Int(b) - 50
-
-            // S1 level
-            b = buffer.next(&offset)
-            source1.level = Int(b)
-
-            // S2 level
-            b = buffer.next(&offset)
-            source2.level = Int(b)
-
-            // last byte is checksum
-        }
-        
-        public func decodeWaveNumber(msb: Byte, lsb: Byte) -> Int {
-            let binaryString = msb.toBinary() + lsb.toBinary().pad(with: "0", toLength: 7)
-            return Int(binaryString, radix: 2)! + 1 // bring into 1~256
-        }
-
-        public func encodeWaveNumber(waveNumber: Int) -> (Byte, Byte) {
-            let number = waveNumber - 1  // bring into range 0...255
-            // Encode wave number as two bytes. First convert the number to binary with eight bits, zero-padded from the left if necessary.
-            let waveNumberString = String(number, radix: 2).pad(with: "0", toLength: 8)
-            // First byte is just the top bit
-            let highByte = Byte(waveNumberString.prefix(1), radix: 2)!
-            // Second byte is all the rest
-            let restIndex = waveNumberString.index(after: waveNumberString.startIndex)
-            let lowByte = Byte(waveNumberString.suffix(from: restIndex), radix: 2)!
-            
-            return (highByte, lowByte)
+            // last byte is checksum, we just save it (must be recalculated when generating SysEx)
+            noteChecksum = buffer[10]
         }
         
         public var data: ByteArray {
-            var buf = ByteArray()
+            // Interleave the bytes for S1 and S2
+            var buf = zip(source1.data, source2.data).flatMap({ [$0, $1] })
             
-            let (source1WaveHigh, source1WaveLow) = encodeWaveNumber(waveNumber: source1.waveNumber)
-            let (source2WaveHigh, source2WaveLow) = encodeWaveNumber(waveNumber: source2.waveNumber)
-            buf.append(contentsOf: [
-                source1WaveHigh,
-                source2WaveHigh,
-                source1WaveLow,
-                source2WaveLow,
-                Byte(source1.decay),
-                Byte(source2.decay),
-                Byte(source1.tune),
-                Byte(source2.tune),
-                Byte(source1.level),
-                Byte(source2.level)
-            ])
-                    
+            // Inject the output select into the very first byte:
+            buf[0] |= Byte(submix.index << 4)
+            
             return buf
         }
         
         public var systemExclusiveData: ByteArray {
             var buf = ByteArray()
-            buf.append(contentsOf: self.data)
-            buf.append(checksum(bytes: data))
+            let theData = self.data
+            buf.append(contentsOf: theData)
+            buf.append(checksum(bytes: theData))
             return buf
         }
     }
-
     
     public static let dataSize = 682
     public static let noteCount = 61
@@ -219,7 +168,6 @@ public struct Drum: Codable {
     
     public init(bytes buffer: ByteArray) {
         var offset = 0
-        var b: Byte = 0
         
         common = Common(bytes: buffer.slice(from: offset, length: Common.dataSize))
         offset += Common.dataSize
@@ -234,17 +182,17 @@ public struct Drum: Codable {
     }
     
     public var data: ByteArray {
-        var buf = ByteArray()
-        buf.append(contentsOf: self.common.data)
-        self.notes.forEach { buf.append(contentsOf: $0.systemExclusiveData) }
-        return buf
+        return self.systemExclusiveData
     }
 
     public var systemExclusiveData: ByteArray {
         var buf = ByteArray()
-        let d = self.data
-        buf.append(contentsOf: d)
-        buf.append(checksum(bytes: d))
+        
+        buf.append(contentsOf: self.common.systemExclusiveData)  // includes the common checksum
+        
+        // The SysEx data for each note has its own checksum
+        self.notes.forEach { buf.append(contentsOf: $0.systemExclusiveData) }
+
         return buf
     }
 }

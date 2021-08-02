@@ -109,7 +109,7 @@ public struct Vibrato: Codable, Equatable {
         }
         else {
             shape = .triangle
-            print("Value out of range for vibrato shape: \(index). Using default value \(shape).", standardError)
+            print("Value out of range for vibrato shape: \(index). Using default value \(shape).", to: &standardError)
         }
 
         b = buffer.next(&offset)

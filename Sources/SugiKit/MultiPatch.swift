@@ -62,7 +62,7 @@ public struct MultiPatch: Codable {
             }
             else {
                 velocitySwitch = .all
-                print("Value out of range for velocity switch: \(index). Using default value \(velocitySwitch)", standardError)
+                print("Value out of range for velocity switch: \(index). Using default value \(velocitySwitch)", to: &standardError)
             }
             
             isMuted = b.isBitSet(6)
@@ -76,7 +76,7 @@ public struct MultiPatch: Codable {
             }
             else {
                 submix = .a
-                print("Value out of range for submix: \(index). Using default value \(submix)", standardError)
+                print("Value out of range for submix: \(index). Using default value \(submix)", to: &standardError)
             }
 
             index = Int((b & 0b00011000) >> 3)
@@ -85,7 +85,7 @@ public struct MultiPatch: Codable {
             }
             else {
                 playMode = .keyboard
-                print("Value out of range for submix: \(index). Using default value \(playMode)", standardError)
+                print("Value out of range for submix: \(index). Using default value \(playMode)", to: &standardError)
             }
 
             b = buffer.next(&offset)
