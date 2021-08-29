@@ -30,10 +30,13 @@ final class SinglePatchTests: XCTestCase {
         0x32, // press freq
 
         // source data (4 x 7 = 28 bytes)
-        0x00, 0x00, 0x02, 0x03, 0x00, 0x00, 0x50,
-        0x40, 0x12, 0x12, 0x7e, 0x7f, 0x4c, 0x4c,
-        0x5a, 0x5b, 0x00, 0x34, 0x02, 0x03, 0x2c,
-        0x37, 0x34, 0x35, 0x02, 0x02, 0x15, 0x11,
+        0x00, 0x00, 0x02, 0x03, // delay
+        0x00, 0x00, 0x50, 0x40, // wave select h + ks curve
+        0x12, 0x12, 0x7e, 0x7f, // wave select l
+        0x4c, 0x4c, 0x5a, 0x5b, // coarse + key track
+        0x00, 0x34, 0x02, 0x03, // fixed key
+        0x2c, 0x37, 0x34, 0x35, // fine
+        0x02, 0x02, 0x15, 0x11, // prs>frq sw + vib./a.bend sw + vel.curve
         
         // amplifier data (4 x 11 = 44 bytes)
         0x4b, 0x4b, 0x34, 0x35, 0x36, 0x36, 0x34, 0x35, 0x48, 0x48, 0x34,
@@ -82,7 +85,7 @@ final class SinglePatchTests: XCTestCase {
         // This patch should have sources 1 and 2 active,
         // sources 3 and 4 muted.
         let single = SinglePatch(bytes: self.patchData)
-        XCTAssertEqual(single.activeSources, [true, true, false, false])
+        XCTAssert(single.sources[0].isActive && single.sources[1].isActive && !single.sources[2].isActive && !single.sources[3].isActive)
         // TODO: Still not sure which way it is in the SysEx
     }
     
@@ -195,4 +198,43 @@ final class SinglePatchTests: XCTestCase {
         print(desc)
         XCTAssert(desc.length != 0)
     }
+    
+    // The SYX files have junk in them, so there is no point really to compare
+    // the byte representations. Maybe emit SysEx bytes, parse that back and
+    // then compare the data model representations instead?
+    
+    func testRoundtrip() {
+        let originalPatch = SinglePatch(bytes: self.patchData)
+        let emittedBytes = originalPatch.systemExclusiveData
+        let emittedPatch = SinglePatch(bytes: emittedBytes)
+        XCTAssertEqual(emittedPatch, originalPatch)
+    }
+    
+    /*
+    func testContent() {
+        // The starting offset of the single patch block
+        let singleStartOffset = 8 // SysEx header length
+        var singles = [SinglePatch]()
+        var offset = singleStartOffset
+        let singlesData = a401Bytes.slice(from: offset, length: Bank.singlePatchCount * SinglePatch.dataSize)
+        print(("singlesData.count = \(singlesData.count)"))
+        
+        offset = 0  // reset to start of single patches
+        for _ in 0..<Bank.singlePatchCount {
+            singles.append(SinglePatch(bytes: singlesData.slice(from: offset, length: SinglePatch.dataSize)))
+            offset += SinglePatch.dataSize
+        }
+
+        var buffer = ByteArray()
+        singles.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
+        
+        offset = 0
+        while buffer[offset] == singlesData[offset] {
+            offset += 1
+        }
+        print("First diff at offset \(offset)")
+        
+        XCTAssertEqual(buffer, singlesData)
+    }
+    */
 }

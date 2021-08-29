@@ -4,6 +4,7 @@ import Foundation
 public struct Source: Codable, CustomStringConvertible {
     static let dataSize = 18
 
+    public var isActive: Bool
     public var delay: Int // 0~100
     public var wave: Wave
     public var keyTrack:  Bool
@@ -16,6 +17,7 @@ public struct Source: Codable, CustomStringConvertible {
     public var keyScalingCurve: KeyScalingCurve
     
     public init() {
+        isActive = true
         delay = 0
         wave = Wave(number: 10)
         keyTrack = true
@@ -29,6 +31,8 @@ public struct Source: Codable, CustomStringConvertible {
     }
     
     public init(bytes buffer: ByteArray) {
+        self.isActive = false  // this is set later by single patch parsing
+        
         var offset: Int = 0
         var b: Byte = 0
         var index: Int = 0
@@ -78,6 +82,8 @@ public struct Source: Codable, CustomStringConvertible {
     
     var data: ByteArray {
         var buf = ByteArray()
+        
+        // isActive is not emitted, that information is in the single
                     
         buf.append(Byte(delay))
         
@@ -124,6 +130,11 @@ public struct Source: Codable, CustomStringConvertible {
     public var description: String {
         var lines = [String]()
         lines.append("Delay = \(delay)")
+        lines.append("Wave = \(wave)")
+        lines.append("Key track = \(keyTrack)")
+        lines.append("Coarse = \(coarse), Fine = \(fine)")
+        lines.append("Fixed key = \(fixedKey)")
+        lines.append("Press. freq = \(pressureFrequency), Vibrato = \(vibrato)")
         lines.append("Velocity curve = \(velocityCurve)")
         lines.append("Key scaling curve = \(keyScalingCurve)")
         return lines.joined(separator: "\n")

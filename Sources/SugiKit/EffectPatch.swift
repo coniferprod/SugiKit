@@ -103,7 +103,7 @@ public enum Effect: String, Codable, CaseIterable {
     ])
 }
 
-public struct SubmixSettings: Codable, CustomStringConvertible {
+public struct SubmixSettings: Codable, CustomStringConvertible, Equatable {
     public var pan: Int  // 0~15 / 0~+/-7 (K4)
     public var send1: Int  // 0~99
     public var send2: Int  // 0~100 (from correction sheet, not 0~99)
@@ -130,7 +130,7 @@ public struct SubmixSettings: Codable, CustomStringConvertible {
 }
 
 /// Represents an effect patch.
-public struct EffectPatch: Codable, CustomStringConvertible {
+public struct EffectPatch: Codable, CustomStringConvertible, Equatable {
     static let dataSize = 35
     static let submixCount = 8
     
@@ -155,7 +155,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
         //print("effect:\n\(buffer.hexDump)")
         
         b = buffer.next(&offset)
-        effect = Effect(index: Int(b + 1))!
+        effect = Effect(index: Int(b + 1))!  // in SysEx 0~15, store as 1~16
         
         b = buffer.next(&offset)
         param1 = Int(b)
@@ -186,7 +186,7 @@ public struct EffectPatch: Codable, CustomStringConvertible {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        [effect.index, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
+        [effect.index - 1, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
             buf.append(Byte($0))
         }
         self.submixes.forEach { buf.append(contentsOf: $0.data) }

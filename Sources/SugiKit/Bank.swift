@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents a full bank with 64 singles, 64 multis, drum, and 32 effects.
-public struct Bank: Codable {
+public struct Bank: Codable, Equatable {
     public static let singlePatchCount = 64
     public static let multiPatchCount = 64
     public static let effectPatchCount = 32

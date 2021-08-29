@@ -33,4 +33,47 @@ final class BankTests: XCTestCase {
         XCTAssertEqual(bank.multis.count, 64)
         XCTAssertEqual(bank.effects.count, 32)
     }
+    
+    func testSinglesLength() {
+        let bank = Bank(bytes: self.bankData)
+        var buffer = ByteArray()
+        bank.singles.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
+        XCTAssertEqual(buffer.count, Bank.singlePatchCount * SinglePatch.dataSize)
+    }
+    
+    func testMultisLength() {
+        let bank = Bank(bytes: self.bankData)
+        var buffer = ByteArray()
+        bank.multis.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
+        XCTAssertEqual(buffer.count, Bank.multiPatchCount * MultiPatch.dataSize)
+    }
+    
+    func testDrumLength() {
+        let bank = Bank(bytes: self.bankData)
+        var buffer = ByteArray()
+        buffer.append(contentsOf: bank.drum.systemExclusiveData)
+        XCTAssertEqual(buffer.count, Drum.dataSize)
+    }
+    
+    func testEffectLength() {
+        let bank = Bank(bytes: self.bankData)
+        var buffer = ByteArray()
+        bank.effects.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
+        XCTAssertEqual(buffer.count, Bank.effectPatchCount * EffectPatch.dataSize)
+    }
+    
+    // The SYX files have junk in them, so there is no point really to compare
+    // the byte representations. Maybe emit SysEx bytes, parse them back and
+    // then compare the data model representations instead?
+    // The most important thing in the emitted SysEx is that the checksum is right,
+    // so that the K4 will accept the dump.
+    
+    func testRoundtrip() {
+        let originalBank = Bank(bytes: self.bankData)
+        
+        let emittedBytes = originalBank.systemExclusiveData
+        let currentBank = Bank(bytes: emittedBytes)
+        
+        XCTAssertEqual(currentBank, originalBank)
+    }
 }

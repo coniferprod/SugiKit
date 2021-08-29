@@ -16,7 +16,6 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
     public var am12: Bool
     public var am34: Bool
         
-    public var activeSources: [Bool]  // true if source is active, false if not
     public var benderRange: Int  // 0~12 in semitones
     public var pressFreq: Int // 0~100 (±50)
     public var wheelAssign: WheelAssign
@@ -48,7 +47,6 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         vibrato = Vibrato()
         lfo = LFO()
         sources = [Source(), Source(), Source(), Source()]
-        activeSources = [true, true, true, true] // all sources active
         amplifiers = [Amplifier(), Amplifier(), Amplifier(), Amplifier()]
         filter1 = Filter()
         filter2 = Filter()
@@ -60,8 +58,6 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         var b: Byte = 0
         var index = 0  // reused for enumerated types
 
-        //print("Single patch bytes: \n\(buffer.hexDump)")
-        
         // Get the patch name from 10 bytes representing ASCII characters.
         // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
         let originalName = String(bytes: buffer.slice(from: offset, length: SinglePatch.nameLength), encoding: .ascii) ?? String(repeating: " ", count: SinglePatch.nameLength)
@@ -114,12 +110,9 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         //print("AM 3>4 = \(self.am34)")
 
         b = buffer.next(&offset)
-        activeSources = [ // 0/mute, 1/not mute
-            !b.isBitSet(0),
-            !b.isBitSet(1),
-            !b.isBitSet(2),
-            !b.isBitSet(3)
-        ]
+        let activeSourcesByte = b  // save this byte for later
+        // The active status of the sources is set later when they have been
+        // parsed and initialized.
         
         // Collect the bytes that make up the vibrato settings.
         // First byte comes from bits 4...5 of s14.
@@ -169,7 +162,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         self.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
         let sourceByteCount = 28
-        let sourceBytes = ByteArray(buffer[offset ..< offset + sourceByteCount])
+        let sourceBytes = buffer.slice(from: offset, length: sourceByteCount)
         let sourceData: [ByteArray] = [
             everyNthByte(d: sourceBytes, n: 4, start: 0),
             everyNthByte(d: sourceBytes, n: 4, start: 1),
@@ -184,8 +177,15 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         ]
         offset += sourceByteCount
 
+        // Now it's time to set the active status of the sources
+        for i in 0..<SinglePatch.sourceCount {
+            if activeSourcesByte.isBitSet(i) { // 0/mute, 1/not mute
+                self.sources[i].isActive = true
+            }
+        }
+        
         let amplifierByteCount = 44
-        let amplifierBytes = ByteArray(buffer[offset ..< offset + amplifierByteCount])
+        let amplifierBytes = buffer.slice(from: offset, length: amplifierByteCount)
         let amplifierData: [ByteArray] = [
             everyNthByte(d: amplifierBytes, n: 4, start: 0),
             everyNthByte(d: amplifierBytes, n: 4, start: 1),
@@ -201,7 +201,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         offset += amplifierByteCount
 
         let filterByteCount = 28
-        let filterBytes = ByteArray(buffer[offset ..< offset + filterByteCount])
+        let filterBytes = buffer.slice(from: offset, length: filterByteCount)
         let filterData: [ByteArray] = [
             everyNthByte(d: filterBytes, n: 2, start: 0),
             everyNthByte(d: filterBytes, n: 2, start: 1),
@@ -245,9 +245,12 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         d.append(s13)
         
         var s14: Byte = Byte(vibrato.shape.index) << 4
-        for (i, sm) in activeSources.enumerated() {
-            if sm {
+        for i in 0..<SinglePatch.sourceCount {
+            if self.sources[i].isActive {
                 s14.setBit(i)
+            }
+            else {
+                s14.unsetBit(i)
             }
         }
         d.append(s14)
@@ -318,8 +321,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         lines.append("AM3>4 = \(am34)")
         
         var muteString = ""
-        for (index, element) in activeSources.enumerated() {
-            muteString += element ? String(index + 1) : "-"
+        for i in 0..<SinglePatch.sourceCount {
+            muteString += self.sources[i].isActive ? String(i + 1) : "-"
         }
         lines.append("Sources = \(muteString)")
         
@@ -330,12 +333,11 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
 
         lines.append("\(autoBend)")
         
-        for (index, source) in sources.enumerated() {
-            if !activeSources[index] {  // this source is muted
-                continue
+        for (index, source) in self.sources.enumerated() {
+            if source.isActive {
+                lines.append("SOURCE \(index + 1):")
+                lines.append(source.description)
             }
-            
-            lines.append(source.description)
         }
         
         for (_, amplifier) in amplifiers.enumerated() {

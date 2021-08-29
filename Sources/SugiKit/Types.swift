@@ -67,7 +67,7 @@ public enum KeyScalingCurve: Int, Codable, CaseIterable {
     }
 }
 
-public struct Zone: Codable {
+public struct Zone: Codable, Equatable {
     public var low: Int
     public var high: Int
     public var velocitySwitch: VelocitySwitch
@@ -94,7 +94,7 @@ public enum PlayMode: String, Codable, CaseIterable {
     }
 }
 
-public enum VelocitySwitch: String, Codable, CaseIterable {
+public enum VelocitySwitch: String, Codable, CaseIterable, Equatable {
     case soft
     case loud
     case all
@@ -109,7 +109,7 @@ public enum VelocitySwitch: String, Codable, CaseIterable {
     }
 }
 
-public enum Submix: String, Codable, CaseIterable {
+public enum Submix: String, Codable, CaseIterable, Equatable {
     case a = "a"
     case b = "b"
     case c = "c"
@@ -206,7 +206,6 @@ public struct AutoBend: Codable, Equatable, CustomStringConvertible {
     public init(bytes buffer: ByteArray) {
         var offset = 0
         var b: Byte = 0x00
-        var index = 0
         
         b = buffer.next(&offset)
         time = Int(b & 0x7f)

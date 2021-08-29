@@ -1,9 +1,9 @@
 import Foundation
 
 /// Represents a multi patch.
-public struct MultiPatch: Codable {
+public struct MultiPatch: Codable, Equatable {
     /// Represents one section of a multi patch.
-    public struct Section: Codable {
+    public struct Section: Codable, Equatable {
         public static let dataSize = 8
         
         public var singlePatchNumber: Int  // 0~63 / A-1 ~ D-16
@@ -101,10 +101,10 @@ public struct MultiPatch: Codable {
         public var data: ByteArray {
             var d = ByteArray()
             
-            // M12
+            // M12 / M20 etc.
             d.append(Byte(singlePatchNumber))
             
-            // M13
+            // M13 / M21 etc.
             d.append(Byte(zone.low))
             
             // M14
@@ -121,6 +121,7 @@ public struct MultiPatch: Codable {
             // M16
             var m16: Byte = Byte(submix.index)
             m16 |= Byte(playMode.index) << 3
+            d.append(m16)
 
             // M17
             d.append(Byte(level))
@@ -139,7 +140,7 @@ public struct MultiPatch: Codable {
     static let sectionCount = 8
     static let nameLength = 10
 
-    public var name: String
+    public var name: String  // 10 ASCII characters
     public var volume: Int  // 0~100 (from correction sheet, not 0~99)
     public var effect: Int  // 0~31/1~32
     
@@ -193,6 +194,7 @@ public struct MultiPatch: Codable {
         // M11
         d.append(Byte(effect - 1)) // 1~32 to 0~31
         
+        // M12 / M20 / M28 / M36 / M44 / M52 / M60 / M68
         for section in sections {
             d.append(contentsOf: section.data)
         }
@@ -204,7 +206,7 @@ public struct MultiPatch: Codable {
         var buf = ByteArray()
         let d = self.data
         buf.append(contentsOf: d)
-        buf.append(checksum(bytes: d))
+        buf.append(checksum(bytes: d))  // M76
         return buf
     }
 }

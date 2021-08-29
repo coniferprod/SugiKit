@@ -1,9 +1,9 @@
 import Foundation
 
-public struct DrumSource: Codable {
+public struct DrumSource: Codable, Equatable {
     public var wave: Wave
     public var decay: Int // 0~100
-    public var tune: Int // 0~100 / 0~+/50
+    public var tune: Int // -50~+50 (in SysEx 0~100)
     public var level: Int // 0~100 (from correction sheet, not 0~99)
     
     public init() {
@@ -38,7 +38,7 @@ public struct DrumSource: Codable {
             highByte,
             lowByte,
             Byte(decay),
-            Byte(tune),
+            Byte(tune + 50),
             Byte(level)
         ])
         
@@ -46,8 +46,8 @@ public struct DrumSource: Codable {
     }
 }
 
-public struct Drum: Codable {
-    public struct Common: Codable {
+public struct Drum: Codable, Equatable {
+    public struct Common: Codable, Equatable {
         public static let dataSize = 11
 
         public var channel: Byte  // drm rcv ch, store 0...15 as 1...16
@@ -101,7 +101,7 @@ public struct Drum: Codable {
     }
     
     /// Represents a note in the drum patch.
-    public struct Note: Codable {
+    public struct Note: Codable, Equatable {
         public static let dataSize = 11
         
         public var submix: Submix

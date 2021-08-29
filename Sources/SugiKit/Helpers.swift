@@ -25,6 +25,7 @@ extension Byte {
         return (self & (1 << position)) != 0
     }
     
+    /// Returns the bit field from the bit in position `start` up to but not including the bit at position `end`.
     public func bitField(start: Int, end: Int) -> Byte {
         guard start >= 0 else {
             print("bit field start must not be negative", to: &standardError)
@@ -187,7 +188,7 @@ extension ByteArray {
     /// Returns a new byte array with `length` bytes starting from `offset`.
     public func slice(from offset: Int, length: Int) -> ByteArray {
         return ByteArray(self[offset ..< offset + length])
-    }
+    }    
 }
 
 extension Double {
