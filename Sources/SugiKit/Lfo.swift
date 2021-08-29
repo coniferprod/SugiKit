@@ -20,7 +20,7 @@ public struct LFO: Codable, Equatable {
 
     public var shape: Shape
     public var speed: Int
-    public var delay: Int
+    public var delay: Int  // 0~100
     public var depth: Int  // -50~+50
     public var pressureDepth: Int  // -50~+50
     
@@ -131,3 +131,7 @@ public struct Vibrato: Codable, Equatable {
         return buf
     }
 }
+
+// Note that the LFO and Vibrato structs are nearly identical.
+// Structs don't have inheritance, but using a protocol here
+// seems weird somehow. So let's bear a bit of code duplication.

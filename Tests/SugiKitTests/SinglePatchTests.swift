@@ -100,7 +100,7 @@ final class SinglePatchTests: XCTestCase {
         XCTAssertEqual(single.wheelAssign, .vibrato)
         XCTAssertEqual(single.wheelDepth, 13)
         
-        var autoBend = AutoBend(time: 57, depth: -1, keyScalingTime: 0, velocityDepth: 0)
+        let autoBend = AutoBend(time: 57, depth: -1, keyScalingTime: 0, velocityDepth: 0)
         XCTAssertEqual(single.autoBend, autoBend)
     }
     

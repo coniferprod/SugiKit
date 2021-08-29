@@ -3,33 +3,34 @@ import XCTest
 
 final class DrumPatchTests: XCTestCase {
     var bytes = ByteArray()
-    var bank: Bank?
+    
+    // The starting offset of the drum block
+    let drumStartOffset = 8 // SysEx header length
+        + Bank.singlePatchCount * SinglePatch.dataSize  // 64 single patches
+        + Bank.multiPatchCount * MultiPatch.dataSize // 64 multi patches
+    
+    var drum: Drum?
     
     // Called before each test method begins
     override func setUp() {
         self.bytes = a401Bytes
-        self.bank = Bank(bytes: self.bytes)
+        self.drum = Drum(bytes: bytes.slice(from: drumStartOffset, length: Drum.dataSize))
     }
     
     func testVolume() {
-        let drum = bank!.drum
-        XCTAssertEqual(drum.common.volume, 100)
+        XCTAssertEqual(drum!.common.volume, 100)
     }
     
     func testChannel() {
-        let drum = bank!.drum
-        XCTAssertEqual(drum.common.channel, 10)
+        XCTAssertEqual(drum!.common.channel, 10)
     }
 
     func testVelocityDepth() {
-        let drum = bank!.drum
-        XCTAssertEqual(drum.common.velocityDepth, 50)
+        XCTAssertEqual(drum!.common.velocityDepth, 50)
     }
     
     func testNoteParameters() {
-        let drum = bank!.drum
-
-        let note = drum.notes[0]  // this is the C1 drum note
+        let note = drum!.notes[0]  // this is the C1 drum note
         
         // hex: 70 01 60 3f 46 17 10 00 64 55
         XCTAssertEqual(note.source1.wave.number, 97)

@@ -286,9 +286,9 @@ public struct LevelModulation: Codable, Equatable, CustomStringConvertible {
 }
 
 public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
-    public var attackVelocity: Int
-    public var releaseVelocity: Int
-    public var keyScaling: Int
+    public var attackVelocity: Int  // -50~+50
+    public var releaseVelocity: Int  // -50~+50
+    public var keyScaling: Int  // -50~+50
     
     public init() {
         attackVelocity = 0

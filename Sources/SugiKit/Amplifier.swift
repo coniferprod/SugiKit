@@ -2,10 +2,10 @@ import Foundation
 
 public struct Amplifier: Codable, Equatable, CustomStringConvertible {
     public struct Envelope: Codable, Equatable, CustomStringConvertible {
-        public var attack: Int
-        public var decay: Int
-        public var sustain: Int
-        public var release: Int
+        public var attack: Int  // 0~100
+        public var decay: Int  // 0~100
+        public var sustain: Int  // 0~100
+        public var release: Int  // 0~100
         
         public init() {
             attack = 0
@@ -34,7 +34,7 @@ public struct Amplifier: Codable, Equatable, CustomStringConvertible {
 
     static let dataSize = 11
     
-    public var level: Int
+    public var level: Int  // 0~100
     public var envelope: Envelope
     public var levelModulation: LevelModulation
     public var timeModulation: TimeModulation

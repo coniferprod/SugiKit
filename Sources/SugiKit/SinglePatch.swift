@@ -62,7 +62,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
 
         //print("Single patch bytes: \n\(buffer.hexDump)")
         
-        name = String(bytes: buffer.slice(from: offset, length: SinglePatch.nameLength), encoding: .ascii) ?? ""
+        // Get the patch name from 10 bytes representing ASCII characters.
+        // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
+        let originalName = String(bytes: buffer.slice(from: offset, length: SinglePatch.nameLength), encoding: .ascii) ?? String(repeating: " ", count: SinglePatch.nameLength)
+        name = originalName.replacingOccurrences(of: "\0", with: " ")
         offset += SinglePatch.nameLength
 
         b = buffer.next(&offset)

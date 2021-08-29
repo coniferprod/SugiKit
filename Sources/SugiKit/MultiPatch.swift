@@ -157,7 +157,11 @@ public struct MultiPatch: Codable {
         var offset = 0
         var b: Byte = 0
 
-        self.name = String(bytes: buffer.slice(from: offset, length: MultiPatch.nameLength), encoding: .ascii) ?? String(repeating: " ", count: MultiPatch.nameLength)
+        // Get the patch name from 10 bytes representing ASCII characters.
+        // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
+        let originalName = String(bytes: buffer.slice(from: offset, length: MultiPatch.nameLength), encoding: .ascii) ?? String(repeating: " ", count: MultiPatch.nameLength)
+        self.name = originalName.replacingOccurrences(of: "\0", with: " ")
+
         offset += MultiPatch.nameLength
 
         //print("\(self.name):\n\(buffer.hexDump)")

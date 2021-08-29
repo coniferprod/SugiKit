@@ -4,41 +4,60 @@ import XCTest
 
 final class MultiPatchTests: XCTestCase {
     var bytes = ByteArray()
-    var bank: Bank?
+    
+    // The starting offset of the multi patch block
+    let multiStartOffset = 8 // SysEx header length
+        + Bank.singlePatchCount * SinglePatch.dataSize  // 64 single patches
+    
+    var multis = [MultiPatch]()
     
     // Called before each test method begins
     override func setUp() {
         self.bytes = a401Bytes
-        self.bank = Bank(bytes: self.bytes)
+        self.multis = [MultiPatch]()
+        var offset = multiStartOffset
+        for _ in 0..<Bank.multiPatchCount {
+            self.multis.append(MultiPatch(bytes: self.bytes.slice(from: offset, length: MultiPatch.dataSize)))
+            offset += MultiPatch.dataSize
+        }
     }
     
     func testName() {
-        let multi = bank!.multis[0]
-        XCTAssertEqual(multi.name, "Fatt!Anna5")
+        XCTAssertEqual(multis[0].name, "Fatt!Anna5")
+    }
+    
+    func testNameWithTrailingNul() {
+        let bankBytes = a403Bytes
+        var bankMultis = [MultiPatch]()
+        var offset = multiStartOffset
+        for _ in 0..<Bank.multiPatchCount {
+            bankMultis.append(MultiPatch(bytes: bankBytes.slice(from: offset, length: MultiPatch.dataSize)))
+            offset += MultiPatch.dataSize
+        }
+        let multi = bankMultis[8]  // pick up multi A-9
+        
+        // trailing NUL should be replaced by SPACE
+        XCTAssertEqual(multi.name, "Solo Now! ");
     }
 
     func testVolume() {
-        let multi = bank!.multis[0]
-        XCTAssertEqual(multi.volume, 80)
+        XCTAssertEqual(multis[0].volume, 80)
     }
 
     func testEffect() {
-        let multi = bank!.multis[0]
-        XCTAssertEqual(multi.effect, 11)
+        XCTAssertEqual(multis[0].effect, 11)
     }
 
     func testSectionInstrumentParameters() {
-        let multi = bank!.multis[0]
-        let section1 = multi.sections[0]
-        let section2 = multi.sections[1]
+        let section1 = multis[0].sections[0]
+        let section2 = multis[0].sections[1]
 
         XCTAssertEqual(section1.singlePatchNumber, 14)  // IA-15 YorFatnes8
         XCTAssertEqual(section2.singlePatchNumber, 63)  // ID-16 Taurs4Pole
     }
     
     func testSectionZoneParameters() {
-        let multi = bank!.multis[0]
-        let section = multi.sections[0]
+        let section = multis[0].sections[0]
         XCTAssertEqual(section.zone.low, 0)  // C-2
         XCTAssertEqual(section.zone.high, 127) // G8
         XCTAssertEqual(section.velocitySwitch, .all)  // see testByteM15Parsing()
@@ -77,14 +96,12 @@ final class MultiPatchTests: XCTestCase {
     // should now correct this error.
     
     func testSectionChannelParameters() {
-        let multi = bank!.multis[0]
-        let section = multi.sections[0]
+        let section = multis[0].sections[0]
         XCTAssertEqual(section.channel, 1)
     }
     
     func testSectionLevelParameters() {
-        let multi = bank!.multis[0]
-        let section = multi.sections[0]
+        let section = multis[0].sections[0]
         XCTAssertEqual(section.level, 100)
         XCTAssertEqual(section.transpose, 0)
         XCTAssertEqual(section.tune, 0)

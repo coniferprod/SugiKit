@@ -2,10 +2,10 @@ import Foundation
 
 public struct Filter: Codable, Equatable {
     public struct Envelope: Codable, Equatable {
-        public var attack: Int
-        public var decay: Int
-        public var sustain: Int  // -50~+50, in SysEx 0~100
-        public var release: Int
+        public var attack: Int  // 0~100
+        public var decay: Int  // 0~100
+        public var sustain: Int  // -50~+50, in SysEx 0~100 (also manual has an error)
+        public var release: Int  // 0~100
         
         public init() {
             attack = 0

@@ -3,21 +3,32 @@ import XCTest
 
 final class EffectPatchTests: XCTestCase {
     var bytes = ByteArray()
-    var bank: Bank?
+    
+    // The starting offset of the effect patch block
+    let effectStartOffset = 8 // SysEx header length
+        + Bank.singlePatchCount * SinglePatch.dataSize  // 64 single patches
+        + Bank.multiPatchCount * MultiPatch.dataSize // 64 multi patches
+        + Drum.dataSize
+    
+    var effects = [EffectPatch]()
     
     // Called before each test method begins
     override func setUp() {
         self.bytes = ByteArray(a401Bytes)
-        self.bank = Bank(bytes: self.bytes)
+        
+        var offset = effectStartOffset
+        for _ in 0..<Bank.effectPatchCount {
+            self.effects.append(EffectPatch(bytes: self.bytes.slice(from: offset, length: EffectPatch.dataSize)))
+            offset += EffectPatch.dataSize
+        }
     }
     
     func testEffectType() {
-        let effect = bank!.effects[0]
-        XCTAssertEqual(effect.effect, .reverb1)
+        XCTAssertEqual(effects[0].effect, .reverb1)
     }
     
     func testEffectParameters() {
-        let effect = bank!.effects[0]
+        let effect = effects[0]
         XCTAssertEqual(effect.param1, 7)  // PRE.DELAY = 7
         XCTAssertEqual(effect.param2, 5)  // REV.TIME = 5
         XCTAssertEqual(effect.param3, 31) // TONE = 31
@@ -60,7 +71,7 @@ final class EffectPatchTests: XCTestCase {
      */
     
     func testSubmixParameters() {
-        let effect = bank!.effects[0]
+        let effect = effects[0]
         let submix = effect.submixes[0]
         XCTAssertEqual(submix.pan, -7)
         XCTAssertEqual(submix.send1, 45)
@@ -68,7 +79,7 @@ final class EffectPatchTests: XCTestCase {
     }
     
     func testDescription() {
-        let effect = bank!.effects[0]
+        let effect = effects[0]
         
         let expected = """
         Reverb 1: Pre. Delay=7  Rev. Time=5  Tone=31
@@ -83,6 +94,5 @@ final class EffectPatchTests: XCTestCase {
         """
         let actual = effect.description
         XCTAssertEqual(actual, expected)
-
     }
 }
