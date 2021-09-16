@@ -1,7 +1,9 @@
 import Foundation
 
-public struct Amplifier: Codable, Equatable, CustomStringConvertible {
-    public struct Envelope: Codable, Equatable, CustomStringConvertible {
+/// DCA settings.
+public struct Amplifier: Codable, Equatable {
+    /// DCA envelope.
+    public struct Envelope: Codable, Equatable {
         public var attack: Int  // 0~100
         public var decay: Int  // 0~100
         public var sustain: Int  // 0~100
@@ -20,21 +22,11 @@ public struct Amplifier: Codable, Equatable, CustomStringConvertible {
             sustain = s
             release = r
         }
-        
-        public var data: ByteArray {
-            var buf = ByteArray()
-            [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
-            return buf
-        }
-        
-        public var description: String {
-            return "A=\(attack) D=\(decay) S=\(sustain) R=\(release)"
-        }
     }
 
     static let dataSize = 11
     
-    public var level: Int  // 0~100
+    public var level: UInt  // 0~100
     public var envelope: Envelope
     public var levelModulation: LevelModulation
     public var timeModulation: TimeModulation
@@ -51,7 +43,7 @@ public struct Amplifier: Codable, Equatable, CustomStringConvertible {
         var b: Byte = 0
         
         b = buffer.next(&offset)
-        self.level = Int(b)
+        self.level = UInt(b)
 
         var e = Envelope()
         
@@ -96,19 +88,41 @@ public struct Amplifier: Codable, Equatable, CustomStringConvertible {
         b = buffer.next(&offset)
         self.timeModulation.keyScaling = Int(b) - 50
     }
-    
-    public var data: ByteArray {
+}
+
+// MARK: - SystemExclusiveData
+
+extension Amplifier: SystemExclusiveData {
+    public func asData() -> ByteArray {
         var buf = ByteArray()
             
         buf.append(Byte(level))
-        buf.append(contentsOf: self.envelope.data)
+        buf.append(contentsOf: self.envelope.asData())
         buf.append(contentsOf: self.levelModulation.data)
         buf.append(contentsOf: self.timeModulation.data)
 
         return buf
     }
-    
+}
+
+extension Amplifier.Envelope: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+        [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
+        return buf
+    }
+}
+
+// MARK: - CustomStringConvertible
+
+extension Amplifier: CustomStringConvertible {
     public var description: String {
         return "Env=\(self.envelope) LevelMod=\(self.levelModulation) TimeMod=\(self.timeModulation)"
+    }
+}
+
+extension Amplifier.Envelope: CustomStringConvertible {
+    public var description: String {
+        return "A=\(attack) D=\(decay) S=\(sustain) R=\(release)"
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents a multi patch.
-public struct MultiPatch: Codable, Equatable {
+public class MultiPatch: HashableClass, Codable, Identifiable {
     /// Represents one section of a multi patch.
     public struct Section: Codable, Equatable {
         public static let dataSize = 8
@@ -146,7 +146,7 @@ public struct MultiPatch: Codable, Equatable {
     
     public var sections = [Section]()
     
-    public init() {
+    public override init() {
         name = "Multi     "
         volume = 100
         effect = 1

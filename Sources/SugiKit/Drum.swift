@@ -2,7 +2,7 @@ import Foundation
 
 public struct DrumSource: Codable, Equatable {
     public var wave: Wave
-    public var decay: Int // 0~100
+    public var decay: UInt // 0~100
     public var tune: Int // -50~+50 (in SysEx 0~100)
     public var level: Int // 0~100 (from correction sheet, not 0~99)
     
@@ -19,7 +19,7 @@ public struct DrumSource: Codable, Equatable {
         let lowByte = buffer[1]
         wave = Wave(number: Wave.numberFrom(highByte: highByte, lowByte: lowByte))
 
-        decay = Int(buffer[2])
+        decay = UInt(buffer[2])
         tune = Int(buffer[3]) - 50
         level = Int(buffer[4])
     }
@@ -51,8 +51,8 @@ public struct Drum: Codable, Equatable {
         public static let dataSize = 11
 
         public var channel: Byte  // drm rcv ch, store 0...15 as 1...16
-        public var volume: Int  // drm vol, 0~100
-        public var velocityDepth: Int  // drm vel depth, 0~100 but actually -50...+50
+        public var volume: UInt  // drm vol, 0~100
+        public var velocityDepth: Int  // drm vel depth, -50~+50 (0~100 in SysEx)
         public var commonChecksum: Byte
 
         public init() {
@@ -70,7 +70,7 @@ public struct Drum: Codable, Equatable {
             self.channel = b + 1
 
             b = buffer.next(&offset)
-            self.volume = Int(b)
+            self.volume = UInt(b)
             
             b = buffer.next(&offset)
             // DRUM velocity depth is actually -50...+50

@@ -45,10 +45,8 @@ final class SinglePatchTests: XCTestCase {
         0x32, 0x35, 0x36, 0x32, 0x32, 0x35, 0x36, 0x32, 0x32, 0x33, 0x34,
                 
         // filter data (2 x 14 = 28 bytes)
-        0x31, 0x51, 0x02, 0x07, 0x32, 0x34, 0x5b,
-        0x34, 0x32, 0x34, 0x36, 0x34, 0x32, 0x33,
-        0x56, 0x01, 0x64, 0x02, 0x32, 0x63, 0x56,
-        0x01, 0x32, 0x33, 0x32, 0x33, 0x32, 0x33,
+        0x31, 0x51, 0x02, 0x07, 0x32, 0x34, 0x5b, 0x34, 0x32, 0x34, 0x36, 0x34, 0x32, 0x33,
+        0x56, 0x01, 0x64, 0x02, 0x32, 0x63, 0x56, 0x01, 0x32, 0x33, 0x32, 0x33, 0x32, 0x33,
         
         // checksum
         0x6e
@@ -204,10 +202,71 @@ final class SinglePatchTests: XCTestCase {
     // then compare the data model representations instead?
     
     func testRoundtrip() {
-        let originalPatch = SinglePatch(bytes: self.patchData)
-        let emittedBytes = originalPatch.systemExclusiveData
-        let emittedPatch = SinglePatch(bytes: emittedBytes)
-        XCTAssertEqual(emittedPatch, originalPatch)
+        // Grab single patch A-2 from A401.
+        let data = a401Bytes.slice(from: SystemExclusiveHeader.dataSize + SinglePatch.dataSize, length: SinglePatch.dataSize)
+        let originalPatch = SinglePatch(bytes: data)
+
+        // Reconstruct single patch A-2:
+        let patch = SinglePatch()
+        patch.volume = 100
+        patch.name = "Gen'Sister"
+        patch.effect = 23
+        patch.submix = .g
+        patch.sourceMode = .normal
+        patch.am12 = false
+        patch.am34 = false
+        patch.polyphonyMode = .poly2
+        patch.benderRange = 2
+        patch.pressFreq = 0
+        patch.wheelAssign = .vibrato
+        patch.wheelDepth = 13
+        patch.autoBend = AutoBend(time: 45, depth: -7, keyScalingTime: 0, velocityDepth: 0)
+        
+        var amp1 = Amplifier()
+        amp1.level = 75
+        amp1.envelope = Amplifier.Envelope(attack: 54, decay: 72, sustain: 90, release: 64)
+        amp1.levelModulation = LevelModulation(velocityDepth: 15, pressureDepth: 0, keyScalingDepth: -6)
+        amp1.timeModulation = TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0)
+        patch.amplifiers[0] = amp1
+
+        var amp2 = Amplifier()
+        amp2.level = 47
+        amp2.envelope = Amplifier.Envelope(attack: 54, decay: 72, sustain: 90, release: 64)
+        amp2.levelModulation = LevelModulation(velocityDepth: 15, pressureDepth: 0, keyScalingDepth: 30)
+        amp2.timeModulation = TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0)
+        patch.amplifiers[1] = amp2
+
+        var source1 = Source()
+        source1.isActive = true
+        source1.wave = Wave(number: 10)
+        source1.keyTrack = true
+        source1.coarse = -12
+        source1.fine = 0
+        source1.fixedKey = FixedKey(key: Byte(FixedKey.keyNumber(for: "C-1")))
+        source1.pressureFrequency = false
+        source1.vibrato = true
+        
+        var source2 = Source()
+        source2.isActive = true
+        source2.wave = Wave(number: 1)
+        source2.keyTrack = true
+        source2.coarse = 0
+        source2.fine = 0
+        source2.fixedKey = FixedKey(key: Byte(FixedKey.keyNumber(for: "E3")))
+        source2.pressureFrequency = false
+        source2.vibrato = true
+        
+        patch.sources[0] = source1
+        patch.sources[1] = source2
+        
+        patch.sources[2].isActive = false
+        patch.sources[3].isActive = false
+
+        patch.filter1 = Filter(cutoff: 40, resonance: 2, cutoffModulation: LevelModulation(velocityDepth: 0, pressureDepth: 0, keyScalingDepth: 13), isLfoModulatingCutoff: false, envelopeDepth: 0, envelopeVelocityDepth: 0, envelope: Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86), timeModulation: TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0))
+        
+        patch.filter2 = Filter(cutoff: 40, resonance: 2, cutoffModulation: LevelModulation(velocityDepth: 0, pressureDepth: 0, keyScalingDepth: 13), isLfoModulatingCutoff: false, envelopeDepth: 0, envelopeVelocityDepth: 0, envelope: Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86), timeModulation: TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0))
+
+        XCTAssertEqual(patch, originalPatch)
     }
     
     /*

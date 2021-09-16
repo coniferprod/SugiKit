@@ -6,7 +6,7 @@ import Foundation
 // - the combined wave number is xwwwwwww 0~255
 public typealias WaveSelect = (high: Bit, low: BitArray)
 
-public struct Wave: Codable, CustomStringConvertible, Equatable {
+public struct Wave: Codable, Equatable {
     public static var names = [
         "(not used)",  // just to bring the index in line with the one-based wave number
         
@@ -277,26 +277,28 @@ public struct Wave: Codable, CustomStringConvertible, Equatable {
         "LOOP 11",
         "LOOP 12"
     ]
+    
     public var name: String {
         get {
-            return Wave.names[number]
+            return Wave.names[Int(number)]
         }
     }
-    public var number: Int  // store as 1...256
+    
+    public var number: UInt  // store as 1...256
     
     public init() {
         number = 1
     }
     
-    public init(number: Int) {
+    public init(number: UInt) {
         self.number = number
     }
     
     // Extracts the 8-bit wave number from the high and low bits and brings it to range 1~256.
-    public static func numberFrom(highByte: Byte, lowByte: Byte) -> Int {
+    public static func numberFrom(highByte: Byte, lowByte: Byte) -> UInt {
         //print("highByte = 0x\(String(highByte, radix: 16)), lowByte = 0x\(String(lowByte, radix: 16))")
-        let high = Int(highByte & 0x01)  // `wave select h` is b0 of s34/s35/s36/s37
-        let low = Int(lowByte & 0x7f)    // `wave select l` is bits 0...6 of s38/s39/s40/s41
+        let high = UInt(highByte & 0x01)  // `wave select h` is b0 of s34/s35/s36/s37
+        let low = UInt(lowByte & 0x7f)    // `wave select l` is bits 0...6 of s38/s39/s40/s41
         //print("high = 0x\(String(high, radix: 16)), low = 0x\(String(low, radix: 16))")
         // Combine the h and l to one 8-bit value and make it 1~256
         return ((high << 7) | low) + 1
@@ -314,8 +316,18 @@ public struct Wave: Codable, CustomStringConvertible, Equatable {
         
         return (high: highBit, low: lowBits)
     }
-    
+}
+
+// MARK: - CustomStringConvertible
+
+extension Wave: CustomStringConvertible {
     public var description: String {
         return "\(self.number) \(self.name)"
     }
+}
+
+// MARK: - Identifiable
+
+extension Wave: Identifiable {
+    public var id: UInt { number }
 }

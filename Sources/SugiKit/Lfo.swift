@@ -19,8 +19,8 @@ public struct LFO: Codable, Equatable {
     }
 
     public var shape: Shape
-    public var speed: Int
-    public var delay: Int  // 0~100
+    public var speed: UInt  // 0~100
+    public var delay: UInt  // 0~100
     public var depth: Int  // -50~+50
     public var pressureDepth: Int  // -50~+50
     
@@ -34,7 +34,7 @@ public struct LFO: Codable, Equatable {
         pressureDepth = 0
     }
     
-    public init(shape: Shape, speed: Int, delay: Int, depth: Int, pressureDepth: Int) {
+    public init(shape: Shape, speed: UInt, delay: UInt, depth: Int, pressureDepth: Int) {
         self.shape = shape
         self.speed = speed
         self.delay = delay
@@ -49,13 +49,19 @@ public struct LFO: Codable, Equatable {
         
         b = buffer.next(&offset)
         index = Int(b & 0x03)
-        shape = Shape(index: index)!
+        if let lfoShape = Shape(index: index) {
+            shape = lfoShape
+        }
+        else {
+            shape = .triangle
+            print("Value out of range for LFO shape: \(index). Using default value \(shape).", to: &standardError)
+        }
 
         b = buffer.next(&offset)
-        speed = Int(b & 0x7f)
+        speed = UInt(b & 0x7f)
 
         b = buffer.next(&offset)
-        delay = Int(b & 0x7f)
+        delay = UInt(b & 0x7f)
 
         b = buffer.next(&offset)
         depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
@@ -66,20 +72,20 @@ public struct LFO: Codable, Equatable {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        [shape.index, speed, delay, depth + 50, pressureDepth + 50].forEach {
-            buf.append(Byte($0))
-        }
+        
+        buf.append(Byte(shape.index))
+        buf.append(Byte(speed))
+        buf.append(Byte(delay))
+        buf.append(Byte(depth + 50))
+        buf.append(Byte(pressureDepth + 50))
+
         return buf
     }
-    
-    // Another way of implementing the `data` property would be something like this:
-    // `return [Byte(shape.index!), Byte(speed), Byte(delay), Byte(depth + 50), Byte(pressureDepth + 50)]`
-    // but that is riddled with typecasts to `Byte`.
 }
 
 public struct Vibrato: Codable, Equatable {
     public var shape: LFO.Shape
-    public var speed: Int  // 0~100
+    public var speed: UInt  // 0~100
     public var depth: Int  // -50+~50
     public var pressureDepth: Int  // -50+~+50
     
@@ -90,7 +96,7 @@ public struct Vibrato: Codable, Equatable {
         pressureDepth = 0
     }
     
-    public init(shape: LFO.Shape, speed: Int, depth: Int, pressureDepth: Int) {
+    public init(shape: LFO.Shape, speed: UInt, depth: Int, pressureDepth: Int) {
         self.shape = shape
         self.speed = speed
         self.depth = depth
@@ -114,7 +120,7 @@ public struct Vibrato: Codable, Equatable {
 
         b = buffer.next(&offset)
         // Vibrato speed = s16 bits 0...6
-        speed = Int(b & 0x7f)
+        speed = UInt(b & 0x7f)
         
         b = buffer.next(&offset)
         pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
@@ -125,9 +131,12 @@ public struct Vibrato: Codable, Equatable {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        [shape.index, speed, depth + 50, pressureDepth + 50].forEach {
-            buf.append(Byte($0))
-        }
+        
+        buf.append(Byte(shape.index))
+        buf.append(Byte(speed))
+        buf.append(Byte(depth + 50))
+        buf.append(Byte(pressureDepth + 50))
+
         return buf
     }
 }

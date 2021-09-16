@@ -103,10 +103,10 @@ public enum Effect: String, Codable, CaseIterable {
     ])
 }
 
-public struct SubmixSettings: Codable, CustomStringConvertible, Equatable {
+public struct SubmixSettings: Codable, Equatable {
     public var pan: Int  // 0~15 / 0~+/-7 (K4)
-    public var send1: Int  // 0~99
-    public var send2: Int  // 0~100 (from correction sheet, not 0~99)
+    public var send1: UInt  // 0~99
+    public var send2: UInt  // 0~100 (from correction sheet, not 0~99)
     
     public init() {
         self.pan = 0
@@ -114,7 +114,7 @@ public struct SubmixSettings: Codable, CustomStringConvertible, Equatable {
         self.send2 = 0
     }
     
-    public init(pan: Int, send1: Int, send2: Int) {
+    public init(pan: Int, send1: UInt, send2: UInt) {
         self.pan = pan
         self.send1 = send1
         self.send2 = send2
@@ -123,14 +123,10 @@ public struct SubmixSettings: Codable, CustomStringConvertible, Equatable {
     public var data: ByteArray {
         return [Byte(pan + 8), Byte(send1), Byte(send2)]
     }
-    
-    public var description: String {
-        return "Pan=\(pan) Send1=\(send1) Send2=\(send2)"
-    }
 }
 
 /// Represents an effect patch.
-public struct EffectPatch: Codable, CustomStringConvertible, Equatable {
+public class EffectPatch: HashableClass, Codable, Identifiable {
     static let dataSize = 35
     static let submixCount = 8
     
@@ -140,7 +136,7 @@ public struct EffectPatch: Codable, CustomStringConvertible, Equatable {
     public var param3: Int  // 0~31
     public var submixes: [SubmixSettings]
     
-    public init() {
+    public override init() {
         effect = .reverb1
         param1 = 0
         param2 = 3
@@ -174,10 +170,10 @@ public struct EffectPatch: Codable, CustomStringConvertible, Equatable {
             let pan = Int(b) - 7
 
             b = buffer.next(&offset)
-            let send1 = Int(b)
+            let send1 = UInt(b)
 
             b = buffer.next(&offset)
-            let send2 = Int(b)
+            let send2 = UInt(b)
 
             let submix = SubmixSettings(pan: pan, send1: send1, send2: send2)
             submixes.append(submix)
@@ -200,7 +196,11 @@ public struct EffectPatch: Codable, CustomStringConvertible, Equatable {
         buf.append(checksum(bytes: d))
         return buf
     }
-    
+}
+
+// MARK: - CustomStringConvertible
+
+extension EffectPatch: CustomStringConvertible {
     public var description: String {
         var lines = [String]()
         let name = Effect.names[self.effect.index]
@@ -210,5 +210,11 @@ public struct EffectPatch: Codable, CustomStringConvertible, Equatable {
             lines.append("  \(submix.rawValue.uppercased()): \(submixSettings)")
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+extension SubmixSettings: CustomStringConvertible {
+    public var description: String {
+        return "Pan=\(pan) Send1=\(send1) Send2=\(send2)"
     }
 }

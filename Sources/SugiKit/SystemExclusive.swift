@@ -1,5 +1,9 @@
 import Foundation
 
+public protocol SystemExclusiveData {
+    func asData() -> ByteArray
+}
+
 public struct SystemExclusiveHeader {
     public static let dataSize = 8
     

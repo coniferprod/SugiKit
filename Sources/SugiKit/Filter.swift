@@ -2,10 +2,10 @@ import Foundation
 
 public struct Filter: Codable, Equatable {
     public struct Envelope: Codable, Equatable {
-        public var attack: Int  // 0~100
-        public var decay: Int  // 0~100
+        public var attack: UInt  // 0~100
+        public var decay: UInt  // 0~100
         public var sustain: Int  // -50~+50, in SysEx 0~100 (also manual has an error)
-        public var release: Int  // 0~100
+        public var release: UInt  // 0~100
         
         public init() {
             attack = 0
@@ -14,7 +14,7 @@ public struct Filter: Codable, Equatable {
             release = 0
         }
 
-        public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
+        public init(attack a: UInt, decay d: UInt, sustain s: Int, release r: UInt) {
             attack = a
             decay = d
             sustain = s
@@ -23,8 +23,9 @@ public struct Filter: Codable, Equatable {
         
         public var data: ByteArray {
             var buf = ByteArray()
-            [attack, decay, sustain + 50, release].forEach {
-                buf.append(Byte($0))
+            
+            [Byte(attack), Byte(decay), Byte(sustain + 50), Byte(release)].forEach {
+                buf.append($0)
             }
             return buf
         }
@@ -32,12 +33,12 @@ public struct Filter: Codable, Equatable {
 
     public static let dataSize = 14
     
-    public var cutoff: Int
-    public var resonance: Int
+    public var cutoff: UInt  // 0~100
+    public var resonance: UInt  // 0~7
     public var cutoffModulation: LevelModulation
     public var isLfoModulatingCutoff: Bool
-    public var envelopeDepth: Int
-    public var envelopeVelocityDepth: Int
+    public var envelopeDepth: Int  // -50~+50
+    public var envelopeVelocityDepth: Int // -50~+50
     public var envelope: Envelope
     public var timeModulation: TimeModulation
     
@@ -52,7 +53,7 @@ public struct Filter: Codable, Equatable {
         timeModulation = TimeModulation()
     }
     
-    public init(cutoff: Int, resonance: Int, cutoffModulation: LevelModulation, isLfoModulatingCutoff: Bool, envelopeDepth: Int, envelopeVelocityDepth: Int, envelope: Envelope, timeModulation: TimeModulation) {
+    public init(cutoff: UInt, resonance: UInt, cutoffModulation: LevelModulation, isLfoModulatingCutoff: Bool, envelopeDepth: Int, envelopeVelocityDepth: Int, envelope: Envelope, timeModulation: TimeModulation) {
         self.cutoff = cutoff
         self.resonance = resonance
         self.cutoffModulation = cutoffModulation
@@ -68,10 +69,10 @@ public struct Filter: Codable, Equatable {
         var b: Byte = 0
         
         b = d.next(&offset)
-        self.cutoff = Int(b)
+        self.cutoff = UInt(b)
         
         b = d.next(&offset)
-        self.resonance = Int(b & 0x07)  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
+        self.resonance = UInt(b & 0x07)  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
         self.isLfoModulatingCutoff = b.isBitSet(3)
 
         self.cutoffModulation = LevelModulation()
@@ -94,16 +95,16 @@ public struct Filter: Codable, Equatable {
         var e = Envelope()
         
         b = d.next(&offset)
-        e.attack = Int(b & 0x7f)
+        e.attack = UInt(b & 0x7f)
 
         b = d.next(&offset)
-        e.decay = Int(b & 0x7f)
+        e.decay = UInt(b & 0x7f)
 
         b = d.next(&offset)
         e.sustain = Int(b & 0x7f) - 50  // error in manual and SysEx: actually -50~+50, not 0~100
 
         b = d.next(&offset)
-        e.release = Int(b & 0x7f)
+        e.release = UInt(b & 0x7f)
         
         self.envelope = e
         
@@ -137,5 +138,19 @@ public struct Filter: Codable, Equatable {
         buf.append(contentsOf: timeModulation.data)
 
         return buf
+    }
+}
+
+// MARK: - CustomStringConvertible
+
+extension Filter: CustomStringConvertible {
+    public var description: String {
+        return "Cutoff=\(self.cutoff) Resonance=\(self.resonance) CutOffMod=\(self.cutoffModulation) LFO=\(self.isLfoModulatingCutoff) Env.Depth=\(self.envelopeDepth) Env.Vel.Depth=\(self.envelopeVelocityDepth) Env=\(self.envelope) TimeMod=\(self.timeModulation)"
+    }
+}
+
+extension Filter.Envelope: CustomStringConvertible {
+    public var description: String {
+        return "A=\(self.attack) D=\(self.decay) S=\(self.sustain) R=\(self.release)"
     }
 }

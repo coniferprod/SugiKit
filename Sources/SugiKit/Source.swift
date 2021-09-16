@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents one source in a single patch.
-public struct Source: Codable, CustomStringConvertible {
+public struct Source: Codable {
     static let dataSize = 18
 
     public var isActive: Bool
@@ -17,7 +17,7 @@ public struct Source: Codable, CustomStringConvertible {
     public var keyScalingCurve: KeyScalingCurve
     
     public init() {
-        isActive = true
+        isActive = false
         delay = 0
         wave = Wave(number: 10)
         keyTrack = true
@@ -126,7 +126,19 @@ public struct Source: Codable, CustomStringConvertible {
         
         return buf
     }
-    
+}
+
+// MARK: - SystemExclusiveData
+
+extension Source: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        return self.data
+    }
+}
+
+// MARK: - CustomStringConvertible
+
+extension Source: CustomStringConvertible {
     public var description: String {
         var lines = [String]()
         lines.append("Delay = \(delay)")

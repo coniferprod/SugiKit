@@ -1,14 +1,14 @@
 import Foundation
 
 /// Represents a single patch.
-public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConvertible {
+public class SinglePatch: HashableClass, Codable, Identifiable {
     static let dataSize = 131
     static let sourceCount = 4
     static let nameLength = 10
 
     public var name: String  // name (10 characters)
-    public var volume: Int  // volume 0~100
-    public var effect: Int  // effect patch number 1~32 (in SysEx 0~31)
+    public var volume: UInt  // volume 0~100
+    public var effect: UInt  // effect patch number 1~32 (in SysEx 0~31)
     public var submix: Submix // A...H
         
     public var sourceMode: SourceMode
@@ -65,12 +65,12 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         offset += SinglePatch.nameLength
 
         b = buffer.next(&offset)
-        volume = Int(b)
+        volume = UInt(b)
 
         // effect = s11 bits 0...4
         b = buffer.next(&offset)
         //print("effect byte s11 = 0x\(String(b, radix: 16))")
-        effect = Int(b & 0b00011111) + 1  // mask out top three bits just in case, then bring into range 1~32
+        effect = UInt(Int(b & 0b00011111) + 1)  // mask out top three bits just in case, then bring into range 1~32
 
         // output select = s12 bits 0...2
         b = buffer.next(&offset)
@@ -179,7 +179,12 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
 
         // Now it's time to set the active status of the sources
         for i in 0..<SinglePatch.sourceCount {
-            if activeSourcesByte.isBitSet(i) { // 0/mute, 1/not mute
+            // The description in the SysEx spec seems to be backwards:
+            // actually 0 is mute OFF and 1 is mute ON (thanks Sean/Edisyn).
+            if activeSourcesByte.isBitSet(i) {
+                self.sources[i].isActive = false
+            }
+            else {
                 self.sources[i].isActive = true
             }
         }
@@ -279,10 +284,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
             d.append(s4data[i])
         }
 
-        let amp1Data = amplifiers[0].data
-        let amp2Data = amplifiers[1].data
-        let amp3Data = amplifiers[2].data
-        let amp4Data = amplifiers[3].data
+        let amp1Data = amplifiers[0].asData()
+        let amp2Data = amplifiers[1].asData()
+        let amp3Data = amplifiers[2].asData()
+        let amp4Data = amplifiers[3].asData()
         for i in 0 ..< Amplifier.dataSize {
             d.append(amp1Data[i])
             d.append(amp2Data[i])
@@ -300,15 +305,20 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         return d
     }
     
-    /// Gets the data and the checksum calculated based on the data.
     public var systemExclusiveData: ByteArray {
         var buf = ByteArray()
+        
         let d = self.data
         buf.append(contentsOf: d)
         buf.append(checksum(bytes: d))
+        
         return buf
     }
-    
+}
+
+// MARK: - CustomStringConvertible
+
+extension SinglePatch: CustomStringConvertible {
     public var description: String {
         var lines = [String]()
         lines.append("Name = \(name)")
@@ -343,6 +353,9 @@ public class SinglePatch: HashableClass, Codable, Identifiable, CustomStringConv
         for (_, amplifier) in amplifiers.enumerated() {
             lines.append(amplifier.description)
         }
+        
+        lines.append("F1: \(filter1.description)")
+        lines.append("F2: \(filter2.description)")
         
         return lines.joined(separator: "\n")
     }
