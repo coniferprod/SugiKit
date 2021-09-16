@@ -4,10 +4,10 @@ import Foundation
 public struct Amplifier: Codable, Equatable {
     /// DCA envelope.
     public struct Envelope: Codable, Equatable {
-        public var attack: Int  // 0~100
-        public var decay: Int  // 0~100
-        public var sustain: Int  // 0~100
-        public var release: Int  // 0~100
+        public var attack: UInt  // 0~100
+        public var decay: UInt  // 0~100
+        public var sustain: UInt  // 0~100
+        public var release: UInt  // 0~100
         
         public init() {
             attack = 0
@@ -16,7 +16,7 @@ public struct Amplifier: Codable, Equatable {
             release = 0
         }
         
-        public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
+        public init(attack a: UInt, decay d: UInt, sustain s: UInt, release r: UInt) {
             attack = a
             decay = d
             sustain = s
@@ -48,16 +48,16 @@ public struct Amplifier: Codable, Equatable {
         var e = Envelope()
         
         b = buffer.next(&offset)
-        e.attack = Int(b)
+        e.attack = UInt(b)
         
         b = buffer.next(&offset)
-        e.decay = Int(b)
+        e.decay = UInt(b)
         
         b = buffer.next(&offset)
-        e.sustain = Int(b)
+        e.sustain = UInt(b)
         
         b = buffer.next(&offset)
-        e.release = Int(b)
+        e.release = UInt(b)
     
         self.envelope = e
         

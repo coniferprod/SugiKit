@@ -16,8 +16,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     public var am12: Bool
     public var am34: Bool
         
-    public var benderRange: Int  // 0~12 in semitones
-    public var pressFreq: Int // 0~100 (±50)
+    public var benderRange: UInt  // 0~12 in semitones
+    public var pressFreq: Int // -50~+50 (0~100 in SysEx)
     public var wheelAssign: WheelAssign
     public var wheelDepth: Int  // -50 ... +50
     public var autoBend: AutoBend
@@ -121,7 +121,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 
         b = buffer.next(&offset)  // s15
         // Pitch bend = s15 bits 0...3
-        benderRange = Int(b.bitField(start: 0, end: 4))
+        benderRange = UInt(b.bitField(start: 0, end: 4))
         //print("bender range = \(benderRange)", to: &standardError)
         
         // Wheel assign = s15 bits 4...5

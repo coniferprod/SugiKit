@@ -184,10 +184,10 @@ public enum WheelAssign: String, Codable, CaseIterable {
 public struct AutoBend: Codable, Equatable, CustomStringConvertible {
     static let dataSize = 4
     
-    public var time: Int
-    public var depth: Int
-    public var keyScalingTime: Int
-    public var velocityDepth: Int
+    public var time: UInt  // 0~100
+    public var depth: Int  // -50~+50
+    public var keyScalingTime: Int  // -50~+50
+    public var velocityDepth: Int  // -50~+50
     
     public init() {
         time = 0
@@ -196,7 +196,7 @@ public struct AutoBend: Codable, Equatable, CustomStringConvertible {
         velocityDepth = 0
     }
     
-    public init(time: Int, depth: Int, keyScalingTime: Int, velocityDepth: Int) {
+    public init(time: UInt, depth: Int, keyScalingTime: Int, velocityDepth: Int) {
         self.time = time
         self.depth = depth
         self.keyScalingTime = keyScalingTime
@@ -208,7 +208,7 @@ public struct AutoBend: Codable, Equatable, CustomStringConvertible {
         var b: Byte = 0x00
         
         b = buffer.next(&offset)
-        time = Int(b & 0x7f)
+        time = UInt(b & 0x7f)
 
         b = buffer.next(&offset)
         depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
@@ -222,8 +222,8 @@ public struct AutoBend: Codable, Equatable, CustomStringConvertible {
     
     public var data: ByteArray {
         var buf = ByteArray()
-        [time, depth + 50, keyScalingTime + 50, velocityDepth + 50].forEach {
-            buf.append(Byte($0))
+        [Byte(time), Byte(depth + 50), Byte(keyScalingTime + 50), Byte(velocityDepth + 50)].forEach {
+            buf.append($0)
         }
         return buf
     }

@@ -4,7 +4,7 @@ public struct DrumSource: Codable, Equatable {
     public var wave: Wave
     public var decay: UInt // 0~100
     public var tune: Int // -50~+50 (in SysEx 0~100)
-    public var level: Int // 0~100 (from correction sheet, not 0~99)
+    public var level: UInt // 0~100 (from correction sheet, not 0~99)
     
     public init() {
         wave = Wave(number: 97) // "KICK"
@@ -21,7 +21,7 @@ public struct DrumSource: Codable, Equatable {
 
         decay = UInt(buffer[2])
         tune = Int(buffer[3]) - 50
-        level = Int(buffer[4])
+        level = UInt(buffer[4])
     }
     
     public var data: ByteArray {
