@@ -1,9 +1,7 @@
 #if os(Linux)
-import func Glibc.puts
-import var Glibc.stderr
+import Glibc
 #else
-import func Darwin.fputs
-import var Darwin.stderr
+import Darwin
 #endif
 
 struct StandardErrorOutputStream: TextOutputStream {
