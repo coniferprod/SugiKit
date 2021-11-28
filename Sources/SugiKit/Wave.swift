@@ -294,14 +294,12 @@ public struct Wave: Codable, Equatable {
         self.number = number
     }
     
-    // Extracts the 8-bit wave number from the high and low bits and brings it to range 1~256.
-    public static func numberFrom(highByte: Byte, lowByte: Byte) -> UInt {
-        //print("highByte = 0x\(String(highByte, radix: 16)), lowByte = 0x\(String(lowByte, radix: 16))")
+    public init(highByte: Byte, lowByte: Byte) {
         let high = UInt(highByte & 0x01)  // `wave select h` is b0 of s34/s35/s36/s37
         let low = UInt(lowByte & 0x7f)    // `wave select l` is bits 0...6 of s38/s39/s40/s41
-        //print("high = 0x\(String(high, radix: 16)), low = 0x\(String(low, radix: 16))")
+
         // Combine the h and l to one 8-bit value and make it 1~256
-        return ((high << 7) | low) + 1
+        self.number = ((high << 7) | low) + 1
     }
     
     public var select: WaveSelect {
@@ -331,3 +329,24 @@ extension Wave: CustomStringConvertible {
 extension Wave: Identifiable {
     public var id: UInt { number }
 }
+
+// MARK: - SystemExclusiveData
+
+extension Wave: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+        
+        let ws = self.select
+
+        // Encode wave number as two bytes.
+        // First byte is just the top bit, second byte is all the rest.
+        let highByte: Byte = ws.high == .one ? 1 : 0
+        let lowByte = Byte.fromBits(bits: ws.low)
+        
+        buf.append(highByte)
+        buf.append(lowByte)
+
+        return buf
+    }
+}
+

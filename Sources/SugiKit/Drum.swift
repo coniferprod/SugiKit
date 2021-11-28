@@ -17,7 +17,7 @@ public struct DrumSource: Codable, Equatable {
         // s1 wave select MSB contains the out select in bits 4...6, so mask it off
         let highByte: Byte = buffer[0] & 0b00000001
         let lowByte = buffer[1]
-        wave = Wave(number: Wave.numberFrom(highByte: highByte, lowByte: lowByte))
+        wave = Wave(highByte: highByte, lowByte: lowByte)
 
         decay = UInt(buffer[2])
         tune = Int(buffer[3]) - 50
@@ -27,16 +27,9 @@ public struct DrumSource: Codable, Equatable {
     public var data: ByteArray {
         var buf = ByteArray()
         
-        let ws = wave.select
-
-        // Encode wave number as two bytes.
-        // First byte is just the top bit, second byte is all the rest.
-        let highByte: Byte = ws.high == .one ? 1 : 0
-        let lowByte = Byte.fromBits(bits: ws.low)
+        buf.append(contentsOf: self.wave.asData())
         
         buf.append(contentsOf: [
-            highByte,
-            lowByte,
             Byte(decay),
             Byte(tune + 50),
             Byte(level)

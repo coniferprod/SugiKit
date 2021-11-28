@@ -53,9 +53,7 @@ public struct Source: Codable {
         // This byte has the wave select low value 0~127 in bits 0...6
         let b2 = buffer.next(&offset)
         
-        let waveNumber = Wave.numberFrom(highByte: b, lowByte: b2)
-
-        wave = Wave(number: waveNumber)
+        wave = Wave(highByte: b, lowByte: b2)
 
         b = buffer.next(&offset)
         
