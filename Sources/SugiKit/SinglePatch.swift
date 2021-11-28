@@ -180,7 +180,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         // Now it's time to set the active status of the sources
         for i in 0..<SinglePatch.sourceCount {
             // The description in the SysEx spec seems to be backwards:
-            // actually 0 is mute OFF and 1 is mute ON (thanks Sean/Edisyn).
+            // actually 0 is mute OFF and 1 is mute ON.
             if activeSourcesByte.isBitSet(i) {
                 self.sources[i].isActive = false
             }
