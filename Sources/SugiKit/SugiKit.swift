@@ -1,5 +1,8 @@
-import func Darwin.fputs
-import var Darwin.stderr
+#if os(Linux)
+import Glibc
+#else
+import Darwin
+#endif
 
 struct StandardErrorOutputStream: TextOutputStream {
     mutating func write(_ string: String) {
