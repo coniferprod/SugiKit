@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 /// Represents a multi patch.
 public class MultiPatch: HashableClass, Codable, Identifiable {
     /// Represents one section of a multi patch.

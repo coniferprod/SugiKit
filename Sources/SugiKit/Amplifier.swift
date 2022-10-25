@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 /// DCA settings.
 public struct Amplifier: Codable, Equatable {
     /// DCA envelope.

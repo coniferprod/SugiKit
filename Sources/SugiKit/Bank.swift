@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 /// Represents a full bank with 64 singles, 64 multis, drum, and 32 effects.
 public struct Bank: Codable, Equatable {
     public static let singlePatchCount = 64

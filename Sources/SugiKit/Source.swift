@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 /// Represents one source in a single patch.
 public struct Source: Codable {
     static let dataSize = 18

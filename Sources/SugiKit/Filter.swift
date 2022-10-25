@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 public struct Filter: Codable, Equatable {
     public struct Envelope: Codable, Equatable {
         public var attack: UInt  // 0~100

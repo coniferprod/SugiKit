@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 extension String {
     /// Pads the string from left using `with` to `length`.
     public func pad(with character: String, toLength length: Int) -> String {
@@ -13,18 +16,6 @@ extension String {
 }
 
 extension Byte {
-    public mutating func setBit(_ position: Int) {
-        self |= 1 << position;
-    }
-    
-    public mutating func unsetBit(_ position: Int) {
-        self &= ~(1 << position);
-    }
-    
-    public func isBitSet(_ position: Int) -> Bool {
-        return (self & (1 << position)) != 0
-    }
-    
     /// Returns the bit field from the bit in position `start` up to but not including the bit at position `end`.
     public func bitField(start: Int, end: Int) -> Byte {
         guard start >= 0 else {

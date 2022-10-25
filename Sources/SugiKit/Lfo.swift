@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 public struct LFO: Codable, Equatable {
     public enum Shape: String, Codable, CaseIterable {
         case triangle

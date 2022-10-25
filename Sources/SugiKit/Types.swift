@@ -1,7 +1,7 @@
 import Foundation
 
-public typealias Byte = UInt8
-public typealias ByteArray = [Byte]
+import SyxPack
+
 
 extension CaseIterable where Self: Equatable {
     var index: Self.AllCases.Index {

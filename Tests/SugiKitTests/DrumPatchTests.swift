@@ -1,5 +1,6 @@
 import XCTest
 @testable import SugiKit
+import SyxPack
 
 final class DrumPatchTests: XCTestCase {
     var bytes = ByteArray()

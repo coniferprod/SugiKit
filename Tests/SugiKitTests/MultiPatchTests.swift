@@ -2,6 +2,8 @@ import XCTest
 
 @testable import SugiKit
 
+import SyxPack
+
 final class MultiPatchTests: XCTestCase {
     var bytes = ByteArray()
     

@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 public struct DrumSource: Codable, Equatable {
     public var wave: Wave
     public var decay: UInt // 0~100

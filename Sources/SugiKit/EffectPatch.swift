@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 /// Type of effect.
 public enum Effect: String, Codable, CaseIterable {
     case undefined

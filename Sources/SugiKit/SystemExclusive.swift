@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 public protocol SystemExclusiveData {
     func asData() -> ByteArray
 }

@@ -1,6 +1,9 @@
 import XCTest
 
+import SyxPack
+
 @testable import SugiKit
+
 
 final class WaveTests: XCTestCase {
     func testWaveName() {

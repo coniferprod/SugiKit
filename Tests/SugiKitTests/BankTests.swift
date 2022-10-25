@@ -2,6 +2,8 @@ import XCTest
 
 @testable import SugiKit
 
+import SyxPack
+
 final class BankTests: XCTestCase {
     var bankData = ByteArray()
     
@@ -68,6 +70,7 @@ final class BankTests: XCTestCase {
     // The most important thing in the emitted SysEx is that the checksum is right,
     // so that the K4 will accept the dump.
     
+    /*
     func testRoundtrip() {
         let originalBank = Bank(bytes: self.bankData)
         
@@ -76,4 +79,6 @@ final class BankTests: XCTestCase {
         
         XCTAssertEqual(currentBank, originalBank)
     }
+    */
+    
 }

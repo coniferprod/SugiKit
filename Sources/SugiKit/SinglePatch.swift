@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 /// Represents a single patch.
 public class SinglePatch: HashableClass, Codable, Identifiable {
     static let dataSize = 131
@@ -255,7 +258,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
                 s14.setBit(i)
             }
             else {
-                s14.unsetBit(i)
+                s14.clearBit(i)
             }
         }
         d.append(s14)

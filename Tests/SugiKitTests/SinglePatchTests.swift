@@ -2,6 +2,8 @@ import XCTest
 
 @testable import SugiKit
 
+import SyxPack
+
 final class SinglePatchTests: XCTestCase {
     var filterEnvelope: Filter.Envelope?
     var amplifierEnvelope: Amplifier.Envelope?
@@ -201,6 +203,7 @@ final class SinglePatchTests: XCTestCase {
     // the byte representations. Maybe emit SysEx bytes, parse that back and
     // then compare the data model representations instead?
     
+/*
     func testRoundtrip() {
         // Grab single patch A-2 from A401.
         let data = a401Bytes.slice(from: SystemExclusiveHeader.dataSize + SinglePatch.dataSize, length: SinglePatch.dataSize)
@@ -268,6 +271,7 @@ final class SinglePatchTests: XCTestCase {
 
         XCTAssertEqual(patch, originalPatch)
     }
+    */
     
     /*
     func testContent() {

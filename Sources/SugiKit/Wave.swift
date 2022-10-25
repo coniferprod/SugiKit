@@ -1,5 +1,8 @@
 import Foundation
 
+import SyxPack
+
+
 // In SysEx, the wave select for a source is divided into wave select high and low like this:
 // - wave select h is one bit x
 // - wave select l is seven bits wwwwwww

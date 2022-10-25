@@ -1,5 +1,6 @@
 import XCTest
 @testable import SugiKit
+import SyxPack
 
 // Test cases related to parsing System Exclusive files to get domain objects.
 final class AbsorptionTests: XCTestCase {
