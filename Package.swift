@@ -9,13 +9,29 @@ let package = Package(
         .iOS(.v13),
     ],
     products: [
-        .library(name: "SugiKit", targets: ["SugiKit"]),
+        .library(
+            name: "SugiKit",
+            targets: ["SugiKit"]
+        ),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(
+            url: "https://github.com/coniferprod/SyxPack",
+            from: "0.7.0"
+        ),
+    ],
     targets: [
-        .target(name: "SugiKit", dependencies: []),
-        .testTarget(name: "SugiKitTests", dependencies: ["SugiKit"],
-            resources: [.copy("Resources")]),
+        .target(
+            name: "SugiKit",
+            dependencies: ["SyxPack"]
+        ),
+        .testTarget(
+            name: "SugiKitTests",
+            dependencies: ["SugiKit", "SyxPack"],
+            resources: [
+                .copy("Resources")
+            ]
+        ),
     ]
 )
 
