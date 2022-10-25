@@ -2,8 +2,9 @@ import Foundation
 
 import SyxPack
 
-
+/// LFO settings.
 public struct LFO: Codable, Equatable {
+    /// LFO shapes.
     public enum Shape: String, Codable, CaseIterable {
         case triangle
         case sawtooth

@@ -295,13 +295,6 @@ extension String {
     }
 }
 
-public func patchName(patchNumber: Int, patchCount: Int = 16) -> String {
-    let bankIndex = patchNumber / patchCount
-    let bankLetter = ["A", "B", "C", "D"][bankIndex]
-    let patchIndex = (patchNumber % patchCount) + 1
-    return "\(bankLetter)-\(patchIndex)"
-}
-
 func checksum(bytes: ByteArray) -> Byte {
     var totalSum = bytes.reduce(0) { $0 + (Int($1) & 0xff) }
     totalSum += 0xa5
@@ -320,5 +313,23 @@ func checksum(bytes: ByteArray) -> Byte {
     public init(wrappedValue: String) {
         self.wrappedValue = wrappedValue.adjusted(length: PatchName.length)
     }
+    
+    public static func bankNameForNumber(n: Int) -> String {
+        let bankIndex = n / 16
+        let bankLetter = ["A", "B", "C", "D"][bankIndex]
+        let patchIndex = (n % 16) + 1
+        return "\(bankLetter)-\(patchIndex)"
+    }
 }
 
+// MARK: - SystemExclusiveData
+
+extension PatchName: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var d = ByteArray()
+        for codeUnit in wrappedValue.utf8 {
+            d.append(codeUnit)
+        }
+        return d
+    }
+}

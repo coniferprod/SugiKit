@@ -228,14 +228,9 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         
     public var data: ByteArray {
         var d = ByteArray()
-        
-        //print("name is \(name.utf8.count) characters")
-        for codeUnit in name.utf8 {
-            d.append(codeUnit)
-        }
-        
-        d.append(Byte(volume)) // s10
 
+        d.append(contentsOf: _name.asData())
+        d.append(Byte(volume)) // s10
         d.append(Byte(effect - 1)) // s11: 1~32 to 0~31
         
         let submixNames = ["a", "b", "c", "d", "e", "f", "g", "h"]
@@ -306,16 +301,6 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         }
 
         return d
-    }
-    
-    public var systemExclusiveData: ByteArray {
-        var buf = ByteArray()
-        
-        let d = self.data
-        buf.append(contentsOf: d)
-        buf.append(checksum(bytes: d))
-        
-        return buf
     }
 }
 

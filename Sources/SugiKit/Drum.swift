@@ -137,14 +137,6 @@ public struct Drum: Codable, Equatable {
             
             return buf
         }
-        
-        public var systemExclusiveData: ByteArray {
-            var buf = ByteArray()
-            let theData = self.data
-            buf.append(contentsOf: theData)
-            buf.append(checksum(bytes: theData))
-            return buf
-        }
     }
     
     public static let dataSize = 682
@@ -165,7 +157,7 @@ public struct Drum: Codable, Equatable {
         offset += Common.dataSize
         
         notes = [Note]()
-        for i in 0..<Drum.noteCount {
+        for _ in 0..<Drum.noteCount {
             let noteBytes = buffer.slice(from: offset, length: Note.dataSize)
             notes.append(Note(bytes: noteBytes))
             //print("drum note \(i):\n\(noteBytes.hexDump)")
@@ -208,4 +200,3 @@ extension Drum.Note: SystemExclusiveData {
         return buf
     }
 }
-

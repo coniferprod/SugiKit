@@ -185,9 +185,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         var d = ByteArray()
         
         // M0...M9 = name
-        for codeUnit in name.utf8 {
-            d.append(codeUnit)
-        }
+        d.append(contentsOf: _name.asData())
         
         // M10
         d.append(Byte(volume))
@@ -203,6 +201,8 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         return d
     }
 }
+
+// MARK: - SystemExclusiveData
 
 extension MultiPatch: SystemExclusiveData {
     public func asData() -> ByteArray {

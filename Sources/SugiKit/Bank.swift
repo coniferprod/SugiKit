@@ -54,16 +54,6 @@ public struct Bank: Codable, Equatable {
             offset += EffectPatch.dataSize
         }
     }
-    
-    public static func nameForPatch(_ n: Int) -> String {
-        let patchesPerBank = 16
-        let bankIndex = n / patchesPerBank
-        let bankLetters = ["A", "B", "C", "D"]
-        let letter = bankLetters[bankIndex]
-        let patchIndex = (n % patchesPerBank) + 1
-
-        return "\(letter)-\(patchIndex)"
-    }
 }
 
 // MARK: - SystemExclusiveData

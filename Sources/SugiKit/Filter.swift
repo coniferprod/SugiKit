@@ -2,8 +2,9 @@ import Foundation
 
 import SyxPack
 
-
+/// DCF settings.
 public struct Filter: Codable, Equatable {
+    /// DCF envelope.
     public struct Envelope: Codable, Equatable {
         public var attack: UInt  // 0~100
         public var decay: UInt  // 0~100

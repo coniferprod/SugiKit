@@ -39,7 +39,7 @@ final class BankTests: XCTestCase {
     func testSinglesLength() {
         let bank = Bank(bytes: self.bankData)
         var buffer = ByteArray()
-        bank.singles.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
+        bank.singles.forEach { buffer.append(contentsOf: $0.asData()) }
         XCTAssertEqual(buffer.count, Bank.singlePatchCount * SinglePatch.dataSize)
     }
     

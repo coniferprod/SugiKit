@@ -13,6 +13,13 @@ and to avoid typing, the following typealias definitions are used:
     public typealias ByteArray = [Byte]
 
 
+### System Exclusive data generation
+
+All types that contribute to the System Exclusive data format conform to the
+`SystemExclusiveData` protocol. Most such types also have a `data` property,
+which can be used to collect the data for inclusion into the SysEx data, and
+for calculating a checksum as necessary.
+ 
 ### Enumerated types
 
 Many of the synth parameter values are modeled with enumerated types.
