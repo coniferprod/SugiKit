@@ -19,6 +19,7 @@ public struct Source: Codable {
     public var velocityCurve: VelocityCurve
     public var keyScalingCurve: KeyScalingCurve
     
+    /// Initializes the source with default settings.
     public init() {
         isActive = false
         delay = 0
@@ -33,6 +34,7 @@ public struct Source: Codable {
         keyScalingCurve = .curve1
     }
     
+    /// Initializes the source from System Exclusive data bytes.
     public init(bytes buffer: ByteArray) {
         self.isActive = false  // this is set later by single patch parsing
         
@@ -81,7 +83,8 @@ public struct Source: Codable {
         velocityCurve = VelocityCurve.allCases[index]
     }
     
-    var data: ByteArray {
+    /// Gets the System Exclusive data for this source.
+    public var data: ByteArray {
         var buf = ByteArray()
         
         // isActive is not emitted, that information is in the single
@@ -129,17 +132,10 @@ public struct Source: Codable {
     }
 }
 
-// MARK: - SystemExclusiveData
-
-extension Source: SystemExclusiveData {
-    public func asData() -> ByteArray {
-        return self.data
-    }
-}
-
 // MARK: - CustomStringConvertible
 
 extension Source: CustomStringConvertible {
+    /// Gets a printable string representation of the source.
     public var description: String {
         var lines = [String]()
         lines.append("Delay = \(delay)")

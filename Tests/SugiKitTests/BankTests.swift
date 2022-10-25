@@ -25,7 +25,7 @@ final class BankTests: XCTestCase {
         // Seems that resources still don't work in Xcode 12.5.1, so use raw bytes from A401Bytes.swift:
         let dataBytes = a401Bytes
 
-        self.bankData = dataBytes.slice(from: SystemExclusiveHeader.dataSize, length: dataBytes.count - (SystemExclusiveHeader.dataSize + 1))
+        self.bankData = dataBytes.slice(from: SugiMessage.Header.dataSize, length: dataBytes.count - (SugiMessage.Header.dataSize + 1))
     }
 
     func testInit() {

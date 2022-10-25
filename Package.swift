@@ -17,7 +17,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/coniferprod/SyxPack",
-            from: "0.7.0"
+            from: "0.7.1"
         ),
     ],
     targets: [

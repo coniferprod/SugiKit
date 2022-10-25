@@ -31,6 +31,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     public var filter1: Filter
     public var filter2: Filter
 
+    /// Initializes a single patch with default settings.
     public override init() {
         name = "Single    "
         volume = 90
@@ -55,7 +56,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         filter2 = Filter()
     }
     
-    /// Initializes a single patch from system exclusive data.
+    /// Initializes a single patch from System Exclusive data bytes.
     public init(bytes buffer: ByteArray) {
         var offset = 0
         var b: Byte = 0
@@ -225,7 +226,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         //print("incoming checksum = \(b)")
         //self.incomingChecksum = b   // store the checksum as we got it from SysEx
     }
-        
+    
+    /// Gets the System Exclusive data for this single patch.
     public var data: ByteArray {
         var d = ByteArray()
 
@@ -307,6 +309,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 // MARK: - SystemExclusiveData
 
 extension SinglePatch: SystemExclusiveData {
+    /// Gets the System Exclusive data for this single patch with checksum.
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
@@ -321,6 +324,7 @@ extension SinglePatch: SystemExclusiveData {
 // MARK: - CustomStringConvertible
 
 extension SinglePatch: CustomStringConvertible {
+    /// Gets a printable string representation of the single patch.
     public var description: String {
         var lines = [String]()
         lines.append("Name = \(name)")

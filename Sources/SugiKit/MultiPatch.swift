@@ -20,6 +20,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         public var transpose: Int  // 0~48 / +/- 24
         public var tune: Int  // 0~100 / +/- 50
         
+        /// Initializes a multi patch section with default settings.
         public init() {
             singlePatchNumber = 0
             
@@ -37,6 +38,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             tune = 0
         }
         
+        /// Initializes a multi patch section from System Exclusive data bytes.
         public init(bytes buffer: ByteArray) {
             var offset = 0
             var b: Byte = 0x00
@@ -101,6 +103,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             tune = Int(b) - 50
         }
         
+        /// Gets the SysEx data for the multi patch section.
         public var data: ByteArray {
             var d = ByteArray()
             
@@ -149,6 +152,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
     
     public var sections = [Section]()
     
+    /// Initializes a multi patch with default settings.
     public override init() {
         name = "Multi     "
         volume = 100
@@ -157,6 +161,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         sections = Array(repeating: Section(), count: MultiPatch.sectionCount)
     }
     
+    /// Initializes a multi patch from System Exclusive data bytes.
     public init(bytes buffer: ByteArray) {
         var offset = 0
         var b: Byte = 0
@@ -181,6 +186,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         }
     }
     
+    /// Gets the System Exclusive data for the multi patch.
     public var data: ByteArray {
         var d = ByteArray()
         
@@ -205,6 +211,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
 // MARK: - SystemExclusiveData
 
 extension MultiPatch: SystemExclusiveData {
+    /// Gets the System Exclusive data for the multi with checksum.
     public func asData() -> ByteArray {
         var buf = ByteArray()
         let d = self.data

@@ -3,59 +3,78 @@ import Foundation
 import SyxPack
 
 
+/// Protocol for getting the MIDI System Exclusive data bytes of an item.
 public protocol SystemExclusiveData {
     func asData() -> ByteArray
 }
 
-public struct SystemExclusiveHeader {
-    public static let dataSize = 8
-    
-    public static let initiator: Byte = 0xF0
-    public static let terminator: Byte = 0xF7
+/// Represents a Kawai K4/K4r System Exclusive message header.
+public struct SugiMessage {
+    public struct Header {
+        public static let dataSize = 8
 
-    public var manufacturerID: Byte
-    public var channel: Byte
-    public var function: Byte
-    public var group: Byte
-    public var machineID: Byte
-    public var substatus1: Byte
-    public var substatus2: Byte
-    
-    public init() {
-        self.manufacturerID = 0
-        self.channel = 0
-        self.function = 0
-        self.group = 0
-        self.machineID = 0
-        self.substatus1 = 0
-        self.substatus2 = 0
+        public var channel: Int  // pass it in as 1...16
+        public var function: Byte
+        public var group: Byte
+        public var machineID: Byte
+        public var substatus1: Byte
+        public var substatus2: Byte
+
+        public init(channel: Int, function: Byte, substatus1: Byte) {
+            self.channel = channel
+            self.function = function
+            self.group = 0x00  // synth group = 0x00
+            self.machineID = 0x04 // machine ID for K4/K4r
+            self.substatus1 = substatus1
+            self.substatus2 = 0x00 // always zero for K4
+        }
+        
+        public init(d: ByteArray) {
+            self.channel = Int(d[2] + 1)  // adjust to 1...16
+            self.function = d[3]
+            self.group = d[4]
+            self.machineID = d[5]
+            self.substatus1 = d[6]
+            self.substatus2 = d[7] // always zero for K4
+        }
+
+        public var data: ByteArray {
+            return [
+                Byte(self.channel - 1),  // adjust back to 0...15 for SysEx
+                self.function,
+                self.group,
+                self.machineID,
+                self.substatus1,
+                self.substatus2
+            ]
+        }
     }
     
-    public init(d: ByteArray) {
-        self.manufacturerID = d[1]
-        self.channel = d[2]
-        self.function = d[3]
-        self.group = d[4]
-        self.machineID = d[5]
-        self.substatus1 = d[6]
-        self.substatus2 = d[7]
-    }
-    
-    public var data: ByteArray {
-        return [
-            self.manufacturerID,
-            self.channel,
-            self.function,
-            self.group,
-            self.machineID,
-            self.substatus1,
-            self.substatus2
-        ]
+    public var header: Header
+    public var content: ByteArray
+
+    // For a SyxPack message, the payload is header + content.
+    // The content is the result of asData() from SinglePatch, MultiPatch,
+    // Drum, Effect, or Bank. It already has the necessary checksum.
+    // So the final MIDI SysEx message the bytes of a SyxPack manufacturer-specific message as below:
+
+    /// Constructs the bytes of a manufacturer-specific System Exclusive message for Kawai from a SugiMessage.
+    /// The result is ready to be sent down to a MIDI output port or saved to a file.
+    public func asBytes() -> ByteArray {
+        return Message.manufacturerSpecific(Manufacturer.kawai, self.asData()).asData()
     }
 }
 
-// The Kawai K4 can emit many kinds of System Exclusive dumps,
-// with data for one or many singles, multis, etc.
+extension SugiMessage: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var result = ByteArray()
+        result.append(contentsOf: self.header.data)
+        result.append(contentsOf: self.content)
+        return result
+    }
+}
+
+/// Represents the kind of Kawai K4 MIDI System Exclusive dump.
 public enum SystemExclusiveKind {
     case all(Bool, ByteArray)
     
@@ -79,17 +98,17 @@ public enum SystemExclusiveKind {
     /// enumeration value with the raw data.
     public static func identify(data: ByteArray) -> SystemExclusiveKind? {
         // Extract the SysEx header:
-        let headerData = data.slice(from: 0, length: SystemExclusiveHeader.dataSize)
-        let header = SystemExclusiveHeader(d: headerData)
+        let headerData = data.slice(from: 0, length: SugiMessage.Header.dataSize)
+        let header = SugiMessage.Header(d: headerData)
         
         // The raw data is everything after the header, not including the very last byte
-        let length = data.count - SystemExclusiveHeader.dataSize - 1
-        let rawData = data.slice(from: SystemExclusiveHeader.dataSize, length: length)
+        let length = data.count - SugiMessage.Header.dataSize - 1
+        let rawData = data.slice(from: SugiMessage.Header.dataSize, length: length)
         
         // Seems like the only way to tell apart one single/multi data dump and
         // one drum/effect data dump is the substatus1 byte in the header.
         // Singles and multis: internal substatus1 = 0x00, external substatus1 = 0x02
-        // Drum and effect: internal substatus1 = 0x01, external substatus2 = 0x03
+        // Drum and effect: internal substatus1 = 0x01, external substatus1 = 0x03
 
         // Currently we only reliably identify an "all patch data dump".
         switch header.function {
