@@ -46,21 +46,21 @@ final class BankTests: XCTestCase {
     func testMultisLength() {
         let bank = Bank(bytes: self.bankData)
         var buffer = ByteArray()
-        bank.multis.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
+        bank.multis.forEach { buffer.append(contentsOf: $0.asData()) }
         XCTAssertEqual(buffer.count, Bank.multiPatchCount * MultiPatch.dataSize)
     }
     
     func testDrumLength() {
         let bank = Bank(bytes: self.bankData)
         var buffer = ByteArray()
-        buffer.append(contentsOf: bank.drum.systemExclusiveData)
+        buffer.append(contentsOf: bank.drum.asData())
         XCTAssertEqual(buffer.count, Drum.dataSize)
     }
     
     func testEffectLength() {
         let bank = Bank(bytes: self.bankData)
         var buffer = ByteArray()
-        bank.effects.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
+        bank.effects.forEach { buffer.append(contentsOf: $0.asData()) }
         XCTAssertEqual(buffer.count, Bank.effectPatchCount * EffectPatch.dataSize)
     }
     

@@ -3,7 +3,7 @@ import Foundation
 import SyxPack
 
 
-/// Type of effect.
+/// The effect type.
 public enum Effect: String, Codable, CaseIterable {
     case undefined
     case reverb1
@@ -190,9 +190,13 @@ public class EffectPatch: HashableClass, Codable, Identifiable {
         }
         self.submixes.forEach { buf.append(contentsOf: $0.data) }
         return buf
-    }
-    
-    public var systemExclusiveData: ByteArray {
+    }    
+}
+
+// MARK: - SystemExclusiveData
+
+extension EffectPatch: SystemExclusiveData {
+    public func asData() -> ByteArray {
         var buf = ByteArray()
         let d = self.data
         buf.append(contentsOf: d)

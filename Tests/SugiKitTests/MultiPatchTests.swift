@@ -25,7 +25,7 @@ final class MultiPatchTests: XCTestCase {
     }
     
     func testLength() {
-        XCTAssertEqual(multis[0].systemExclusiveData.count, MultiPatch.dataSize)
+        XCTAssertEqual(multis[0].asData().count, MultiPatch.dataSize)
     }
     
     func testName() {

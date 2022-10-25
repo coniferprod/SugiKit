@@ -179,7 +179,19 @@ extension ByteArray {
     /// Returns a new byte array with `length` bytes starting from `offset`.
     public func slice(from offset: Int, length: Int) -> ByteArray {
         return ByteArray(self[offset ..< offset + length])
-    }    
+    }
+    
+    public func everyNthByte(n: Int, start: Int = 0) -> ByteArray {
+        var result = ByteArray()
+        
+        for i in 0 ..< self.count {
+            if i % n == 0 {
+                result.append(self[i + start])
+            }
+        }
+        
+        return result
+    }
 }
 
 extension Double {
@@ -248,49 +260,39 @@ extension String {
     }
 }
 
-public func noteName(for key: Int) -> String {
-    let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-    let octave = key / 12 - 1
-    let name = noteNames[key % 12];
-    return "\(name)\(octave)"
+public enum PadFrom {
+    case left
+    case right
 }
 
-public func keyNumber(for name: String) -> Int {
-    let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-    let notes = CharacterSet(charactersIn: "CDEFGAB")
+extension String {
+    public func pad(with character: String, toLength length: Int, from: PadFrom = .right) -> String {
+        let padCount = length - self.count
+        guard padCount > 0 else {
+            return self
+        }
 
-    var i = 0
-    var notePart = ""
-    var octavePart = ""
-    while i < name.count {
-        let c = name[i ..< i + 1]
-        
-        let isNote = c.unicodeScalars.allSatisfy { notes.contains($0) }
-        if isNote {
-            notePart += c
+        if from == .left {
+            return String(repeating: character, count: padCount) + self
         }
-        
-        if c == "#" {
-            notePart += c
+        else {
+            return self + String(repeating: character, count: padCount)
         }
-        
-        if c == "-" {
-            octavePart += c
-        }
-        
-        let isDigit = c.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
-        if isDigit {
-            octavePart += c
-        }
-        
-        i += 1
     }
+}
 
-    if let octave = Int(octavePart), let noteIndex = names.firstIndex(where: { $0 == notePart }) {
-        return (octave + 1) * 12 + noteIndex
+extension String {
+    public func adjusted(length: Int, pad: String = " ") -> String {
+        // If longer, truncate to `length`.
+        // If shorter, pad from right with `pad` to the length `length`.
+        if self.count > length {
+            return String(self.prefix(length))
+        }
+        else {
+            return self.pad(with: " ", toLength: length, from: .right)
+            //return self.padding(toLength: length, withPad: " ", startingAt: self.count - 1)
+        }
     }
-
-    return 0
 }
 
 public func patchName(patchNumber: Int, patchCount: Int = 16) -> String {
@@ -300,20 +302,23 @@ public func patchName(patchNumber: Int, patchCount: Int = 16) -> String {
     return "\(bankLetter)-\(patchIndex)"
 }
 
-public func everyNthByte(d: ByteArray, n: Int, start: Int) -> ByteArray {
-    var result = ByteArray()
-    
-    for i in 0 ..< d.count {
-        if i % n == 0 {
-            result.append(d[i + start])
-        }
-    }
-    
-    return result
-}
-
 func checksum(bytes: ByteArray) -> Byte {
     var totalSum = bytes.reduce(0) { $0 + (Int($1) & 0xff) }
     totalSum += 0xa5
     return Byte(totalSum & 0x7f)
 }
+
+@propertyWrapper public struct PatchName: Codable {
+    public static let length = 10
+    
+    public var wrappedValue: String {
+        didSet {
+            wrappedValue = wrappedValue.adjusted(length: PatchName.length)
+        }
+    }
+    
+    public init(wrappedValue: String) {
+        self.wrappedValue = wrappedValue.adjusted(length: PatchName.length)
+    }
+}
+

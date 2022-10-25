@@ -55,18 +55,6 @@ public struct Bank: Codable, Equatable {
         }
     }
     
-    /// Returns the System Exclusive data for the bank. Each section has its own checksum.
-    public var systemExclusiveData: ByteArray {
-        var buffer = ByteArray()
-
-        singles.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
-        multis.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
-        buffer.append(contentsOf: drum.systemExclusiveData)
-        effects.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
-
-        return buffer
-    }
-    
     public static func nameForPatch(_ n: Int) -> String {
         let patchesPerBank = 16
         let bankIndex = n / patchesPerBank
@@ -75,5 +63,21 @@ public struct Bank: Codable, Equatable {
         let patchIndex = (n % patchesPerBank) + 1
 
         return "\(letter)-\(patchIndex)"
+    }
+}
+
+// MARK: - SystemExclusiveData
+
+extension Bank: SystemExclusiveData {
+    /// Gets the System Exclusive data for the bank. Each section has its own checksum.
+    public func asData() -> ByteArray {
+        var buffer = ByteArray()
+
+        singles.forEach { buffer.append(contentsOf: $0.asData()) }
+        multis.forEach { buffer.append(contentsOf: $0.asData()) }
+        buffer.append(contentsOf: drum.asData())
+        effects.forEach { buffer.append(contentsOf: $0.asData()) }
+
+        return buffer
     }
 }

@@ -3,14 +3,6 @@ import XCTest
 import SyxPack
 
 final class SugiKitTests: XCTestCase {
-    func testNoteName() {
-        XCTAssertEqual(noteName(for: 60), "C4")
-    }
-
-    func testKeyNumber() {
-        XCTAssertEqual(keyNumber(for: "C4"), 60)
-    }
-
     func testEmptyBankCreation() {
         let bank = Bank()
         XCTAssertEqual(bank.singles.count, Bank.singlePatchCount)

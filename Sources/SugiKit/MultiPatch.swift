@@ -141,9 +141,9 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
 
     static let dataSize = 77
     static let sectionCount = 8
-    static let nameLength = 10
 
-    public var name: String  // 10 ASCII characters
+    @PatchName public var name: String // 10 ASCII characters
+    
     public var volume: Int  // 0~100 (from correction sheet, not 0~99)
     public var effect: Int  // 0~31/1~32
     
@@ -163,11 +163,9 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
 
         // Get the patch name from 10 bytes representing ASCII characters.
         // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
-        let originalName = String(bytes: buffer.slice(from: offset, length: MultiPatch.nameLength), encoding: .ascii) ?? String(repeating: " ", count: MultiPatch.nameLength)
+        let originalName = String(bytes: buffer.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
+        offset += PatchName.length
         self.name = originalName.replacingOccurrences(of: "\0", with: " ")
-
-        offset += MultiPatch.nameLength
-
         //print("\(self.name):\n\(buffer.hexDump)")
         
         b = buffer.next(&offset)
@@ -204,8 +202,10 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         
         return d
     }
-    
-    public var systemExclusiveData: ByteArray {
+}
+
+extension MultiPatch: SystemExclusiveData {
+    public func asData() -> ByteArray {
         var buf = ByteArray()
         let d = self.data
         buf.append(contentsOf: d)

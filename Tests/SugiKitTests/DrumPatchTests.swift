@@ -51,7 +51,7 @@ final class DrumPatchTests: XCTestCase {
     
     func testSystemExclusiveDataLength() {
         let drum = Drum()
-        XCTAssertEqual(drum.systemExclusiveData.count, Drum.dataSize)
+        XCTAssertEqual(drum.asData().count, Drum.dataSize)
     }
 }
 

@@ -9,7 +9,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     static let sourceCount = 4
     static let nameLength = 10
 
-    public var name: String  // name (10 characters)
+    @PatchName public var name: String  // name (10 characters)
     public var volume: UInt  // volume 0~100
     public var effect: UInt  // effect patch number 1~32 (in SysEx 0~31)
     public var submix: Submix // A...H
@@ -63,9 +63,9 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 
         // Get the patch name from 10 bytes representing ASCII characters.
         // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
-        let originalName = String(bytes: buffer.slice(from: offset, length: SinglePatch.nameLength), encoding: .ascii) ?? String(repeating: " ", count: SinglePatch.nameLength)
+        let originalName = String(bytes: buffer.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
         name = originalName.replacingOccurrences(of: "\0", with: " ")
-        offset += SinglePatch.nameLength
+        offset += PatchName.length
 
         b = buffer.next(&offset)
         volume = UInt(b)
@@ -167,10 +167,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         let sourceByteCount = 28
         let sourceBytes = buffer.slice(from: offset, length: sourceByteCount)
         let sourceData: [ByteArray] = [
-            everyNthByte(d: sourceBytes, n: 4, start: 0),
-            everyNthByte(d: sourceBytes, n: 4, start: 1),
-            everyNthByte(d: sourceBytes, n: 4, start: 2),
-            everyNthByte(d: sourceBytes, n: 4, start: 3),
+            sourceBytes.everyNthByte(n: 4, start: 0),
+            sourceBytes.everyNthByte(n: 4, start: 1),
+            sourceBytes.everyNthByte(n: 4, start: 2),
+            sourceBytes.everyNthByte(n: 4, start: 3),
         ]
         self.sources = [
             Source(bytes: sourceData[0]),
@@ -195,10 +195,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         let amplifierByteCount = 44
         let amplifierBytes = buffer.slice(from: offset, length: amplifierByteCount)
         let amplifierData: [ByteArray] = [
-            everyNthByte(d: amplifierBytes, n: 4, start: 0),
-            everyNthByte(d: amplifierBytes, n: 4, start: 1),
-            everyNthByte(d: amplifierBytes, n: 4, start: 2),
-            everyNthByte(d: amplifierBytes, n: 4, start: 3),
+            amplifierBytes.everyNthByte(n: 4, start: 0),
+            amplifierBytes.everyNthByte(n: 4, start: 1),
+            amplifierBytes.everyNthByte(n: 4, start: 2),
+            amplifierBytes.everyNthByte(n: 4, start: 3),
         ]
         self.amplifiers = [
             Amplifier(bytes: amplifierData[0]),
@@ -211,8 +211,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         let filterByteCount = 28
         let filterBytes = buffer.slice(from: offset, length: filterByteCount)
         let filterData: [ByteArray] = [
-            everyNthByte(d: filterBytes, n: 2, start: 0),
-            everyNthByte(d: filterBytes, n: 2, start: 1),
+            filterBytes.everyNthByte(n: 2, start: 0),
+            filterBytes.everyNthByte(n: 2, start: 1),
         ]
         offset += filterByteCount
         
@@ -309,6 +309,20 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     }
     
     public var systemExclusiveData: ByteArray {
+        var buf = ByteArray()
+        
+        let d = self.data
+        buf.append(contentsOf: d)
+        buf.append(checksum(bytes: d))
+        
+        return buf
+    }
+}
+
+// MARK: - SystemExclusiveData
+
+extension SinglePatch: SystemExclusiveData {
+    public func asData() -> ByteArray {
         var buf = ByteArray()
         
         let d = self.data

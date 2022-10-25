@@ -2,47 +2,9 @@ import Foundation
 
 import SyxPack
 
-
-public struct DrumSource: Codable, Equatable {
-    public var wave: Wave
-    public var decay: UInt // 0~100
-    public var tune: Int // -50~+50 (in SysEx 0~100)
-    public var level: UInt // 0~100 (from correction sheet, not 0~99)
-    
-    public init() {
-        wave = Wave(number: 97) // "KICK"
-        decay = 0
-        tune = 0
-        level = 100
-    }
-    
-    public init(bytes buffer: ByteArray) {
-        // s1 wave select MSB contains the out select in bits 4...6, so mask it off
-        let highByte: Byte = buffer[0] & 0b00000001
-        let lowByte = buffer[1]
-        wave = Wave(highByte: highByte, lowByte: lowByte)
-
-        decay = UInt(buffer[2])
-        tune = Int(buffer[3]) - 50
-        level = UInt(buffer[4])
-    }
-    
-    public var data: ByteArray {
-        var buf = ByteArray()
-        
-        buf.append(contentsOf: self.wave.asData())
-        
-        buf.append(contentsOf: [
-            Byte(decay),
-            Byte(tune + 50),
-            Byte(level)
-        ])
-        
-        return buf
-    }
-}
-
+/// Drum patch.
 public struct Drum: Codable, Equatable {
+    /// Common settings of the drum patch.
     public struct Common: Codable, Equatable {
         public static let dataSize = 11
 
@@ -51,6 +13,7 @@ public struct Drum: Codable, Equatable {
         public var velocityDepth: Int  // drm vel depth, -50~+50 (0~100 in SysEx)
         public var commonChecksum: Byte
 
+        /// Initializes the drum patch common settings with default values.
         public init() {
             channel = 1
             volume = 100
@@ -58,6 +21,7 @@ public struct Drum: Codable, Equatable {
             commonChecksum = 0x00
         }
         
+        /// Initializes the drum patch common settings from MIDI System Exclusive data bytes.
         public init(bytes buffer: ByteArray) {
             var offset = 0
             var b: Byte = 0
@@ -84,32 +48,64 @@ public struct Drum: Codable, Equatable {
                 0, 0, 0, 0, 0, 0, 0 // seven dummy bytes (d03...d09)
             ]
         }
-        
-        public var systemExclusiveData: ByteArray {
-            var buf = ByteArray()
+    }
 
-            let theData = self.data
-            buf.append(contentsOf: theData)
-            buf.append(checksum(bytes: theData))
+    /// Source for drum patch.
+    public struct Source: Codable, Equatable {
+        public var wave: Wave
+        public var decay: UInt // 0~100
+        public var tune: Int // -50~+50 (in SysEx 0~100)
+        public var level: UInt // 0~100 (from correction sheet, not 0~99)
+        
+        /// Initializes the drum source with default values.
+        public init() {
+            wave = Wave(number: 97) // "KICK"
+            decay = 0
+            tune = 0
+            level = 100
+        }
+        
+        /// Initializes the drum source from MIDI System Exclusive data bytes.
+        public init(bytes buffer: ByteArray) {
+            // s1 wave select MSB contains the out select in bits 4...6, so mask it off
+            let highByte: Byte = buffer[0] & 0b00000001
+            let lowByte = buffer[1]
+            wave = Wave(highByte: highByte, lowByte: lowByte)
+
+            decay = UInt(buffer[2])
+            tune = Int(buffer[3]) - 50
+            level = UInt(buffer[4])
+        }
+        
+        public var data: ByteArray {
+            var buf = ByteArray()
+            
+            buf.append(contentsOf: self.wave.asData())
+            
+            buf.append(contentsOf: [
+                Byte(decay),
+                Byte(tune + 50),
+                Byte(level)
+            ])
             
             return buf
         }
     }
-    
+
     /// Represents a note in the drum patch.
     public struct Note: Codable, Equatable {
         public static let dataSize = 11
         
         public var submix: Submix
-        public var source1: DrumSource
-        public var source2: DrumSource
+        public var source1: Source
+        public var source2: Source
         
         public var noteChecksum: Byte
         
         public init() {
             submix = .a
-            source1 = DrumSource()
-            source2 = DrumSource()
+            source1 = Source()
+            source2 = Source()
             noteChecksum = 0x00
         }
         
@@ -121,12 +117,12 @@ public struct Drum: Codable, Equatable {
             let sourceBytes = ByteArray(buffer[0...9])  // everything but the checksum
             
             // Split the alternating bytes into their own arrays for S1 and S2
-            let source1Bytes = everyNthByte(d: sourceBytes, n: 2, start: 0)
-            let source2Bytes = everyNthByte(d: sourceBytes, n: 2, start: 1)
+            let source1Bytes = sourceBytes.everyNthByte(n: 2, start: 0)
+            let source2Bytes = sourceBytes.everyNthByte(n: 2, start: 1)
                 
             // Construct the drum sources from the raw bytes
-            source1 = DrumSource(bytes: source1Bytes)
-            source2 = DrumSource(bytes: source2Bytes)
+            source1 = Source(bytes: source1Bytes)
+            source2 = Source(bytes: source2Bytes)
             
             // last byte is checksum, we just save it (must be recalculated when generating SysEx)
             noteChecksum = buffer[10]
@@ -176,19 +172,40 @@ public struct Drum: Codable, Equatable {
             offset += Note.dataSize
         }
     }
-    
-    public var data: ByteArray {
-        return self.systemExclusiveData
-    }
+}
 
-    public var systemExclusiveData: ByteArray {
+// MARK: - SystemExclusiveData
+
+extension Drum: SystemExclusiveData {
+    public func asData() -> ByteArray {
         var buf = ByteArray()
         
-        buf.append(contentsOf: self.common.systemExclusiveData)  // includes the common checksum
+        buf.append(contentsOf: self.common.asData())  // includes the common checksum
         
         // The SysEx data for each note has its own checksum
-        self.notes.forEach { buf.append(contentsOf: $0.systemExclusiveData) }
+        self.notes.forEach { buf.append(contentsOf: $0.asData()) }
 
         return buf
     }
 }
+
+extension Drum.Common: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+        let d = self.data
+        buf.append(contentsOf: d)
+        buf.append(checksum(bytes: d))
+        return buf
+    }
+}
+
+extension Drum.Note: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+        let d = self.data
+        buf.append(contentsOf: d)
+        buf.append(checksum(bytes: d))
+        return buf
+    }
+}
+

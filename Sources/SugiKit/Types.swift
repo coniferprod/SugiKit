@@ -316,6 +316,61 @@ public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
     }
 }
 
+/// Key with note number and name.
+public struct Key: Codable {
+    public var note: Int
+    
+    public var name: String {
+        let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        let octave = self.note / 12 - 1
+        let name = noteNames[self.note % 12]
+        return "\(name)\(octave)"
+    }
+    
+    public init(note: Int) {
+        self.note = note
+    }
+    
+    public init(name: String) {
+        let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+        let notes = CharacterSet(charactersIn: "CDEFGAB")
+        
+        var i = 0
+        var notePart = ""
+        var octavePart = ""
+        while i < name.count {
+            let c = name[i ..< i + 1]
+            
+            let isNote = c.unicodeScalars.allSatisfy { notes.contains($0) }
+            if isNote {
+                notePart += c
+            }
+     
+            if c == "#" {
+                notePart += c
+            }
+            if c == "-" {
+                octavePart += c
+            }
+            
+            let isDigit = c.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
+            if isDigit {
+                octavePart += c
+            }
+
+            i += 1
+        }
+
+        if let octave = Int(octavePart), let noteIndex = names.firstIndex(where: { $0 == notePart }) {
+            self.note = (octave + 1) * 12 + noteIndex
+        }
+        else {
+            self.note = 0
+        }
+    }
+}
+
 public struct FixedKey: Codable, Equatable, CustomStringConvertible {
     public var key: Byte
     
