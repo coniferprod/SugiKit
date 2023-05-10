@@ -103,6 +103,78 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             tune = Int(b) - 50
         }
         
+        /// Parse multi patch data from MIDI System Exclusive data bytes.
+        /// - Parameter data: The data bytes.
+        /// - Returns: A result type with valid `Section` data or an instance of `ParseError`.
+        public static func parse(from data: ByteArray) -> Result<Section, ParseError> {
+            guard data.count >= Section.dataSize else {
+                return .failure(.notEnoughData(data.count, Section.dataSize))
+            }
+            
+            var offset = 0
+            var b: Byte = 0x00
+            var index = 0  // reused for enumerations
+
+            var temp = Section()  // initialize with defaults, then fill in
+            
+            b = data.next(&offset)
+            temp.singlePatchNumber = Int(b)
+
+            b = data.next(&offset)
+            temp.zone = Zone()
+            temp.zone.low = Int(b)
+            
+            b = data.next(&offset)
+            temp.zone.high = Int(b)
+            
+            // channel, velocity switch, and section mute are all in M15
+            b = data.next(&offset)
+
+            //print("multi M15 = \(b.toHex(digits: 2))")
+            
+            temp.channel = b.bitField(start: 0, end: 4) + 1
+
+            index = Int(b.bitField(start: 4, end: 6))
+            if let vs = VelocitySwitch(index: index) {
+                temp.velocitySwitch = vs
+            }
+            else {
+                return .failure(.invalidData(offset))
+            }
+            
+            temp.isMuted = b.isBitSet(6)
+            
+            // M16: out select and mode
+            b = data.next(&offset)
+
+            index = Int(b & 0b00000111)
+            if let sm = Submix(index: index) {
+                temp.submix = sm
+            }
+            else {
+                return .failure(.invalidData(offset))
+            }
+
+            index = Int((b & 0b00011000) >> 3)
+            if let mode = PlayMode(index: index) {
+                temp.playMode = mode
+            }
+            else {
+                return .failure(.invalidData(offset))
+            }
+
+            b = data.next(&offset)
+            temp.level = Int(b)
+            
+            b = data.next(&offset)
+            temp.transpose = Int(b) - 24
+            
+            b = data.next(&offset)
+            temp.tune = Int(b) - 50
+
+            return .success(temp)
+        }
+        
         /// Gets the SysEx data for the multi patch section.
         public var data: ByteArray {
             var d = ByteArray()
@@ -160,49 +232,81 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         
         sections = Array(repeating: Section(), count: MultiPatch.sectionCount)
     }
-    
-    /// Initializes a multi patch from System Exclusive data bytes.
-    public init(bytes buffer: ByteArray) {
+        
+    /// Parse multi patch data from MIDI System Exclusive data bytes.
+    /// - Parameter data: The data bytes.
+    /// - Returns: A result type with valid `Multi` data or an instance of `ParseError`.
+    public static func parse(from data: ByteArray) -> Result<MultiPatch, ParseError> {
+        guard data.count >= MultiPatch.dataSize else {
+            return .failure(.notEnoughData(data.count, MultiPatch.dataSize))
+        }
+        
         var offset = 0
         var b: Byte = 0
 
+        let temp = MultiPatch()  // initialize with defaults, then fill in
+        
         // Get the patch name from 10 bytes representing ASCII characters.
         // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
-        let originalName = String(bytes: buffer.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
+        let originalName = String(bytes: data.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
         offset += PatchName.length
-        self.name = originalName.replacingOccurrences(of: "\0", with: " ")
+        temp.name = originalName.replacingOccurrences(of: "\0", with: " ")
         //print("\(self.name):\n\(buffer.hexDump)")
         
-        b = buffer.next(&offset)
-        self.volume = Int(b)
+        b = data.next(&offset)
+        temp.volume = Int(b)
 
-        b = buffer.next(&offset)
-        self.effect = Int(b + 1) // bring 0~31 to 1~32
+        b = data.next(&offset)
+        temp.effect = Int(b + 1) // bring 0~31 to 1~32
+        
+        // Clear out the section data first!
+        temp.sections.removeAll()
         
         for _ in 0 ..< MultiPatch.sectionCount {
-            let sectionData = buffer.slice(from: offset, length: Section.dataSize)
-            sections.append(Section(bytes: sectionData))
+            let sectionData = data.slice(from: offset, length: Section.dataSize)
+            switch Section.parse(from: sectionData) {
+            case .success(let section):
+                temp.sections.append(section)
+            case .failure(let error):
+                return .failure(error)
+            }
             offset += Section.dataSize
         }
+        
+/*
+        // Validate the checksum:
+        b = data.next(&offset)
+        let sum = checksum(bytes: temp.data)
+        if sum != b {
+            return .failure(.badChecksum(b, sum))
+        }
+  */
+        return .success(temp)
     }
-    
+
     /// Gets the System Exclusive data for the multi patch.
     public var data: ByteArray {
         var d = ByteArray()
         
         // M0...M9 = name
         d.append(contentsOf: _name.asData())
-        
+
         // M10
         d.append(Byte(volume))
         
         // M11
         d.append(Byte(effect - 1)) // 1~32 to 0~31
         
+        print("Before adding sections, have \(d.count) bytes of multi data")
+        
         // M12 / M20 / M28 / M36 / M44 / M52 / M60 / M68
         for section in sections {
-            d.append(contentsOf: section.data)
+            let sd = section.asData()
+            print(sd.count)
+            d.append(contentsOf: section.asData())
         }
+
+        print("After adding sections, have \(d.count) bytes of multi data")
         
         return d
     }
@@ -219,4 +323,17 @@ extension MultiPatch: SystemExclusiveData {
         buf.append(checksum(bytes: d))  // M76
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { MultiPatch.dataSize }
+}
+
+extension MultiPatch.Section: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        let d = self.data
+        //print("Got \(d.count) bytes of section data")
+        return d
+    }
+    
+    public var dataLength: Int { MultiPatch.Section.dataSize }
 }

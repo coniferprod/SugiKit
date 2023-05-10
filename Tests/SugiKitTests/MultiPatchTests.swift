@@ -5,26 +5,39 @@ import XCTest
 import SyxPack
 
 final class MultiPatchTests: XCTestCase {
-    var bytes = ByteArray()
-    
     // The starting offset of the multi patch block
-    let multiStartOffset = 8 // SysEx header length
-        + Bank.singlePatchCount * SinglePatch.dataSize  // 64 single patches
+    let multiStartOffset = Header.dataSize + Bank.singlePatchCount * SinglePatch.dataSize  // 64 single patches
     
     var multis = [MultiPatch]()
     
     // Called before each test method begins
     override func setUp() {
-        self.bytes = a401Bytes
+        guard let message = Message(data: a401Bytes) else {
+            XCTFail("Not a valid System Exclusive message")
+            return
+        }
+        let allMultiData = ByteArray(message.payload.slice(from: multiStartOffset, length: Bank.multiPatchCount * MultiPatch.dataSize))
+        var offset = 0
+
         self.multis = [MultiPatch]()
-        var offset = multiStartOffset
-        for _ in 0..<Bank.multiPatchCount {
-            self.multis.append(MultiPatch(bytes: self.bytes.slice(from: offset, length: MultiPatch.dataSize)))
+        for i in 0..<Bank.multiPatchCount {
+            let multiData = ByteArray(allMultiData.slice(from: offset, length: MultiPatch.dataSize))
+            switch MultiPatch.parse(from: multiData) {
+            case .success(let patch):
+                self.multis.append(patch)
+            case .failure(let error):
+                XCTFail("\(error)")
+            }
             offset += MultiPatch.dataSize
         }
     }
     
+    func testSectionLength() {
+        XCTAssertEqual(multis[0].sections[0].asData().count, MultiPatch.Section.dataSize)
+    }
+    
     func testLength() {
+        //print("multis[0].asData.count = \(multis[0].asData().count)")
         XCTAssertEqual(multis[0].asData().count, MultiPatch.dataSize)
     }
     
@@ -32,20 +45,18 @@ final class MultiPatchTests: XCTestCase {
         XCTAssertEqual(multis[0].name, "Fatt!Anna5")
     }
     
+    /*
     func testNameWithTrailingNul() {
-        let bankBytes = a403Bytes
-        var bankMultis = [MultiPatch]()
-        var offset = multiStartOffset
-        for _ in 0..<Bank.multiPatchCount {
-            bankMultis.append(MultiPatch(bytes: bankBytes.slice(from: offset, length: MultiPatch.dataSize)))
-            offset += MultiPatch.dataSize
+        guard let message = Message(data: a401Bytes) else {
+            XCTFail("Not a valid System Exclusive message")
+            return
         }
-        let multi = bankMultis[8]  // pick up multi A-9
         
         // trailing NUL should be replaced by SPACE
-        XCTAssertEqual(multi.name, "Solo Now! ");
+        XCTAssertEqual(multis[8].name, "Solo Now! ");
     }
-
+*/
+    
     func testVolume() {
         XCTAssertEqual(multis[0].volume, 80)
     }

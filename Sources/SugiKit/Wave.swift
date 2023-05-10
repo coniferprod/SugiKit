@@ -351,5 +351,8 @@ extension Wave: SystemExclusiveData {
 
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { 2 }
 }
 

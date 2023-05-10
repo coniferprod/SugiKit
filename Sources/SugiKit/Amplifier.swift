@@ -7,6 +7,8 @@ import SyxPack
 public struct Amplifier: Codable, Equatable {
     /// DCA envelope.
     public struct Envelope: Codable, Equatable {
+        public static let dataSize = 4
+
         public var attack: UInt  // 0~100
         public var decay: UInt  // 0~100
         public var sustain: UInt  // 0~100
@@ -27,7 +29,7 @@ public struct Amplifier: Codable, Equatable {
         }
     }
 
-    static let dataSize = 11
+    public static let dataSize = 11
     
     public var level: UInt  // 0~100
     public var envelope: Envelope
@@ -106,6 +108,9 @@ extension Amplifier: SystemExclusiveData {
 
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { Amplifier.dataSize }
 }
 
 extension Amplifier.Envelope: SystemExclusiveData {
@@ -114,6 +119,9 @@ extension Amplifier.Envelope: SystemExclusiveData {
         [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { Amplifier.Envelope.dataSize }
 }
 
 // MARK: - CustomStringConvertible

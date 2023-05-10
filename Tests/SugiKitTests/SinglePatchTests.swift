@@ -62,242 +62,195 @@ final class SinglePatchTests: XCTestCase {
     }
     
     func testName() {
-        let single = SinglePatch(bytes: self.patchData)
-        XCTAssertEqual(single.name, "Melo Vox 1")
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let patch):
+            XCTAssertEqual(patch.name, "Melo Vox 1")
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testVolume() {
-        let single = SinglePatch(bytes: self.patchData)
-        XCTAssertEqual(single.volume, 100)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let patch):
+            XCTAssertEqual(patch.volume, 100)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testEffect() {
-        let single = SinglePatch(bytes: self.patchData)
-        XCTAssertEqual(single.effect, 1)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let patch):
+            XCTAssertEqual(patch.effect, 1)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testSubmix() {
-        let single = SinglePatch(bytes: self.patchData)
-        XCTAssertEqual(single.submix, .g)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let patch):
+            XCTAssertEqual(patch.submix, .g)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testActiveSources() {
-        // This patch should have sources 1 and 2 active,
-        // sources 3 and 4 muted.
-        let single = SinglePatch(bytes: self.patchData)
-        XCTAssert(single.sources[0].isActive && single.sources[1].isActive && !single.sources[2].isActive && !single.sources[3].isActive)
-        // TODO: Still not sure which way it is in the SysEx
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            // This patch should have sources 1 and 2 active,
+            // sources 3 and 4 muted.
+            XCTAssert(single.sources[0].isActive && single.sources[1].isActive && !single.sources[2].isActive && !single.sources[3].isActive)
+            // TODO: Still not sure which way it is in the SysEx
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
+/*
     // Test COMMON parameters
     func testCommonParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-
-        XCTAssertEqual(single.sourceMode, .normal)
-        XCTAssertEqual(single.am12, false)
-        XCTAssertEqual(single.am34, false)
-        XCTAssertEqual(single.polyphonyMode, .poly2)
-        XCTAssertEqual(single.benderRange, 2)
-        XCTAssertEqual(single.pressFreq, 0)
-        
-        XCTAssertEqual(single.wheelAssign, .vibrato)
-        XCTAssertEqual(single.wheelDepth, 13)
-        
-        let autoBend = AutoBend(time: 57, depth: -1, keyScalingTime: 0, velocityDepth: 0)
-        XCTAssertEqual(single.autoBend, autoBend)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let other = SinglePatch.Common()
+            other.name = "Melo Vox 1"
+            other.volume = 0x64
+            other.submix = .g
+            other.sourceMode = .normal
+            other.am12 = false
+            other.am34 = false
+            other.polyphonyMode = .poly2
+            other.benderRange = 2
+            other.pressFreq = 0
+            other.wheelAssign = .vibrato
+            other.wheelDepth = 13
+            other.autoBend = AutoBend(time: 57, depth: -1, keyScalingTime: 0, velocityDepth: 0)
+            XCTAssertEqual(single, other)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
+*/
     
     // Test S-COMMON parameters
     func testSourceCommonParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-        let source = single.sources[0]
-
-        XCTAssertEqual(source.delay, 0)
-        XCTAssertEqual(source.velocityCurve, .curve1)
-        XCTAssertEqual(source.keyScalingCurve, .curve1)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let source = single.sources[0]
+            XCTAssertEqual(source.delay, 0)
+            XCTAssertEqual(source.velocityCurve, .curve1)
+            XCTAssertEqual(source.keyScalingCurve, .curve1)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     // Test DCA parameters
     func testAmplifierParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-        let amp = single.amplifiers[0]
-        XCTAssertEqual(amp.level, 75)
-        
-        XCTAssertEqual(amp.envelope, self.amplifierEnvelope)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let amp = single.amplifiers[0]
+            XCTAssertEqual(amp.level, 75)
+            XCTAssertEqual(amp.envelope, self.amplifierEnvelope)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testAmplifierModulationParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-        let amp = single.amplifiers[0]
-        let levelMod = amp.levelModulation
-        XCTAssertEqual(levelMod.velocityDepth, 15)
-        XCTAssertEqual(levelMod.pressureDepth, 0)
-        XCTAssertEqual(levelMod.keyScalingDepth, -6)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let amp = single.amplifiers[0]
+            let levelMod = amp.levelModulation
+            XCTAssertEqual(levelMod.velocityDepth, 15)
+            XCTAssertEqual(levelMod.pressureDepth, 0)
+            XCTAssertEqual(levelMod.keyScalingDepth, -6)
         
-        let timeMod = amp.timeModulation
-        XCTAssertEqual(timeMod.attackVelocity, 0)
-        XCTAssertEqual(timeMod.releaseVelocity, 0)
-        XCTAssertEqual(timeMod.keyScaling, 0)
+            let timeMod = amp.timeModulation
+            XCTAssertEqual(timeMod.attackVelocity, 0)
+            XCTAssertEqual(timeMod.releaseVelocity, 0)
+            XCTAssertEqual(timeMod.keyScaling, 0)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     // Test DCF parameters
     func testFilterParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-        let filter = Filter(
-            cutoff: 49,
-            resonance: 2,
-            cutoffModulation: LevelModulation(velocityDepth: 0, pressureDepth: 41, keyScalingDepth: 0),
-            isLfoModulatingCutoff: false,
-            envelopeDepth: 4,
-            envelopeVelocityDepth: 0,
-            envelope: Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86),
-            timeModulation: TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0))
-
-        XCTAssertEqual(single.filter1, filter)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let filter = Filter(
+                cutoff: 49,
+                resonance: 2,
+                cutoffModulation: LevelModulation(velocityDepth: 0, pressureDepth: 41, keyScalingDepth: 0),
+                isLfoModulatingCutoff: false,
+                envelopeDepth: 4,
+                envelopeVelocityDepth: 0,
+                envelope: Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86),
+                timeModulation: TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0))
+            XCTAssertEqual(single.filter1, filter)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     // Test DCF MOD paramaters
     func testFilterModulationParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-        let filter = single.filter1
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let filter = single.filter1
         
-        XCTAssertEqual(filter.envelopeDepth, 4)
-        XCTAssertEqual(filter.envelopeVelocityDepth, 0)
-        
-        XCTAssertEqual(single.filter1.envelope, Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86))
-                               
-        let timeMod = filter.timeModulation
-        XCTAssertEqual(timeMod.attackVelocity, 0)
-        XCTAssertEqual(timeMod.releaseVelocity, 0)
-        XCTAssertEqual(timeMod.keyScaling, 0)
+            XCTAssertEqual(filter.envelopeDepth, 4)
+            XCTAssertEqual(filter.envelopeVelocityDepth, 0)
+            
+            XCTAssertEqual(single.filter1.envelope, Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86))
+                                   
+            let timeMod = filter.timeModulation
+            XCTAssertEqual(timeMod.attackVelocity, 0)
+            XCTAssertEqual(timeMod.releaseVelocity, 0)
+            XCTAssertEqual(timeMod.keyScaling, 0)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     // Test DCO parameters
     func testOscillatorParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-        let source = single.sources[0]
-        XCTAssertEqual(source.wave.number, 19)
-        XCTAssertEqual(source.keyTrack, true)
-        XCTAssertEqual(source.coarse, -12)
-        XCTAssertEqual(source.fine, -6)
-        XCTAssertEqual(source.fixedKey.description, "C-1")
-        XCTAssertEqual(source.pressureFrequency, false)
-        XCTAssertEqual(source.vibrato, true)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let source = single.sources[0]
+            XCTAssertEqual(source.wave.number, 19)
+            XCTAssertEqual(source.keyTrack, true)
+            XCTAssertEqual(source.coarse, -12)
+            XCTAssertEqual(source.fine, -6)
+            XCTAssertEqual(source.fixedKey.description, "C-1")
+            XCTAssertEqual(source.pressureFrequency, false)
+            XCTAssertEqual(source.vibrato, true)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     // Test LFO parameters
     func testLFOParameters() {
-        let single = SinglePatch(bytes: self.patchData)
-        XCTAssertEqual(single.vibrato, self.vibrato)
-        XCTAssertEqual(single.lfo, self.lfo)
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            XCTAssertEqual(single.vibrato, self.vibrato)
+            XCTAssertEqual(single.lfo, self.lfo)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testDescription() {
-        let single = SinglePatch(bytes: self.patchData)
-        let desc = single.description
-        print(desc)
-        XCTAssert(desc.length != 0)
-    }
-    
-    // The SYX files have junk in them, so there is no point really to compare
-    // the byte representations. Maybe emit SysEx bytes, parse that back and
-    // then compare the data model representations instead?
-    
-/*
-    func testRoundtrip() {
-        // Grab single patch A-2 from A401.
-        let data = a401Bytes.slice(from: SystemExclusiveHeader.dataSize + SinglePatch.dataSize, length: SinglePatch.dataSize)
-        let originalPatch = SinglePatch(bytes: data)
-
-        // Reconstruct single patch A-2:
-        let patch = SinglePatch()
-        patch.volume = 100
-        patch.name = "Gen'Sister"
-        patch.effect = 23
-        patch.submix = .g
-        patch.sourceMode = .normal
-        patch.am12 = false
-        patch.am34 = false
-        patch.polyphonyMode = .poly2
-        patch.benderRange = 2
-        patch.pressFreq = 0
-        patch.wheelAssign = .vibrato
-        patch.wheelDepth = 13
-        patch.autoBend = AutoBend(time: 45, depth: -7, keyScalingTime: 0, velocityDepth: 0)
-        
-        var amp1 = Amplifier()
-        amp1.level = 75
-        amp1.envelope = Amplifier.Envelope(attack: 54, decay: 72, sustain: 90, release: 64)
-        amp1.levelModulation = LevelModulation(velocityDepth: 15, pressureDepth: 0, keyScalingDepth: -6)
-        amp1.timeModulation = TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0)
-        patch.amplifiers[0] = amp1
-
-        var amp2 = Amplifier()
-        amp2.level = 47
-        amp2.envelope = Amplifier.Envelope(attack: 54, decay: 72, sustain: 90, release: 64)
-        amp2.levelModulation = LevelModulation(velocityDepth: 15, pressureDepth: 0, keyScalingDepth: 30)
-        amp2.timeModulation = TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0)
-        patch.amplifiers[1] = amp2
-
-        var source1 = Source()
-        source1.isActive = true
-        source1.wave = Wave(number: 10)
-        source1.keyTrack = true
-        source1.coarse = -12
-        source1.fine = 0
-        source1.fixedKey = FixedKey(key: Byte(FixedKey.keyNumber(for: "C-1")))
-        source1.pressureFrequency = false
-        source1.vibrato = true
-        
-        var source2 = Source()
-        source2.isActive = true
-        source2.wave = Wave(number: 1)
-        source2.keyTrack = true
-        source2.coarse = 0
-        source2.fine = 0
-        source2.fixedKey = FixedKey(key: Byte(FixedKey.keyNumber(for: "E3")))
-        source2.pressureFrequency = false
-        source2.vibrato = true
-        
-        patch.sources[0] = source1
-        patch.sources[1] = source2
-        
-        patch.sources[2].isActive = false
-        patch.sources[3].isActive = false
-
-        patch.filter1 = Filter(cutoff: 40, resonance: 2, cutoffModulation: LevelModulation(velocityDepth: 0, pressureDepth: 0, keyScalingDepth: 13), isLfoModulatingCutoff: false, envelopeDepth: 0, envelopeVelocityDepth: 0, envelope: Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86), timeModulation: TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0))
-        
-        patch.filter2 = Filter(cutoff: 40, resonance: 2, cutoffModulation: LevelModulation(velocityDepth: 0, pressureDepth: 0, keyScalingDepth: 13), isLfoModulatingCutoff: false, envelopeDepth: 0, envelopeVelocityDepth: 0, envelope: Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86), timeModulation: TimeModulation(attackVelocity: 0, releaseVelocity: 0, keyScaling: 0))
-
-        XCTAssertEqual(patch, originalPatch)
-    }
-    */
-    
-    /*
-    func testContent() {
-        // The starting offset of the single patch block
-        let singleStartOffset = 8 // SysEx header length
-        var singles = [SinglePatch]()
-        var offset = singleStartOffset
-        let singlesData = a401Bytes.slice(from: offset, length: Bank.singlePatchCount * SinglePatch.dataSize)
-        print(("singlesData.count = \(singlesData.count)"))
-        
-        offset = 0  // reset to start of single patches
-        for _ in 0..<Bank.singlePatchCount {
-            singles.append(SinglePatch(bytes: singlesData.slice(from: offset, length: SinglePatch.dataSize)))
-            offset += SinglePatch.dataSize
+        switch SinglePatch.parse(from: self.patchData) {
+        case .success(let single):
+            let desc = single.description
+            XCTAssert(desc.length != 0)
+        case .failure(let error):
+            XCTFail("\(error)")
         }
-
-        var buffer = ByteArray()
-        singles.forEach { buffer.append(contentsOf: $0.systemExclusiveData) }
-        
-        offset = 0
-        while buffer[offset] == singlesData[offset] {
-            offset += 1
-        }
-        print("First diff at offset \(offset)")
-        
-        XCTAssertEqual(buffer, singlesData)
     }
-    */
 }

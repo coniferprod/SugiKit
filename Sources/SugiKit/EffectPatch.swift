@@ -147,42 +147,59 @@ public class EffectPatch: HashableClass, Codable, Identifiable {
         submixes = Array(repeating: SubmixSettings(pan: 0, send1: 50, send2: 50), count: EffectPatch.submixCount)
     }
     
-    public init(bytes buffer: ByteArray) {
+    /// Parse effect patch data from MIDI System Exclusive data bytes.
+    /// - Parameter data: The data bytes.
+    /// - Returns: A result type with valid `EffectPatch` data or an instance of `ParseError`.
+    public static func parse(from data: ByteArray) -> Result<EffectPatch, ParseError> {
+        guard data.count >= EffectPatch.dataSize else {
+            return .failure(.notEnoughData(data.count, EffectPatch.dataSize))
+        }
+        
         var offset = 0
         var b: Byte = 0
 
-        //print("effect:\n\(buffer.hexDump)")
+        var temp = EffectPatch()  // init with defaults, then fill in
         
-        b = buffer.next(&offset)
-        effect = Effect(index: Int(b + 1))!  // in SysEx 0~15, store as 1~16
+        b = data.next(&offset)
+        temp.effect = Effect(index: Int(b + 1))!  // in SysEx 0~15, store as 1~16
         
-        b = buffer.next(&offset)
-        param1 = Int(b)
+        b = data.next(&offset)
+        temp.param1 = Int(b)
         
-        b = buffer.next(&offset)
-        param2 = Int(b)
+        b = data.next(&offset)
+        temp.param2 = Int(b)
         
-        b = buffer.next(&offset)
-        param3 = Int(b)
+        b = data.next(&offset)
+        temp.param3 = Int(b)
         
         offset += 6 // skip dummy bytes
         
-        self.submixes = [SubmixSettings]()
+        temp.submixes = [SubmixSettings]()
         for _ in 0..<EffectPatch.submixCount {
-            b = buffer.next(&offset)
+            b = data.next(&offset)
             let pan = Int(b) - 7
 
-            b = buffer.next(&offset)
+            b = data.next(&offset)
             let send1 = UInt(b)
 
-            b = buffer.next(&offset)
+            b = data.next(&offset)
             let send2 = UInt(b)
 
             let submix = SubmixSettings(pan: pan, send1: send1, send2: send2)
-            submixes.append(submix)
+            temp.submixes.append(submix)
         }
+        
+/*
+        // Validate the checksum:
+        b = data.next(&offset)
+        let sum = checksum(bytes: temp.data)
+        if sum != b {
+            return .failure(.badChecksum(b, sum))
+        }
+*/
+        return .success(temp)
     }
-    
+
     public var data: ByteArray {
         var buf = ByteArray()
         [effect.index - 1, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
@@ -203,6 +220,9 @@ extension EffectPatch: SystemExclusiveData {
         buf.append(checksum(bytes: d))
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { EffectPatch.dataSize }
 }
 
 // MARK: - CustomStringConvertible

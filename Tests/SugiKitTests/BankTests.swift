@@ -21,64 +21,79 @@ final class BankTests: XCTestCase {
         
         let dataBytes = data.bytes
         print("Got \(dataBytes.count) bytes for bank")
-        */
+         */
+        
         // Seems that resources still don't work in Xcode 12.5.1, so use raw bytes from A401Bytes.swift:
-        let dataBytes = a401Bytes
-
-        self.bankData = dataBytes.slice(from: SugiMessage.Header.dataSize, length: dataBytes.count - (SugiMessage.Header.dataSize + 1))
+        guard let message = Message(data: a401Bytes) else {
+            XCTFail("Not a valid System Exclusive message")
+            return
+        }
+        
+        // SysEx message parsed, now payload should be 15123 - (8 + 1) = 15114
+        self.bankData = ByteArray(message.payload.suffix(from: Header.dataSize))
     }
 
     func testInit() {
-        print("Initializing bank from \(self.bankData.count) bytes of data")
-        let bank = Bank(bytes: self.bankData)
-        XCTAssertEqual(bank.singles.count, 64)
-        XCTAssertEqual(bank.multis.count, 64)
-        XCTAssertEqual(bank.effects.count, 32)
+        switch Bank.parse(from: self.bankData) {
+        case .success(let bank):
+            XCTAssertEqual(bank.singles.count, 64)
+            XCTAssertEqual(bank.multis.count, 64)
+            XCTAssertEqual(bank.effects.count, 32)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testSinglesLength() {
-        let bank = Bank(bytes: self.bankData)
-        var buffer = ByteArray()
-        bank.singles.forEach { buffer.append(contentsOf: $0.asData()) }
-        XCTAssertEqual(buffer.count, Bank.singlePatchCount * SinglePatch.dataSize)
+        switch Bank.parse(from: self.bankData) {
+        case .success(let bank):
+            var buffer = ByteArray()
+            bank.singles.forEach { buffer.append(contentsOf: $0.asData()) }
+            XCTAssertEqual(buffer.count, Bank.singlePatchCount * SinglePatch.dataSize)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testMultisLength() {
-        let bank = Bank(bytes: self.bankData)
-        var buffer = ByteArray()
-        bank.multis.forEach { buffer.append(contentsOf: $0.asData()) }
-        XCTAssertEqual(buffer.count, Bank.multiPatchCount * MultiPatch.dataSize)
+        switch Bank.parse(from: self.bankData) {
+        case .success(let bank):
+            var buffer = ByteArray()
+            bank.multis.forEach { buffer.append(contentsOf: $0.asData()) }
+            XCTAssertEqual(buffer.count, Bank.multiPatchCount * MultiPatch.dataSize)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
+    }
+    
+    func testMultiCount() {
+        switch Bank.parse(from: self.bankData) {
+        case .success(let bank):
+            XCTAssertEqual(bank.multis.count, Bank.multiPatchCount)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testDrumLength() {
-        let bank = Bank(bytes: self.bankData)
-        var buffer = ByteArray()
-        buffer.append(contentsOf: bank.drum.asData())
-        XCTAssertEqual(buffer.count, Drum.dataSize)
+        switch Bank.parse(from: self.bankData) {
+        case .success(let bank):
+            var buffer = ByteArray()
+            buffer.append(contentsOf: bank.drum.asData())
+            XCTAssertEqual(buffer.count, Drum.dataSize)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
     
     func testEffectLength() {
-        let bank = Bank(bytes: self.bankData)
-        var buffer = ByteArray()
-        bank.effects.forEach { buffer.append(contentsOf: $0.asData()) }
-        XCTAssertEqual(buffer.count, Bank.effectPatchCount * EffectPatch.dataSize)
+        switch Bank.parse(from: self.bankData) {
+        case .success(let bank):
+            var buffer = ByteArray()
+            bank.effects.forEach { buffer.append(contentsOf: $0.asData()) }
+            XCTAssertEqual(buffer.count, Bank.effectPatchCount * EffectPatch.dataSize)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
-    
-    // The SYX files have junk in them, so there is no point really to compare
-    // the byte representations. Maybe emit SysEx bytes, parse them back and
-    // then compare the data model representations instead?
-    // The most important thing in the emitted SysEx is that the checksum is right,
-    // so that the K4 will accept the dump.
-    
-    /*
-    func testRoundtrip() {
-        let originalBank = Bank(bytes: self.bankData)
-        
-        let emittedBytes = originalBank.systemExclusiveData
-        let currentBank = Bank(bytes: emittedBytes)
-        
-        XCTAssertEqual(currentBank, originalBank)
-    }
-    */
-    
 }

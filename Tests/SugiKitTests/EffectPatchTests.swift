@@ -6,8 +6,8 @@ final class EffectPatchTests: XCTestCase {
     var bytes = ByteArray()
     
     // The starting offset of the effect patch block
-    let effectStartOffset = 8 // SysEx header length
-        + Bank.singlePatchCount * SinglePatch.dataSize  // 64 single patches
+    let effectStartOffset =
+        Bank.singlePatchCount * SinglePatch.dataSize  // 64 single patches
         + Bank.multiPatchCount * MultiPatch.dataSize // 64 multi patches
         + Drum.dataSize
     
@@ -15,11 +15,23 @@ final class EffectPatchTests: XCTestCase {
     
     // Called before each test method begins
     override func setUp() {
-        self.bytes = ByteArray(a401Bytes)
+        guard let message = Message(data: a401Bytes) else {
+            XCTFail("Not a valid System Exclusive message")
+            return
+        }
         
+        // SysEx message parsed, now payload should be 15123 - (8 + 1) = 15114
+        self.bytes = ByteArray(message.payload.suffix(from: Header.dataSize))
+
         var offset = effectStartOffset
         for _ in 0..<Bank.effectPatchCount {
-            self.effects.append(EffectPatch(bytes: self.bytes.slice(from: offset, length: EffectPatch.dataSize)))
+            let effectData = self.bytes.slice(from: offset, length: EffectPatch.dataSize)
+            switch EffectPatch.parse(from: effectData) {
+            case .success(let patch):
+                self.effects.append(patch)
+            case .failure(let error):
+                XCTFail("\(error)")
+            }
             offset += EffectPatch.dataSize
         }
     }

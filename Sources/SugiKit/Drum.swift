@@ -21,25 +21,6 @@ public struct Drum: Codable, Equatable {
             commonChecksum = 0x00
         }
         
-        /// Initializes the drum patch common settings from MIDI System Exclusive data bytes.
-        public init(bytes buffer: ByteArray) {
-            var offset = 0
-            var b: Byte = 0
-
-            b = buffer.next(&offset)
-            self.channel = b + 1
-
-            b = buffer.next(&offset)
-            self.volume = UInt(b)
-            
-            b = buffer.next(&offset)
-            // DRUM velocity depth is actually -50...+50
-            self.velocityDepth = Int(b) - 50  // adjust from 0~100
-            
-            b = buffer.next(&offset)
-            self.commonChecksum = b  // save the original checksum from SysEx for now
-        }
-        
         public var data: ByteArray {
             return [
                 channel - 1,
@@ -48,10 +29,41 @@ public struct Drum: Codable, Equatable {
                 0, 0, 0, 0, 0, 0, 0 // seven dummy bytes (d03...d09)
             ]
         }
+        
+        /// Parse drum common data from MIDI System Exclusive data bytes.
+        /// - Parameter data: The data bytes.
+        /// - Returns: A result type with valid `Common` data or an instance of `ParseError`.
+        public static func parse(from data: ByteArray) -> Result<Common, ParseError> {
+            guard data.count >= Common.dataSize else {
+                return .failure(.notEnoughData(data.count, Common.dataSize))
+            }
+            
+            var tempCommon = Common()  // initialize to defaults
+            
+            var offset = 0
+            var b: Byte = 0
+
+            b = data.next(&offset)
+            tempCommon.channel = b + 1
+
+            b = data.next(&offset)
+            tempCommon.volume = UInt(b)
+            
+            b = data.next(&offset)
+            // DRUM velocity depth is actually -50...+50
+            tempCommon.velocityDepth = Int(b) - 50  // adjust from 0~100
+            
+            b = data.next(&offset)
+            tempCommon.commonChecksum = b  // save the original checksum from SysEx for now
+            
+            return .success(tempCommon)
+        }
     }
 
     /// Source for drum patch.
     public struct Source: Codable, Equatable {
+        public static let dataSize = 5
+        
         public var wave: Wave
         public var decay: UInt // 0~100
         public var tune: Int // -50~+50 (in SysEx 0~100)
@@ -65,16 +77,11 @@ public struct Drum: Codable, Equatable {
             level = 100
         }
         
-        /// Initializes the drum source from MIDI System Exclusive data bytes.
-        public init(bytes buffer: ByteArray) {
-            // s1 wave select MSB contains the out select in bits 4...6, so mask it off
-            let highByte: Byte = buffer[0] & 0b00000001
-            let lowByte = buffer[1]
-            wave = Wave(highByte: highByte, lowByte: lowByte)
-
-            decay = UInt(buffer[2])
-            tune = Int(buffer[3]) - 50
-            level = UInt(buffer[4])
+        public init(wave: Wave, decay: UInt, tune: Int, level: UInt) {
+            self.wave = wave
+            self.decay = decay
+            self.tune = tune
+            self.level = level
         }
         
         public var data: ByteArray {
@@ -90,6 +97,28 @@ public struct Drum: Codable, Equatable {
             
             return buf
         }
+        
+        /// Parse drum source data from MIDI System Exclusive data bytes.
+        /// - Parameter data: The data bytes.
+        /// - Returns: A result type with a valid `Source` or an instance of `ParseError`.
+        public static func parse(from data: ByteArray) -> Result<Source, ParseError> {
+            guard data.count >= Source.dataSize else {
+                return .failure(.notEnoughData(data.count, Source.dataSize))
+            }
+            
+            var tempSource = Source()  // initialize to defaults
+            
+            // s1 wave select MSB contains the out select in bits 4...6, so mask it off
+            let highByte: Byte = data[0] & 0b00000001
+            let lowByte = data[1]
+            tempSource.wave = Wave(highByte: highByte, lowByte: lowByte)
+
+            tempSource.decay = UInt(data[2])
+            tempSource.tune = Int(data[3]) - 50
+            tempSource.level = UInt(data[4])
+            
+            return .success(tempSource)
+        }
     }
 
     /// Represents a note in the drum patch.
@@ -100,32 +129,16 @@ public struct Drum: Codable, Equatable {
         public var source1: Source
         public var source2: Source
         
-        public var noteChecksum: Byte
-        
         public init() {
             submix = .a
             source1 = Source()
             source2 = Source()
-            noteChecksum = 0x00
         }
         
-        public init(bytes buffer: ByteArray) {
-            // Submix / out select is actually bits 4-6 of the first byte
-            let submixValue = Int(buffer[0].bitField(start: 4, end: 7))
-            submix = Submix(index: submixValue)!
-            
-            let sourceBytes = ByteArray(buffer[0...9])  // everything but the checksum
-            
-            // Split the alternating bytes into their own arrays for S1 and S2
-            let source1Bytes = sourceBytes.everyNthByte(n: 2, start: 0)
-            let source2Bytes = sourceBytes.everyNthByte(n: 2, start: 1)
-                
-            // Construct the drum sources from the raw bytes
-            source1 = Source(bytes: source1Bytes)
-            source2 = Source(bytes: source2Bytes)
-            
-            // last byte is checksum, we just save it (must be recalculated when generating SysEx)
-            noteChecksum = buffer[10]
+        public init(submix: Submix, source1: Source, source2: Source) {
+            self.submix = submix
+            self.source1 = source1
+            self.source2 = source2
         }
         
         public var data: ByteArray {
@@ -136,6 +149,51 @@ public struct Drum: Codable, Equatable {
             buf[0] |= Byte(submix.index << 4)
             
             return buf
+        }
+        
+        /// Parse note data from MIDI System Exclusive data bytes.
+        /// - Parameter data: The data bytes.
+        /// - Returns: A result type with valid `Note` data or an instance of `ParseError`.
+        public static func parse(from data: ByteArray) -> Result<Note, ParseError> {
+            guard data.count >= Note.dataSize else {
+                return .failure(.notEnoughData(data.count, Note.dataSize))
+            }
+            
+            var tempNote = Note()
+            
+            // Submix / out select is actually bits 4-6 of the first byte
+            let submixValue = Int(data[0].bitField(start: 4, end: 7))
+            tempNote.submix = Submix(index: submixValue)!
+            
+            let sourceBytes = ByteArray(data[0...9])  // everything but the checksum
+            
+            // Split the alternating bytes into their own arrays for S1 and S2
+            let source1Bytes = sourceBytes.everyNthByte(n: 2, start: 0)
+            let source2Bytes = sourceBytes.everyNthByte(n: 2, start: 1)
+                
+            // Construct the drum sources from the raw bytes
+            switch Source.parse(from: source1Bytes) {
+            case .success(let source):
+                tempNote.source1 = source
+            case .failure(let error):
+                return .failure(error)
+            }
+            
+            switch Source.parse(from: source2Bytes) {
+            case .success(let source):
+                tempNote.source2 = source
+            case .failure(let error):
+                return .failure(error)
+            }
+            
+/*
+            // Compare calculated checksum to what is in the last byte of SysEx data:
+            let sum = checksum(bytes: tempNote.data)
+            if sum != data[10] {
+                return .failure(.badChecksum(sum, data[10]))
+            }
+  */
+            return .success(tempNote)
         }
     }
     
@@ -150,19 +208,41 @@ public struct Drum: Codable, Equatable {
         notes = Array(repeating: Note(), count: Drum.noteCount)
     }
     
-    public init(bytes buffer: ByteArray) {
+    /// Parse drum data from MIDI System Exclusive data bytes.
+    /// - Parameter data: The data bytes.
+    /// - Returns: A result type with valid `Drum` data or an instance of `ParseError`.
+    public static func parse(from data: ByteArray) -> Result<Drum, ParseError> {
+        guard data.count >= Drum.dataSize else {
+            return .failure(.notEnoughData(data.count, Drum.dataSize))
+        }
+        
+        var temp = Drum()  // everything initialized to default values
+        
         var offset = 0
         
-        common = Common(bytes: buffer.slice(from: offset, length: Common.dataSize))
-        offset += Common.dataSize
+        switch Common.parse(from: data.slice(from: offset, length: Common.dataSize)) {
+            case .success(let common):
+                temp.common = common
+            case .failure(let error):
+                return .failure(error)
+        }
         
-        notes = [Note]()
+        offset += Common.dataSize
+
+        var tempNotes = [Note]()
         for _ in 0..<Drum.noteCount {
-            let noteBytes = buffer.slice(from: offset, length: Note.dataSize)
-            notes.append(Note(bytes: noteBytes))
-            //print("drum note \(i):\n\(noteBytes.hexDump)")
+            let noteBytes = data.slice(from: offset, length: Note.dataSize)
+            switch Note.parse(from: noteBytes) {
+            case .success(let note):
+                tempNotes.append(note)
+            case .failure(let error):
+                return .failure(error)
+            }
             offset += Note.dataSize
         }
+        
+        temp.notes = tempNotes
+        return .success(temp)
     }
 }
 
@@ -179,6 +259,9 @@ extension Drum: SystemExclusiveData {
 
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { Drum.dataSize }
 }
 
 extension Drum.Common: SystemExclusiveData {
@@ -189,6 +272,9 @@ extension Drum.Common: SystemExclusiveData {
         buf.append(checksum(bytes: d))
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { Drum.Common.dataSize }
 }
 
 extension Drum.Note: SystemExclusiveData {
@@ -199,4 +285,7 @@ extension Drum.Note: SystemExclusiveData {
         buf.append(checksum(bytes: d))
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { Drum.Note.dataSize }
 }

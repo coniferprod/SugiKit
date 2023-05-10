@@ -137,12 +137,6 @@ extension Byte {
 }
 
 extension Data {
-    public var bytes: ByteArray {
-        var byteArray = ByteArray(repeating: 0, count: self.count)
-        self.copyBytes(to: &byteArray, count: self.count)
-        return byteArray
-    }
-    
     public var hexDump: String {
         var s = ""
         for d in self {
@@ -332,4 +326,7 @@ extension PatchName: SystemExclusiveData {
         }
         return d
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { PatchName.length }
 }

@@ -56,64 +56,69 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         filter2 = Filter()
     }
     
-    /// Initializes a single patch from System Exclusive data bytes.
-    public init(bytes buffer: ByteArray) {
+    /// Parse single patch data from MIDI System Exclusive data bytes.
+    /// - Parameter data: The data bytes.
+    /// - Returns: A result type with valid `SinglePatch` data or an instance of `ParseError`.
+    public static func parse(from data: ByteArray) -> Result<SinglePatch, ParseError> {
+        guard data.count >= SinglePatch.dataSize else {
+            return .failure(.notEnoughData(data.count, SinglePatch.dataSize))
+        }
+        
         var offset = 0
         var b: Byte = 0
         var index = 0  // reused for enumerated types
 
+        let temp = SinglePatch()  // initialize with defaults and then fill in
+        
         // Get the patch name from 10 bytes representing ASCII characters.
         // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
-        let originalName = String(bytes: buffer.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
-        name = originalName.replacingOccurrences(of: "\0", with: " ")
+        let originalName = String(bytes: data.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
+        temp.name = originalName.replacingOccurrences(of: "\0", with: " ")
         offset += PatchName.length
 
-        b = buffer.next(&offset)
-        volume = UInt(b)
+        b = data.next(&offset)
+        temp.volume = UInt(b)
 
         // effect = s11 bits 0...4
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         //print("effect byte s11 = 0x\(String(b, radix: 16))")
-        effect = UInt(Int(b & 0b00011111) + 1)  // mask out top three bits just in case, then bring into range 1~32
+        temp.effect = UInt(Int(b & 0b00011111) + 1)  // mask out top three bits just in case, then bring into range 1~32
 
         // output select = s12 bits 0...2
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         index = Int(b & 0b00000111) // should now have a value 0~7
         if let sm = Submix(index: index) {
-            submix = sm
+            temp.submix = sm
         }
         else {
-            submix = .a
-            print("\(#function): Value out of range for submix: \(index). Using default value ('\(submix)').", to: &standardError)
+            return .failure(.invalidData(offset))
         }
 
         // source mode = s13 bits 0...1
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         
         index = Int(b.bitField(start: 0, end: 2))
         if let smode = SourceMode(index: index) {
-            sourceMode = smode
+            temp.sourceMode = smode
         }
         else {
-            sourceMode = .normal
-            print("\(#file):\(#line): \(#function): Value out of range for source mode: \(index). Using default value ('\(sourceMode)').", to: &standardError)
+            return .failure(.invalidData(offset))
         }
 
         index = Int(b.bitField(start: 2, end: 4))
         if let pmode = PolyphonyMode(index: index) {
-            polyphonyMode = pmode
+            temp.polyphonyMode = pmode
         }
         else {
-            polyphonyMode = .poly1
-            print("Value out of range for polyphony mode: \(index). Using default value ('\(polyphonyMode)').", to: &standardError)
+            return .failure(.invalidData(offset))
         }
         
-        am12 = b.isBitSet(4)
+        temp.am12 = b.isBitSet(4)
         //print("AM 1>2 = \(self.am12)")
-        am34 = b.isBitSet(5)
+        temp.am34 = b.isBitSet(5)
         //print("AM 3>4 = \(self.am34)")
 
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         let activeSourcesByte = b  // save this byte for later
         // The active status of the sources is set later when they have been
         // parsed and initialized.
@@ -123,57 +128,57 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         var vibratoBytes = ByteArray()
         vibratoBytes.append(b.bitField(start: 4, end: 6))
 
-        b = buffer.next(&offset)  // s15
+        b = data.next(&offset)  // s15
         // Pitch bend = s15 bits 0...3
-        benderRange = UInt(b.bitField(start: 0, end: 4))
+        temp.benderRange = UInt(b.bitField(start: 0, end: 4))
         //print("bender range = \(benderRange)", to: &standardError)
         
         // Wheel assign = s15 bits 4...5
         index = Int(b.bitField(start: 4, end: 6))
         if let wa = WheelAssign(index: index) {
-            wheelAssign = wa
+            temp.wheelAssign = wa
         }
         else {
-            wheelAssign = .cutoff
-            print("Value out of range for wheel assign: \(index). Using default value ('\(wheelAssign)').", to: &standardError)
+            temp.wheelAssign = .cutoff
+            print("Value out of range for wheel assign: \(index). Using default value ('\(temp.wheelAssign)').", to: &standardError)
         }
 
-        b = buffer.next(&offset)  // s16
+        b = data.next(&offset)  // s16
         vibratoBytes.append(b)
 
-        b = buffer.next(&offset)  // s17
+        b = data.next(&offset)  // s17
         // Wheel depth = s17 bits 0...6
-        wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
+        temp.wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
         //print("wheel depth = \(self.wheelDepth)")
         
         // s18 ... s21
-        autoBend = AutoBend(bytes: buffer.slice(from: offset, length: AutoBend.dataSize))
+        temp.autoBend = AutoBend(bytes: data.slice(from: offset, length: AutoBend.dataSize))
         offset += AutoBend.dataSize
         
-        b = buffer.next(&offset)  // s22
+        b = data.next(&offset)  // s22
         vibratoBytes.append(b)
 
-        b = buffer.next(&offset)  // s23
+        b = data.next(&offset)  // s23
         vibratoBytes.append(b)
      
         // Finally we have all the vibrato bytes
-        vibrato = Vibrato(bytes: vibratoBytes)
+        temp.vibrato = Vibrato(bytes: vibratoBytes)
         
-        lfo = LFO(bytes: buffer.slice(from: offset, length: LFO.dataSize))
+        temp.lfo = LFO(bytes: data.slice(from: offset, length: LFO.dataSize))
         offset += LFO.dataSize
 
-        b = buffer.next(&offset)
-        self.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
         let sourceByteCount = 28
-        let sourceBytes = buffer.slice(from: offset, length: sourceByteCount)
+        let sourceBytes = data.slice(from: offset, length: sourceByteCount)
         let sourceData: [ByteArray] = [
             sourceBytes.everyNthByte(n: 4, start: 0),
             sourceBytes.everyNthByte(n: 4, start: 1),
             sourceBytes.everyNthByte(n: 4, start: 2),
             sourceBytes.everyNthByte(n: 4, start: 3),
         ]
-        self.sources = [
+        temp.sources = [
             Source(bytes: sourceData[0]),
             Source(bytes: sourceData[1]),
             Source(bytes: sourceData[2]),
@@ -186,22 +191,22 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
             // The description in the SysEx spec seems to be backwards:
             // actually 0 is mute OFF and 1 is mute ON.
             if activeSourcesByte.isBitSet(i) {
-                self.sources[i].isActive = false
+                temp.sources[i].isActive = false
             }
             else {
-                self.sources[i].isActive = true
+                temp.sources[i].isActive = true
             }
         }
         
-        let amplifierByteCount = 44
-        let amplifierBytes = buffer.slice(from: offset, length: amplifierByteCount)
+        let amplifierByteCount = Amplifier.dataSize * 4
+        let amplifierBytes = data.slice(from: offset, length: amplifierByteCount)
         let amplifierData: [ByteArray] = [
             amplifierBytes.everyNthByte(n: 4, start: 0),
             amplifierBytes.everyNthByte(n: 4, start: 1),
             amplifierBytes.everyNthByte(n: 4, start: 2),
             amplifierBytes.everyNthByte(n: 4, start: 3),
         ]
-        self.amplifiers = [
+        temp.amplifiers = [
             Amplifier(bytes: amplifierData[0]),
             Amplifier(bytes: amplifierData[1]),
             Amplifier(bytes: amplifierData[2]),
@@ -209,22 +214,28 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         ]
         offset += amplifierByteCount
 
-        let filterByteCount = 28
-        let filterBytes = buffer.slice(from: offset, length: filterByteCount)
+        let filterByteCount = Filter.dataSize * 2
+        let filterBytes = data.slice(from: offset, length: filterByteCount)
         let filterData: [ByteArray] = [
             filterBytes.everyNthByte(n: 2, start: 0),
             filterBytes.everyNthByte(n: 2, start: 1),
         ]
         offset += filterByteCount
         
-        self.filter1 = Filter(d: filterData[0])
-        self.filter2 = Filter(d: filterData[1])
+        temp.filter1 = Filter(d: filterData[0])
+        temp.filter2 = Filter(d: filterData[1])
         
-        //b = buffer.next(&offset)
+    /*
+        // Read in the original checksum
+        b = data.next(&offset)
 
         // "Check sum value (s130) is the sum of the A5H and s0 ~ s129".
-        //print("incoming checksum = \(b)")
-        //self.incomingChecksum = b   // store the checksum as we got it from SysEx
+        let sum = checksum(bytes: temp.data)
+        if sum != b {
+            return .failure(.badChecksum(b, sum))
+        }
+     */
+        return .success(temp)
     }
     
     /// Gets the System Exclusive data for this single patch.
@@ -319,6 +330,9 @@ extension SinglePatch: SystemExclusiveData {
         
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { SinglePatch.dataSize }
 }
 
 // MARK: - CustomStringConvertible
