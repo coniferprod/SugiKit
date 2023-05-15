@@ -23,6 +23,7 @@ public enum ParseError: Error {
     case notEnoughData(Int, Int)  // actual, expected
     case badChecksum(Byte, Byte)  // actual, expected
     case invalidData(Int)  // offset in data
+    case unidentified  // can't identify this kind
 }
 
 extension ParseError: CustomStringConvertible {
@@ -34,6 +35,8 @@ extension ParseError: CustomStringConvertible {
             return "Computed checksum was \(actual.toHex())H, expected \(expected.toHex())H."
         case .invalidData(let offset):
             return "Invalid data at offset \(offset)."
+        case .unidentified:
+            return "Unable to identify this System Exclusive file."
         }
     }
 }

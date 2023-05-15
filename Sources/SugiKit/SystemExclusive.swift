@@ -81,7 +81,7 @@ public enum SystemExclusiveKind {
     
     /// Identifies the SysEx message and returns the corresponding
     /// enumeration value with the raw data.
-    public static func identify(payload: Payload) -> SystemExclusiveKind? {
+    public static func identify(payload: Payload) -> Result<SystemExclusiveKind, ParseError> {
         // Extract the SysEx header from the message payload:
         let headerData = payload.slice(from: 0, length: Header.dataSize)
         let header = Header(d: headerData)
@@ -94,30 +94,56 @@ public enum SystemExclusiveKind {
         // Singles and multis: internal substatus1 = 0x00, external substatus1 = 0x02
         // Drum and effect: internal substatus1 = 0x01, external substatus1 = 0x03
 
-        // Currently we only reliably identify an "all patch data dump".
         switch header.function {
         case 0x20:  // one patch data dump
             switch header.substatus1 {
             case 0...63:
-                return .oneSingle(Int(header.substatus1), header.substatus2 == 0x00, rawData)
+                return .success(.oneSingle(Int(header.substatus1), header.substatus2 == 0x00, rawData))
             case 64...127:
-                return .oneMulti(Int(header.substatus1 - 64), header.substatus2 == 0x00, rawData)
+                return .success(.oneMulti(Int(header.substatus1 - 64), header.substatus2 == 0x00, rawData))
             default:
-                return nil
+                return .failure(.unidentified)
             }
         case 0x21:  // block data dump
             switch header.substatus2 {
             case 0x00:
-                return .blockSingle(rawData)
+                return .success(.blockSingle(rawData))
             case 0x40:
-                return .blockMulti(rawData)
+                return .success(.blockMulti(rawData))
             default:
-                return nil
+                return .failure(.unidentified)
             }
         case 0x22:  // all data dump
-            return .all(header.substatus2 == 0x00, rawData)
+            return .success(.all(header.substatus2 == 0x00, rawData))
         default:
-            return nil
+            return .failure(.unidentified)
+        }
+    }
+}
+
+extension SystemExclusiveKind: CustomStringConvertible {
+    private func getLocality(_ isInternal: Bool) -> String {
+        return isInternal ? "INT" : "EXT"
+    }
+    
+    public var description: String {
+        switch self {
+        case .all(let isInternal, _):
+            return "Bank \(getLocality(isInternal))"
+        case .oneSingle(let number, let isInternal, _):
+            return "Single \(PatchName.bankNameForNumber(n: number)) \(getLocality(isInternal))"
+        case .oneMulti(let number, let isInternal, _):
+            return "Multi \(PatchName.bankNameForNumber(n: number)) \(getLocality(isInternal))"
+        case .drum:
+            return "Drum"
+        case .oneEffect( _):
+            return "Effect"
+        case .blockSingle(_):
+            return "Block Single"
+        case .blockMulti(_):
+            return "Block Multi"
+        case .blockEffect(_):
+            return "Block Effect"
         }
     }
 }
