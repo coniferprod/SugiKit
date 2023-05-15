@@ -23,12 +23,12 @@ public struct Header {
     }
     
     public init(d: ByteArray) {
-        self.channel = Int(d[2] + 1)  // adjust to 1...16
-        self.function = d[3]
-        self.group = d[4]
-        self.machineID = d[5]
-        self.substatus1 = d[6]
-        self.substatus2 = d[7] // always zero for K4
+        self.channel = Int(d[0] + 1)  // adjust to 1...16
+        self.function = d[1]
+        self.group = d[2]
+        self.machineID = d[3]
+        self.substatus1 = d[4]
+        self.substatus2 = d[5] // always zero for K4
     }
 
     public var data: ByteArray {
@@ -40,6 +40,12 @@ public struct Header {
             self.substatus1,
             self.substatus2
         ]
+    }
+}
+
+extension Header: CustomStringConvertible {
+    public var description: String {
+        return "Ch: \(channel)  Fn: \(function.toHex()), Sub1: \(substatus1.toHex()) Sub2: \(substatus2.toHex())"
     }
 }
 
