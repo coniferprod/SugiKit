@@ -248,8 +248,8 @@ extension SystemExclusiveKind: CustomStringConvertible {
             return "Single \(PatchName.bankNameForNumber(n: number)) \(locality)"
         case .oneMulti(let number, let locality, _):
             return "Multi \(PatchName.bankNameForNumber(n: number)) \(locality)"
-        case .drum:
-            return "Drum"
+        case .drum(let locality, _):
+            return "Drum \(locality)"
         case .oneEffect(let number, let locality, _):
             return "Effect \(number + 1) \(locality)"
         case .blockSingle(let locality, _):
