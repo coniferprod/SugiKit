@@ -9,9 +9,12 @@ final class SystemExclusiveTests: XCTestCase {
             0x00, 0x22, 0x00, 0x04, 0x00, 0x00
         ]
         
-        let header = Header(d: data)
-        
-        XCTAssertEqual(header.function, 0x22)
+        switch Header.parse(from: data) {
+        case .success(let header):
+            XCTAssertEqual(header.function, .allPatchDataDump)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
 
     func testHeaderChannel() {
@@ -19,9 +22,12 @@ final class SystemExclusiveTests: XCTestCase {
             0x00, 0x22, 0x00, 0x04, 0x00, 0x00
         ]
         
-        let header = Header(d: data)
-        
-        // Channel byte is zero going in, adjusted to 1 coming out:
-        XCTAssertEqual(header.channel, 1)
+        switch Header.parse(from: data) {
+        case .success(let header):
+            // Channel byte is zero going in, adjusted to 1 coming out:
+            XCTAssertEqual(header.channel, 1)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
     }
 }
