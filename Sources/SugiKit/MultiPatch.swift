@@ -111,7 +111,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         }
         
         /// Gets the SysEx data for the multi patch section.
-        public var data: ByteArray {
+        private var data: ByteArray {
             var d = ByteArray()
             
             // M12 / M20 etc.
@@ -214,7 +214,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
     }
 
     /// Gets the System Exclusive data for the multi patch.
-    public var data: ByteArray {
+    private var data: ByteArray {
         var d = ByteArray()
         
         // M0...M9 = name

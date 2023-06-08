@@ -107,6 +107,8 @@ public enum Effect: String, Codable, CaseIterable {
 }
 
 public struct SubmixSettings: Codable, Equatable {
+    public static let dataSize = 3
+    
     public var pan: Int  // 0~15 / 0~+/-7 (K4)
     public var send1: UInt  // 0~99
     public var send2: UInt  // 0~100 (from correction sheet, not 0~99)
@@ -121,10 +123,6 @@ public struct SubmixSettings: Codable, Equatable {
         self.pan = pan
         self.send1 = send1
         self.send2 = send2
-    }
-    
-    public var data: ByteArray {
-        return [Byte(pan + 8), Byte(send1), Byte(send2)]
     }
 }
 
@@ -192,12 +190,12 @@ public class EffectPatch: HashableClass, Codable, Identifiable {
         return .success(temp)
     }
 
-    public var data: ByteArray {
+    private var data: ByteArray {
         var buf = ByteArray()
         [effect.index - 1, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
             buf.append(Byte($0))
         }
-        self.submixes.forEach { buf.append(contentsOf: $0.data) }
+        self.submixes.forEach { buf.append(contentsOf: $0.asData()) }
         return buf
     }    
 }
@@ -215,6 +213,16 @@ extension EffectPatch: SystemExclusiveData {
     
     /// Gets the length of the data.
     public var dataLength: Int { EffectPatch.dataSize }
+}
+
+
+extension SubmixSettings: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        return [Byte(pan + 8), Byte(send1), Byte(send2)]
+    }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { SubmixSettings.dataSize }
 }
 
 // MARK: - CustomStringConvertible

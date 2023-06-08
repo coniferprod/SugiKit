@@ -13,7 +13,7 @@ public struct Source: Codable {
     public var keyTrack:  Bool
     public var coarse: Int  // -24~+24
     public var fine: Int  // -50~+50
-    public var fixedKey: FixedKey  // key represents C-1 to G8
+    public var fixedKey: Key  // key represents C-1 to G8
     public var pressureFrequency: Bool
     public var vibrato: Bool
     public var velocityCurve: VelocityCurve
@@ -27,7 +27,7 @@ public struct Source: Codable {
         keyTrack = true
         coarse = 0
         fine = 0
-        fixedKey = FixedKey(key: Byte(FixedKey.keyNumber(for: "C4")))
+        fixedKey = Key(note: 60)
         pressureFrequency = true
         vibrato = true
         velocityCurve = .curve1
@@ -73,7 +73,7 @@ public struct Source: Codable {
         
         b = data.next(&offset)
         let key = b & 0x7f
-        temp.fixedKey = FixedKey(key: key)
+        temp.fixedKey = Key(note: Int(key))
 
         b = data.next(&offset)
         temp.fine = Int((b & 0x7f)) - 50
@@ -85,10 +85,13 @@ public struct Source: Codable {
         temp.velocityCurve = VelocityCurve.allCases[index]
 
         return .success(temp)
-    }
-    
-    /// Gets the System Exclusive data for this source.
-    public var data: ByteArray {
+    }    
+}
+
+// MARK: - SystemExclusiveData
+
+extension Source: SystemExclusiveData {
+    public func asData() -> ByteArray {
         var buf = ByteArray()
         
         // isActive is not emitted, that information is in the single
@@ -117,7 +120,7 @@ public struct Source: Codable {
         buf.append(s42)
         
         // s46/s47/s48/s49
-        buf.append(fixedKey.key)
+        buf.append(Byte(fixedKey.note))
         
         // s50/s51/s52/s53
         buf.append(Byte(fine + 50))  // bring into 0~100
@@ -131,9 +134,12 @@ public struct Source: Codable {
             s54.setBit(0)
         }
         buf.append(s54)
-        
+
         return buf
     }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { Source.dataSize }
 }
 
 // MARK: - CustomStringConvertible

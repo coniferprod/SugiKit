@@ -224,14 +224,6 @@ public struct AutoBend: Codable, Equatable, CustomStringConvertible {
         return .success(temp)
     }
     
-    public var data: ByteArray {
-        var buf = ByteArray()
-        [Byte(time), Byte(depth + 50), Byte(keyScalingTime + 50), Byte(velocityDepth + 50)].forEach {
-            buf.append($0)
-        }
-        return buf
-    }
-
     public var description: String {
         return "Auto bend settings: time = \(time), depth = \(depth), KS time = \(keyScalingTime), vel depth = \(velocityDepth)"
     }
@@ -291,7 +283,7 @@ public struct LevelModulation: Codable, Equatable, CustomStringConvertible {
         return .success(temp)
     }
     
-    public var data: ByteArray {
+    private var data: ByteArray {
         var buf = ByteArray()
         buf.append(contentsOf: [
             Byte(self.velocityDepth + 50),
@@ -343,7 +335,7 @@ public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
         return .success(temp)
     }
 
-    public var data: ByteArray {
+    private var data: ByteArray {
         var buf = ByteArray()
         buf.append(contentsOf: [
             Byte(self.attackVelocity + 50),
@@ -361,23 +353,25 @@ public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
 }
 
 /// Key with note number and name.
-public struct Key: Codable {
+public struct Key: Codable, Equatable, CustomStringConvertible {
+    static let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
     public var note: Int
     
+    /// Name of the key.
     public var name: String {
-        let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
         let octave = self.note / 12 - 1
-        let name = noteNames[self.note % 12]
+        let name = Key.noteNames[self.note % 12]
         return "\(name)\(octave)"
     }
-    
+
+    /// Initialize the key with a note number.
     public init(note: Int) {
         self.note = note
     }
     
-    public init(name: String) {
-        let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-
+    /// Get the key corresponding to a note name.
+    public static func key(for name: String) -> Key? {
         let notes = CharacterSet(charactersIn: "CDEFGAB")
         
         var i = 0
@@ -389,6 +383,9 @@ public struct Key: Codable {
             let isNote = c.unicodeScalars.allSatisfy { notes.contains($0) }
             if isNote {
                 notePart += c
+            }
+            else {
+                return nil
             }
      
             if c == "#" {
@@ -406,63 +403,48 @@ public struct Key: Codable {
             i += 1
         }
 
-        if let octave = Int(octavePart), let noteIndex = names.firstIndex(where: { $0 == notePart }) {
-            self.note = (octave + 1) * 12 + noteIndex
+        if let octave = Int(octavePart), let noteIndex = Key.noteNames.firstIndex(where: { $0 == notePart }) {
+            return Key(note: (octave + 1) * 12 + noteIndex)
         }
-        else {
-            self.note = 0
-        }
+
+        return nil
+    }
+    
+    public var description: String {
+        return self.name
     }
 }
 
-public struct FixedKey: Codable, Equatable, CustomStringConvertible {
-    public var key: Byte
-    
-    public static let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-    
-    public static func noteName(for key: Int) -> String {
-        let octave = key / 12 - 1
-        let name = FixedKey.noteNames[key % 12];
-        return "\(name)\(octave)"
-    }
+// MARK: - SystemExclusiveData conformance
 
-    public static func keyNumber(for name: String) -> Int {
-        let notes = CharacterSet(charactersIn: "CDEFGAB")
-        
-        var i = 0
-        var notePart = ""
-        var octavePart = ""
-        while i < name.count {
-            let c = name[i ..< i + 1]
-            
-            let isNote = c.unicodeScalars.allSatisfy { notes.contains($0) }
-            if isNote {
-                notePart += c
-            }
-     
-            if c == "#" {
-                notePart += c
-            }
-            if c == "-" {
-                octavePart += c
-            }
-            
-            let isDigit = c.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
-            if isDigit {
-                octavePart += c
-            }
-
-            i += 1
+extension AutoBend: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+        [Byte(time), Byte(depth + 50), Byte(keyScalingTime + 50), Byte(velocityDepth + 50)].forEach {
+            buf.append($0)
         }
+        return buf
+    }
+    
+    public var dataLength: Int { AutoBend.dataSize }
+}
 
-        if let octave = Int(octavePart), let noteIndex = FixedKey.noteNames.firstIndex(where: { $0 == notePart }) {
-            return (octave + 1) * 12 + noteIndex
-        }
-
-        return 0
+extension LevelModulation: SystemExclusiveData {
+    /// Gets the level modulation data as MIDI System Exclusive data bytes.
+    public func asData() -> ByteArray {
+        return self.data
     }
 
-    public var description: String {
-        return FixedKey.noteName(for: Int(self.key))
+    /// Gets the length of the level modulation data.
+    public var dataLength: Int { LevelModulation.dataSize }
+}
+
+extension TimeModulation: SystemExclusiveData {
+    /// Gets the time modulation data as MIDI System Exclusive data bytes.
+    public func asData() -> ByteArray {
+        return self.data
     }
+
+    /// Gets the length of the time modulation data.
+    public var dataLength: Int { TimeModulation.dataSize }
 }

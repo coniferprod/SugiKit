@@ -256,7 +256,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     }
     
     /// Gets the System Exclusive data for this single patch.
-    public var data: ByteArray {
+    private var data: ByteArray {
         var d = ByteArray()
 
         d.append(contentsOf: self.name.asData())
@@ -291,20 +291,20 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         d.append((Byte(wheelAssign.index) << 4) | Byte(benderRange))  // s15
         d.append(Byte(vibrato.speed)) // s16
         d.append(Byte(wheelDepth + 50))  // s17
-        d.append(contentsOf: autoBend.data)  // s18 ... s21
+        d.append(contentsOf: autoBend.asData())  // s18 ... s21
         d.append(Byte(vibrato.pressureDepth + 50))  // s22
         d.append(Byte(vibrato.depth + 50))  // s23
-        d.append(contentsOf: lfo.data)  // s24 ... s28
+        d.append(contentsOf: lfo.asData())  // s24 ... s28
         d.append(Byte(pressFreq + 50))  // s29
 
         // The source data are interleaved, with one byte from each first,
         // then the second, etc. That's why they are emitted in this slightly
         // inelegant way. The same applies for DCA and DCF data.
 
-        let s1data = sources[0].data
-        let s2data = sources[1].data
-        let s3data = sources[2].data
-        let s4data = sources[3].data
+        let s1data = sources[0].asData()
+        let s2data = sources[1].asData()
+        let s3data = sources[2].asData()
+        let s4data = sources[3].asData()
         for i in 0 ..< s1data.count {
             d.append(s1data[i])
             d.append(s2data[i])
@@ -323,8 +323,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
             d.append(amp4Data[i])
         }
         
-        let f1Data = filter1.data
-        let f2Data = filter2.data
+        let f1Data = filter1.asData()
+        let f2Data = filter2.asData()
         for i in 0 ..< f1Data.count {
             d.append(f1Data[i])
             d.append(f2Data[i])

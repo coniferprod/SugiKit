@@ -79,18 +79,6 @@ public struct LFO: Codable, Equatable {
 
         return .success(temp)
     }
-    
-    public var data: ByteArray {
-        var buf = ByteArray()
-        
-        buf.append(Byte(shape.index))
-        buf.append(Byte(speed))
-        buf.append(Byte(delay))
-        buf.append(Byte(depth + 50))
-        buf.append(Byte(pressureDepth + 50))
-
-        return buf
-    }
 }
 
 public struct Vibrato: Codable, Equatable {
@@ -142,7 +130,7 @@ public struct Vibrato: Codable, Equatable {
         return .success(temp)
     }
     
-    public var data: ByteArray {
+    private var data: ByteArray {
         var buf = ByteArray()
         
         buf.append(Byte(shape.index))
@@ -159,3 +147,37 @@ public struct Vibrato: Codable, Equatable {
 // Note that the LFO and Vibrato structs are nearly identical.
 // Structs don't have inheritance, but using a protocol here
 // seems weird somehow. So let's bear a bit of code duplication.
+
+// MARK: - SystemExclusiveData conformance
+
+extension LFO: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+        
+        buf.append(Byte(shape.index))
+        buf.append(Byte(speed))
+        buf.append(Byte(delay))
+        buf.append(Byte(depth + 50))
+        buf.append(Byte(pressureDepth + 50))
+
+        return buf
+    }
+    
+    /// Gets the length of the data.
+    public var dataLength: Int { LFO.dataSize }
+}
+
+extension Vibrato: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+        
+        buf.append(Byte(shape.index))
+        buf.append(Byte(speed))
+        buf.append(Byte(depth + 50))
+        buf.append(Byte(pressureDepth + 50))
+        
+        return buf
+    }
+    
+    public var dataLength: Int { Vibrato.dataSize }
+}

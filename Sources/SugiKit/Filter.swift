@@ -46,12 +46,13 @@ public struct Filter: Codable, Equatable {
             return .success(temp)
         }
         
-        public var data: ByteArray {
+        private var data: ByteArray {
             var buf = ByteArray()
             
             [Byte(attack), Byte(decay), Byte(sustain + 50), Byte(release)].forEach {
                 buf.append($0)
             }
+            
             return buf
         }
         
@@ -140,7 +141,7 @@ public struct Filter: Codable, Equatable {
         return .success(temp)
     }
     
-    public var data: ByteArray {
+    private var data: ByteArray {
         var buf = ByteArray()
         
         buf.append(Byte(cutoff))
@@ -152,14 +153,36 @@ public struct Filter: Codable, Equatable {
         }
         buf.append(s104)
         
-        buf.append(contentsOf: cutoffModulation.data)
+        buf.append(contentsOf: cutoffModulation.asData())
         buf.append(Byte(envelopeDepth + 50))
         buf.append(Byte(envelopeVelocityDepth + 50))
-        buf.append(contentsOf: envelope.data)
-        buf.append(contentsOf: timeModulation.data)
+        buf.append(contentsOf: envelope.asData())
+        buf.append(contentsOf: timeModulation.asData())
 
         return buf
     }
+}
+
+// MARK: - SystemExclusiveData
+
+extension Filter.Envelope: SystemExclusiveData {
+    /// Gets the filter envelope data as MIDI System Exclusive bytes.
+    public func asData() -> ByteArray {
+        return self.data
+    }
+    
+    /// Gets the length of the filter envelope data.
+    public var dataLength: Int { Filter.Envelope.dataSize }
+}
+
+extension Filter: SystemExclusiveData {
+    /// Gets the filter data as MIDI System Exclusive bytes.
+    public func asData() -> ByteArray {
+        return self.data
+    }
+    
+    /// Gets the length of the filter data.
+    public var dataLength: Int { Filter.dataSize }
 }
 
 // MARK: - CustomStringConvertible

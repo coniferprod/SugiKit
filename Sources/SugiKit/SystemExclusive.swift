@@ -33,7 +33,7 @@ public struct Header {
         self.substatus2 = substatus2
     }
     
-    public var data: ByteArray {
+    private var data: ByteArray {
         return [
             Byte(self.channel - 1),  // adjust back to 0...15 for SysEx
             self.function.rawValue,

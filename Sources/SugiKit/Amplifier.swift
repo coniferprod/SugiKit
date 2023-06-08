@@ -8,7 +8,7 @@ public struct Amplifier: Codable, Equatable {
     /// DCA envelope.
     public struct Envelope: Codable, Equatable {
         public static let dataSize = 4
-
+        
         public var attack: UInt  // 0~100
         public var decay: UInt  // 0~100
         public var sustain: UInt  // 0~100
@@ -107,8 +107,8 @@ extension Amplifier: SystemExclusiveData {
             
         buf.append(Byte(level))
         buf.append(contentsOf: self.envelope.asData())
-        buf.append(contentsOf: self.levelModulation.data)
-        buf.append(contentsOf: self.timeModulation.data)
+        buf.append(contentsOf: self.levelModulation.asData())
+        buf.append(contentsOf: self.timeModulation.asData())
 
         return buf
     }

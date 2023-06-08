@@ -21,15 +21,6 @@ public struct Drum: Codable, Equatable {
             commonChecksum = 0x00
         }
         
-        public var data: ByteArray {
-            return [
-                channel - 1,
-                Byte(volume),
-                Byte(velocityDepth),
-                0, 0, 0, 0, 0, 0, 0 // seven dummy bytes (d03...d09)
-            ]
-        }
-        
         /// Parse drum common data from MIDI System Exclusive data bytes.
         /// - Parameter data: The data bytes.
         /// - Returns: A result type with valid `Common` data or an instance of `ParseError`.
@@ -84,20 +75,6 @@ public struct Drum: Codable, Equatable {
             self.level = level
         }
         
-        public var data: ByteArray {
-            var buf = ByteArray()
-            
-            buf.append(contentsOf: self.wave.asData())
-            
-            buf.append(contentsOf: [
-                Byte(decay),
-                Byte(tune + 50),
-                Byte(level)
-            ])
-            
-            return buf
-        }
-        
         /// Parse drum source data from MIDI System Exclusive data bytes.
         /// - Parameter data: The data bytes.
         /// - Returns: A result type with a valid `Source` or an instance of `ParseError`.
@@ -141,9 +118,9 @@ public struct Drum: Codable, Equatable {
             self.source2 = source2
         }
         
-        public var data: ByteArray {
+        private var data: ByteArray {
             // Interleave the bytes for S1 and S2
-            var buf = zip(source1.data, source2.data).flatMap({ [$0, $1] })
+            var buf = zip(source1.asData(), source2.asData()).flatMap({ [$0, $1] })
             
             // Inject the output select into the very first byte:
             buf[0] |= Byte(submix.index << 4)
@@ -186,13 +163,6 @@ public struct Drum: Codable, Equatable {
                 return .failure(error)
             }
             
-/*
-            // Compare calculated checksum to what is in the last byte of SysEx data:
-            let sum = checksum(bytes: tempNote.data)
-            if sum != data[10] {
-                return .failure(.badChecksum(sum, data[10]))
-            }
-  */
             return .success(tempNote)
         }
     }
@@ -267,14 +237,38 @@ extension Drum: SystemExclusiveData {
 extension Drum.Common: SystemExclusiveData {
     public func asData() -> ByteArray {
         var buf = ByteArray()
-        let d = self.data
-        buf.append(contentsOf: d)
-        buf.append(checksum(bytes: d))
+        
+        let data: ByteArray = [
+            channel - 1,
+            Byte(volume),
+            Byte(velocityDepth),
+            0, 0, 0, 0, 0, 0, 0 // seven dummy bytes (d03...d09)
+        ]
+        
+        buf.append(contentsOf: data)
+        buf.append(checksum(bytes: data))
         return buf
     }
     
     /// Gets the length of the data.
     public var dataLength: Int { Drum.Common.dataSize }
+}
+
+extension Drum.Source: SystemExclusiveData {
+    public func asData() -> ByteArray {
+        var buf = ByteArray()
+
+        buf.append(contentsOf: self.wave.asData())
+        buf.append(contentsOf: [
+            Byte(decay),
+            Byte(tune + 50),
+            Byte(level)
+        ])
+        
+        return buf
+    }
+    
+    public var dataLength: Int { Drum.Source.dataSize }
 }
 
 extension Drum.Note: SystemExclusiveData {
