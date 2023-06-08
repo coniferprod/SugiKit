@@ -4,20 +4,15 @@ Patch data model and System Exclusive message parser generator for the Kawai K4 
 
 ## Implementation notes
 
-### Helper types
+### Dependencies
 
-The System Exclusive messages deal in bytes and byte arrays. To make it explicit
-and to avoid typing, the following typealias definitions are used:
-
-    public typealias Byte = UInt8
-    public typealias ByteArray = [Byte]
-
+[SyxPack](https://github.com/coniferprod/SyxPack)
 
 ### System Exclusive data generation
 
-All types that contribute to the System Exclusive data format conform to the
+All types that contribute to the MIDI System Exclusive data format conform to the
 `SystemExclusiveData` protocol. Most such types also have a `data` property,
-which can be used to collect the data for inclusion into the SysEx data, and
+which can be used to collect the data for inclusion into the System Exclusive data, and
 for calculating a checksum as necessary.
  
 ### Enumerated types
@@ -58,9 +53,9 @@ Most synth blocks have a computed property `data` that provides the raw
 bytes needed for the generated System Exclusive message. It returns the bytes
 in the required format as a `ByteArray`.
 
-The actual SysEx message is constructed using the computed property
-`systemExclusiveData`, which collects the bytes using the `data` property
-and adds the checksum:
+The actual SysEx message is constructed using the function `asData` defined in
+the `SystemExclusiveData` protocol. It collects the bytes, often using the `data`
+computed property, and adds the checksum:
 
     public var systemExclusiveData: ByteArray {
         var buf = ByteArray()

@@ -98,6 +98,13 @@ public struct Bank: Codable, Equatable {
         tempBank.drum = tempDrum
         return .success(tempBank)
     }
+    
+    public static func nameFor(patchNumber: Int) -> String {
+        let bankIndex = patchNumber / 16
+        let bankLetter = ["A", "B", "C", "D"][bankIndex]
+        let patchIndex = (patchNumber % 16) + 1
+        return "\(bankLetter)-\(patchIndex)"
+    }
 }
 
 // MARK: - SystemExclusiveData

@@ -245,9 +245,9 @@ extension SystemExclusiveKind: CustomStringConvertible {
         case .all(let locality, _):
             return "Bank \(locality)"
         case .oneSingle(let number, let locality, _):
-            return "Single \(PatchName.bankNameForNumber(n: number)) \(locality)"
+            return "Single \(Bank.nameFor(patchNumber: number)) \(locality)"
         case .oneMulti(let number, let locality, _):
-            return "Multi \(PatchName.bankNameForNumber(n: number)) \(locality)"
+            return "Multi \(Bank.nameFor(patchNumber: number)) \(locality)"
         case .drum(let locality, _):
             return "Drum \(locality)"
         case .oneEffect(let number, let locality, _):

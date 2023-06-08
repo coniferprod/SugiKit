@@ -30,6 +30,7 @@ public struct LFO: Codable, Equatable {
     
     static let dataSize = 5
     
+    /// Initializes an LFO with default values.
     public init() {
         shape = .triangle
         speed = 0
@@ -38,6 +39,7 @@ public struct LFO: Codable, Equatable {
         pressureDepth = 0
     }
     
+    /// Initializes an LFO with the specified values.
     public init(shape: Shape, speed: UInt, delay: UInt, depth: Int, pressureDepth: Int) {
         self.shape = shape
         self.speed = speed
@@ -45,33 +47,37 @@ public struct LFO: Codable, Equatable {
         self.depth = depth
         self.pressureDepth = pressureDepth
     }
-    
-    public init(bytes buffer: ByteArray) {
+
+    /// Parses an LFO from MIDI System Exclusive data bytes.
+    public static func parse(from data: ByteArray) -> Result<LFO, ParseError> {
         var offset = 0
         var b: Byte = 0x00
         var index = 0
         
-        b = buffer.next(&offset)
+        var temp = LFO()
+        
+        b = data.next(&offset)
         index = Int(b & 0x03)
         if let lfoShape = Shape(index: index) {
-            shape = lfoShape
+            temp.shape = lfoShape
         }
         else {
-            shape = .triangle
-            print("Value out of range for LFO shape: \(index). Using default value \(shape).", to: &standardError)
+            return .failure(.invalidData(offset))
         }
 
-        b = buffer.next(&offset)
-        speed = UInt(b & 0x7f)
+        b = data.next(&offset)
+        temp.speed = UInt(b & 0x7f)
 
-        b = buffer.next(&offset)
-        delay = UInt(b & 0x7f)
+        b = data.next(&offset)
+        temp.delay = UInt(b & 0x7f)
 
-        b = buffer.next(&offset)
-        depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer.next(&offset)
-        pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+
+        return .success(temp)
     }
     
     public var data: ByteArray {
@@ -107,30 +113,33 @@ public struct Vibrato: Codable, Equatable {
         self.pressureDepth = pressureDepth
     }
     
-    public init(bytes buffer: ByteArray) {
+    public static func parse(from data: ByteArray) -> Result<Vibrato, ParseError> {
         var offset = 0
         var b: Byte = 0x00
         var index = 0
         
-        b = buffer.next(&offset)
+        var temp = Vibrato()
+        
+        b = data.next(&offset)
         index = Int(b.bitField(start: 4, end: 6))
         if let vibratoShape = LFO.Shape(index: index) {
-            shape = vibratoShape
+            temp.shape = vibratoShape
         }
         else {
-            shape = .triangle
-            print("Value out of range for vibrato shape: \(index). Using default value \(shape).", to: &standardError)
+            return .failure(.invalidData(offset))
         }
 
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         // Vibrato speed = s16 bits 0...6
-        speed = UInt(b & 0x7f)
+        temp.speed = UInt(b & 0x7f)
         
-        b = buffer.next(&offset)
-        pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
-        b = buffer.next(&offset)
-        depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+
+        return .success(temp)
     }
     
     public var data: ByteArray {
@@ -143,6 +152,8 @@ public struct Vibrato: Codable, Equatable {
 
         return buf
     }
+    
+    public static let dataSize = 4
 }
 
 // Note that the LFO and Vibrato structs are nearly identical.

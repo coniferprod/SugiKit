@@ -203,21 +203,25 @@ public struct AutoBend: Codable, Equatable, CustomStringConvertible {
         self.velocityDepth = velocityDepth
     }
     
-    public init(bytes buffer: ByteArray) {
+    public static func parse(from data: ByteArray) -> Result<AutoBend, ParseError> {
         var offset = 0
         var b: Byte = 0x00
         
-        b = buffer.next(&offset)
-        time = UInt(b & 0x7f)
+        var temp = AutoBend()
+        
+        b = data.next(&offset)
+        temp.time = UInt(b & 0x7f)
 
-        b = buffer.next(&offset)
-        depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer.next(&offset)
-        keyScalingTime = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.keyScalingTime = Int((b & 0x7f)) - 50 // 0~100 to ±50
 
-        b = buffer.next(&offset)
-        velocityDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        b = data.next(&offset)
+        temp.velocityDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+
+        return .success(temp)
     }
     
     public var data: ByteArray {
@@ -269,6 +273,24 @@ public struct LevelModulation: Codable, Equatable, CustomStringConvertible {
         self.keyScalingDepth = keyScalingDepth
     }
     
+    public static func parse(from data: ByteArray) -> Result<LevelModulation, ParseError> {
+        var offset = 0
+        var b: Byte = 0x00
+        
+        var temp = LevelModulation()
+        
+        b = data.next(&offset)
+        temp.velocityDepth = Int(b) - 50
+
+        b = data.next(&offset)
+        temp.pressureDepth = Int(b) - 50
+        
+        b = data.next(&offset)
+        temp.keyScalingDepth = Int(b) - 50
+        
+        return .success(temp)
+    }
+    
     public var data: ByteArray {
         var buf = ByteArray()
         buf.append(contentsOf: [
@@ -278,6 +300,8 @@ public struct LevelModulation: Codable, Equatable, CustomStringConvertible {
         ])
         return buf
     }
+    
+    public static let dataSize = 3
     
     public var description: String {
         return "Vel.depth=\(velocityDepth) Prs.depth=\(pressureDepth) KSDepth=\(keyScalingDepth)"
@@ -301,6 +325,24 @@ public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
         self.keyScaling = keyScaling
     }
     
+    public static func parse(from data: ByteArray) -> Result<TimeModulation, ParseError> {
+        var offset = 0
+        var b: Byte = 0x00
+        
+        var temp = TimeModulation()
+        
+        b = data.next(&offset)
+        temp.attackVelocity = Int(b) - 50
+        
+        b = data.next(&offset)
+        temp.releaseVelocity = Int(b) - 50
+
+        b = data.next(&offset)
+        temp.keyScaling = Int(b) - 50
+                
+        return .success(temp)
+    }
+
     public var data: ByteArray {
         var buf = ByteArray()
         buf.append(contentsOf: [
@@ -310,6 +352,8 @@ public struct TimeModulation: Codable, Equatable, CustomStringConvertible {
         ])
         return buf
     }
+    
+    public static let dataSize = 3
     
     public var description: String {
         return "AtkVel=\(attackVelocity) RelVel=\(releaseVelocity) KS=\(keyScaling)"

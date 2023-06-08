@@ -5,7 +5,7 @@ import SyxPack
 
 /// Represents one source in a single patch.
 public struct Source: Codable {
-    static let dataSize = 18
+    static let dataSize = 7
 
     public var isActive: Bool
     public var delay: Int // 0~100
@@ -33,54 +33,58 @@ public struct Source: Codable {
         velocityCurve = .curve1
         keyScalingCurve = .curve1
     }
-    
-    /// Initializes the source from System Exclusive data bytes.
-    public init(bytes buffer: ByteArray) {
-        self.isActive = false  // this is set later by single patch parsing
+
+    /// Parses a single patch source from MIDI System Exclusive data bytes.
+    public static func parse(from data: ByteArray) -> Result<Source, ParseError> {
+        var temp = Source()
+        
+        temp.isActive = false  // this is set later by single patch parsing
         
         var offset: Int = 0
         var b: Byte = 0
         var index: Int = 0
         
         // s30/s31/s32/s33
-        b = buffer.next(&offset)
-        delay = Int(b & 0x7f)
+        b = data.next(&offset)
+        temp.delay = Int(b & 0x7f)
 
         // s34/s35/s36/s37
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         
         // This byte has the wave select high bit in b0,
         // and KS curve = bits 4...6
         index = Int(b.bitField(start: 4, end: 7))
-        keyScalingCurve = KeyScalingCurve.allCases[index]
+        temp.keyScalingCurve = KeyScalingCurve.allCases[index]
         //print("KS curve = \(keyScalingCurve)")
 
         // This byte has the wave select low value 0~127 in bits 0...6
-        let b2 = buffer.next(&offset)
+        let b2 = data.next(&offset)
         
-        wave = Wave(highByte: b, lowByte: b2)
+        temp.wave = Wave(highByte: b, lowByte: b2)
 
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         
         // Here the MIDI implementation's SysEx format is a little unclear.
         // My interpretation is that the low six bits are the coarse value,
         // and b6 is the key tracking bit (b7 is zero).
         
-        keyTrack = b.isBitSet(6)
-        coarse = Int((b & 0x3f)) - 24  // 00 ~ 48 to ±24
+        temp.keyTrack = b.isBitSet(6)
+        temp.coarse = Int((b & 0x3f)) - 24  // 00 ~ 48 to ±24
         
-        b = buffer.next(&offset)
+        b = data.next(&offset)
         let key = b & 0x7f
-        fixedKey = FixedKey(key: key)
+        temp.fixedKey = FixedKey(key: key)
 
-        b = buffer.next(&offset)
-        fine = Int((b & 0x7f)) - 50
+        b = data.next(&offset)
+        temp.fine = Int((b & 0x7f)) - 50
 
-        b = buffer.next(&offset)
-        pressureFrequency = b.isBitSet(0)
-        vibrato = b.isBitSet(1)
+        b = data.next(&offset)
+        temp.pressureFrequency = b.isBitSet(0)
+        temp.vibrato = b.isBitSet(1)
         index = Int((b >> 2) & 0b111)
-        velocityCurve = VelocityCurve.allCases[index]
+        temp.velocityCurve = VelocityCurve.allCases[index]
+
+        return .success(temp)
     }
     
     /// Gets the System Exclusive data for this source.

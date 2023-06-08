@@ -20,7 +20,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         public var transpose: Int  // 0~48 / +/- 24
         public var tune: Int  // 0~100 / +/- 50
         
-        /// Initializes a multi patch section with default settings.
+        /// Initialize a multi patch section with default settings.
         public init() {
             singlePatchNumber = 0
             
@@ -38,72 +38,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             tune = 0
         }
         
-        /// Initializes a multi patch section from System Exclusive data bytes.
-        public init(bytes buffer: ByteArray) {
-            var offset = 0
-            var b: Byte = 0x00
-            var index = 0  // reused for enumerations
-
-            b = buffer.next(&offset)
-            singlePatchNumber = Int(b)
-
-            b = buffer.next(&offset)
-            zone = Zone()
-            zone.low = Int(b)
-            
-            b = buffer.next(&offset)
-            zone.high = Int(b)
-            
-            // channel, velocity switch, and section mute are all in M15
-            b = buffer.next(&offset)
-
-            //print("multi M15 = \(b.toHex(digits: 2))")
-            
-            channel = b.bitField(start: 0, end: 4) + 1
-
-            index = Int(b.bitField(start: 4, end: 6))
-            if let vs = VelocitySwitch(index: index) {
-                velocitySwitch = vs
-            }
-            else {
-                velocitySwitch = .all
-                print("Value out of range for velocity switch: \(index). Using default value \(velocitySwitch)", to: &standardError)
-            }
-            
-            isMuted = b.isBitSet(6)
-            
-            // M16: out select and mode
-            b = buffer.next(&offset)
-
-            index = Int(b & 0b00000111)
-            if let sm = Submix(index: index) {
-                submix = sm
-            }
-            else {
-                submix = .a
-                print("Value out of range for submix: \(index). Using default value \(submix)", to: &standardError)
-            }
-
-            index = Int((b & 0b00011000) >> 3)
-            if let mode = PlayMode(index: index) {
-                playMode = mode
-            }
-            else {
-                playMode = .keyboard
-                print("Value out of range for submix: \(index). Using default value \(playMode)", to: &standardError)
-            }
-
-            b = buffer.next(&offset)
-            level = Int(b)
-            
-            b = buffer.next(&offset)
-            transpose = Int(b) - 24
-            
-            b = buffer.next(&offset)
-            tune = Int(b) - 50
-        }
-        
-        /// Parse multi patch data from MIDI System Exclusive data bytes.
+        /// Parse multi patch section from MIDI System Exclusive data bytes.
         /// - Parameter data: The data bytes.
         /// - Returns: A result type with valid `Section` data or an instance of `ParseError`.
         public static func parse(from data: ByteArray) -> Result<Section, ParseError> {
@@ -214,10 +149,10 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         }
     }
 
-    static let dataSize = 77
-    static let sectionCount = 8
+    public static let dataSize = 77
+    public static let sectionCount = 8
 
-    @PatchName public var name: String // 10 ASCII characters
+    public var name: PatchName // 10 ASCII characters
     
     public var volume: Int  // 0~100 (from correction sheet, not 0~99)
     public var effect: Int  // 0~31/1~32
@@ -226,7 +161,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
     
     /// Initializes a multi patch with default settings.
     public override init() {
-        name = "Multi     "
+        name = PatchName("NewMulti")
         volume = 100
         effect = 1
         
@@ -246,13 +181,15 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
 
         let temp = MultiPatch()  // initialize with defaults, then fill in
         
-        // Get the patch name from 10 bytes representing ASCII characters.
-        // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
-        let originalName = String(bytes: data.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
+        let nameData = data.slice(from: offset, length: PatchName.length)
+        switch PatchName.parse(from: nameData) {
+        case .success(let name):
+            temp.name = name
+        case .failure(_):
+            return .failure(.invalidData(offset))
+        }
         offset += PatchName.length
-        temp.name = originalName.replacingOccurrences(of: "\0", with: " ")
-        //print("\(self.name):\n\(buffer.hexDump)")
-        
+
         b = data.next(&offset)
         temp.volume = Int(b)
 
@@ -273,14 +210,6 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             offset += Section.dataSize
         }
         
-/*
-        // Validate the checksum:
-        b = data.next(&offset)
-        let sum = checksum(bytes: temp.data)
-        if sum != b {
-            return .failure(.badChecksum(b, sum))
-        }
-  */
         return .success(temp)
     }
 
@@ -289,15 +218,13 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         var d = ByteArray()
         
         // M0...M9 = name
-        d.append(contentsOf: _name.asData())
+        d.append(contentsOf: self.name.asData())
 
         // M10
         d.append(Byte(volume))
         
         // M11
         d.append(Byte(effect - 1)) // 1~32 to 0~31
-        
-        print("Before adding sections, have \(d.count) bytes of multi data")
         
         // M12 / M20 / M28 / M36 / M44 / M52 / M60 / M68
         for section in sections {
@@ -306,8 +233,6 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             d.append(contentsOf: section.asData())
         }
 
-        print("After adding sections, have \(d.count) bytes of multi data")
-        
         return d
     }
 }
@@ -324,15 +249,13 @@ extension MultiPatch: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { MultiPatch.dataSize }
 }
 
 extension MultiPatch.Section: SystemExclusiveData {
     public func asData() -> ByteArray {
-        let d = self.data
-        //print("Got \(d.count) bytes of section data")
-        return d
+        return self.data
     }
     
     public var dataLength: Int { MultiPatch.Section.dataSize }

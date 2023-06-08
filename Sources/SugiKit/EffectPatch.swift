@@ -189,14 +189,6 @@ public class EffectPatch: HashableClass, Codable, Identifiable {
             temp.submixes.append(submix)
         }
         
-/*
-        // Validate the checksum:
-        b = data.next(&offset)
-        let sum = checksum(bytes: temp.data)
-        if sum != b {
-            return .failure(.badChecksum(b, sum))
-        }
-*/
         return .success(temp)
     }
 

@@ -295,6 +295,7 @@ func checksum(bytes: ByteArray) -> Byte {
     return Byte(totalSum & 0x7f)
 }
 
+/*
 @propertyWrapper public struct PatchName: Codable {
     public static let length = 10
     
@@ -315,13 +316,60 @@ func checksum(bytes: ByteArray) -> Byte {
         return "\(bankLetter)-\(patchIndex)"
     }
 }
+*/
+
+/// Represents the name of a single or multi patch.
+public struct PatchName: Equatable, Codable {
+    /// Length of patch name in characters.
+    public static let length = 10
+    
+    private(set) var _value: String = PatchName.wrapped(name: " ")
+    
+    private static func wrapped(name: String) -> String {
+        return name.adjusted(length: PatchName.length, pad: " ")
+    }
+    
+    /// Value of the wrapped String.
+    public var value: String {
+        get {
+            return _value
+        }
+        
+        set {
+            self._value = PatchName.wrapped(name: newValue)
+        }
+    }
+        
+    /// Initializes the patch name from a `String`.
+    /// The name is padded or truncated to `length` characters if necessary.
+    public init(_ name: String) {
+        self.value = name  // let property setter handle the adjustment
+    }
+    
+    /// Initializes the patch name from MIDI System Exclusive data bytes.
+    public init(data: ByteArray) {
+        self.value = String(data: Data(data), encoding: .ascii) ?? "--------"
+    }
+    
+    /// Parse a patch name from MIDI System Exclusive data.
+    public static func parse(from data: ByteArray) -> Result<PatchName, ParseError> {
+        var temp = PatchName("")
+        if let name = String(bytes: data, encoding: .ascii) {
+            temp.value = name.replacingOccurrences(of: "\0", with: " ")
+            return .success(temp)
+        }
+        else {
+            return .failure(.invalidData(0))
+        }
+    }
+}
 
 // MARK: - SystemExclusiveData
 
 extension PatchName: SystemExclusiveData {
     public func asData() -> ByteArray {
         var d = ByteArray()
-        for codeUnit in wrappedValue.utf8 {
+        for codeUnit in self.value.utf8 {
             d.append(codeUnit)
         }
         return d

@@ -25,6 +25,27 @@ public struct Filter: Codable, Equatable {
             release = r
         }
         
+        public static func parse(from data: ByteArray) -> Result<Envelope, ParseError> {
+            var offset: Int = 0
+            var b: Byte = 0
+            
+            var temp = Envelope()
+            
+            b = data.next(&offset)
+            temp.attack = UInt(b & 0x7f)
+
+            b = data.next(&offset)
+            temp.decay = UInt(b & 0x7f)
+
+            b = data.next(&offset)
+            temp.sustain = Int(b & 0x7f) - 50  // error in manual and SysEx: actually -50~+50, not 0~100
+
+            b = data.next(&offset)
+            temp.release = UInt(b & 0x7f)
+            
+            return .success(temp)
+        }
+        
         public var data: ByteArray {
             var buf = ByteArray()
             
@@ -33,6 +54,8 @@ public struct Filter: Codable, Equatable {
             }
             return buf
         }
+        
+        public static let dataSize = 4
     }
 
     public static let dataSize = 14
@@ -68,59 +91,53 @@ public struct Filter: Codable, Equatable {
         self.timeModulation = timeModulation
     }
     
-    public init(d: ByteArray) {
+    public static func parse(from data: ByteArray) -> Result<Filter, ParseError> {
         var offset: Int = 0
         var b: Byte = 0
         
-        b = d.next(&offset)
-        self.cutoff = UInt(b)
+        var temp = Filter()
         
-        b = d.next(&offset)
-        self.resonance = UInt(b & 0x07)  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
-        self.isLfoModulatingCutoff = b.isBitSet(3)
-
-        self.cutoffModulation = LevelModulation()
+        b = data.next(&offset)
+        temp.cutoff = UInt(b)
         
-        b = d.next(&offset)
-        self.cutoffModulation.velocityDepth = Int(b & 0x7f) - 50
+        b = data.next(&offset)
+        temp.resonance = UInt(b & 0x07)  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
+        temp.isLfoModulatingCutoff = b.isBitSet(3)
 
-        b = d.next(&offset)
-        self.cutoffModulation.pressureDepth = Int(b & 0x7f) - 50
-
-        b = d.next(&offset)
-        self.cutoffModulation.keyScalingDepth = Int(b & 0x7f) - 50
+        let cutoffModulationData = data.slice(from: offset, length: LevelModulation.dataSize)
+        switch LevelModulation.parse(from: cutoffModulationData) {
+        case .success(let cutoffModulation):
+            temp.cutoffModulation = cutoffModulation
+        case .failure(let error):
+            return .failure(error)
+        }
+        offset += LevelModulation.dataSize
         
-        b = d.next(&offset)
-        self.envelopeDepth = Int(b & 0x7f) - 50
+        b = data.next(&offset)
+        temp.envelopeDepth = Int(b & 0x7f) - 50
 
-        b = d.next(&offset)
-        self.envelopeVelocityDepth = Int(b & 0x7f) - 50
-        
-        var e = Envelope()
-        
-        b = d.next(&offset)
-        e.attack = UInt(b & 0x7f)
+        b = data.next(&offset)
+        temp.envelopeVelocityDepth = Int(b & 0x7f) - 50
 
-        b = d.next(&offset)
-        e.decay = UInt(b & 0x7f)
+        let envelopeData = data.slice(from: offset, length: Envelope.dataSize)
+        switch Envelope.parse(from: envelopeData) {
+        case .success(let envelope):
+            temp.envelope = envelope
+        case .failure(let error):
+            return .failure(error)
+        }
+        offset += Envelope.dataSize
 
-        b = d.next(&offset)
-        e.sustain = Int(b & 0x7f) - 50  // error in manual and SysEx: actually -50~+50, not 0~100
+        let timeModulationData = data.slice(from: offset, length: TimeModulation.dataSize)
+        switch TimeModulation.parse(from: timeModulationData) {
+        case .success(let timeModulation):
+            temp.timeModulation = timeModulation
+        case .failure(let error):
+            return .failure(error)
+        }
+        offset += TimeModulation.dataSize
 
-        b = d.next(&offset)
-        e.release = UInt(b & 0x7f)
-        
-        self.envelope = e
-        
-        self.timeModulation = TimeModulation()
-        b = d.next(&offset)
-        self.timeModulation.attackVelocity = Int(b & 0x7f) - 50
-
-        b = d.next(&offset)
-        self.timeModulation.releaseVelocity = Int(b & 0x7f) - 50
-
-        b = d.next(&offset)
-        self.timeModulation.keyScaling = Int(b & 0x7f) - 50
+        return .success(temp)
     }
     
     public var data: ByteArray {

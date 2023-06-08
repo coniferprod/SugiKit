@@ -42,7 +42,7 @@ final class MultiPatchTests: XCTestCase {
     }
     
     func testName() {
-        XCTAssertEqual(multis[0].name, "Fatt!Anna5")
+        XCTAssertEqual(multis[0].name, PatchName("Fatt!Anna5"))
     }
     
     /*

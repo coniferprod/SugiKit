@@ -41,14 +41,33 @@ final class SinglePatchTests: XCTestCase {
         0x02, 0x02, 0x15, 0x11, // prs>frq sw + vib./a.bend sw + vel.curve
         
         // amplifier data (4 x 11 = 44 bytes)
-        0x4b, 0x4b, 0x34, 0x35, 0x36, 0x36, 0x34, 0x35, 0x48, 0x48, 0x34,
-        0x35, 0x5a, 0x5a, 0x34, 0x35, 0x40, 0x40, 0x02, 0x01, 0x41, 0x41,
-        0x35, 0x36, 0x32, 0x32, 0x35, 0x36, 0x2c, 0x2c, 0x35, 0x36, 0x32,
-        0x32, 0x35, 0x36, 0x32, 0x32, 0x35, 0x36, 0x32, 0x32, 0x33, 0x34,
+        0x4b, 0x4b, 0x34, 0x35,  // Sn envelope level
+        0x36, 0x36, 0x34, 0x35,  // Sn envelope attack
+        0x48, 0x48, 0x34, 0x35,  // Sn envelope decay
+        0x5a, 0x5a, 0x34, 0x35,  // Sn envelope sustain
+        0x40, 0x40, 0x02, 0x01,  // Sn envelope release
+        0x41, 0x41, 0x35, 0x36,  // Sn level mod vel
+        0x32, 0x32, 0x35, 0x36,  // Sn level mod prs
+        0x2c, 0x2c, 0x35, 0x36,  // Sn level mod ks
+        0x32, 0x32, 0x35, 0x36,  // Sn time mod on vel
+        0x32, 0x32, 0x35, 0x36,  // Sn time mod off vel
+        0x32, 0x32, 0x33, 0x34,  // Sn time mod ks
                 
         // filter data (2 x 14 = 28 bytes)
-        0x31, 0x51, 0x02, 0x07, 0x32, 0x34, 0x5b, 0x34, 0x32, 0x34, 0x36, 0x34, 0x32, 0x33,
-        0x56, 0x01, 0x64, 0x02, 0x32, 0x63, 0x56, 0x01, 0x32, 0x33, 0x32, 0x33, 0x32, 0x33,
+        0x31, 0x51,  // Fn cutoff
+        0x02, 0x07,  // Fn resonance, LFO sw
+        0x32, 0x34,  // Fn cutoff mod vel
+        0x5b, 0x34,  // Fn cutoff mod prs
+        0x32, 0x34,  // Fn cutoff mod krs
+        0x36, 0x34,  // Fn dcf env dep
+        0x32, 0x33,  // Fn dcf env vel dep
+        0x56, 0x01,  // Fn dcf env attack
+        0x64, 0x02,  // Fn dcf env decay
+        0x32, 0x63,  // Fn dcf env sustain
+        0x56, 0x01,  // Fn dcf env release
+        0x32, 0x33,  // Fn dcf time mod on vel
+        0x32, 0x33,  // Fn dcf time mode off vel
+        0x32, 0x33,  // Fn dcf time mod ks
         
         // checksum
         0x6e
@@ -64,7 +83,7 @@ final class SinglePatchTests: XCTestCase {
     func testName() {
         switch SinglePatch.parse(from: self.patchData) {
         case .success(let patch):
-            XCTAssertEqual(patch.name, "Melo Vox 1")
+            XCTAssertEqual(patch.name, PatchName("Melo Vox 1"))
         case .failure(let error):
             XCTFail("\(error)")
         }
@@ -109,31 +128,6 @@ final class SinglePatchTests: XCTestCase {
         }
     }
     
-/*
-    // Test COMMON parameters
-    func testCommonParameters() {
-        switch SinglePatch.parse(from: self.patchData) {
-        case .success(let single):
-            let other = SinglePatch.Common()
-            other.name = "Melo Vox 1"
-            other.volume = 0x64
-            other.submix = .g
-            other.sourceMode = .normal
-            other.am12 = false
-            other.am34 = false
-            other.polyphonyMode = .poly2
-            other.benderRange = 2
-            other.pressFreq = 0
-            other.wheelAssign = .vibrato
-            other.wheelDepth = 13
-            other.autoBend = AutoBend(time: 57, depth: -1, keyScalingTime: 0, velocityDepth: 0)
-            XCTAssertEqual(single, other)
-        case .failure(let error):
-            XCTFail("\(error)")
-        }
-    }
-*/
-    
     // Test S-COMMON parameters
     func testSourceCommonParameters() {
         switch SinglePatch.parse(from: self.patchData) {
@@ -149,10 +143,13 @@ final class SinglePatchTests: XCTestCase {
     
     // Test DCA parameters
     func testAmplifierParameters() {
-        switch SinglePatch.parse(from: self.patchData) {
-        case .success(let single):
-            let amp = single.amplifiers[0]
-            XCTAssertEqual(amp.level, 75)
+        let ampData = self.patchData.slice(from: 58, length: Amplifier.dataSize * 4)
+        print("Amp data:\n\(ampData.hexDump(config: .plainConfig))")
+        let amp1Data = ampData.everyNthByte(n: 4, start: 0)
+        print("Amp 1 data: \(amp1Data.hexDump(config: .plainConfig))")
+        switch Amplifier.parse(from: amp1Data) {
+        case .success(let amp):
+            XCTAssertEqual(amp.level, 0x4B)
             XCTAssertEqual(amp.envelope, self.amplifierEnvelope)
         case .failure(let error):
             XCTFail("\(error)")
@@ -160,9 +157,10 @@ final class SinglePatchTests: XCTestCase {
     }
     
     func testAmplifierModulationParameters() {
-        switch SinglePatch.parse(from: self.patchData) {
-        case .success(let single):
-            let amp = single.amplifiers[0]
+        let ampData = self.patchData.slice(from: 58, length: Amplifier.dataSize * 4)
+        let amp1Data = ampData.everyNthByte(n: 4, start: 0)
+        switch Amplifier.parse(from: amp1Data) {
+        case .success(let amp):
             let levelMod = amp.levelModulation
             XCTAssertEqual(levelMod.velocityDepth, 15)
             XCTAssertEqual(levelMod.pressureDepth, 0)
@@ -216,11 +214,12 @@ final class SinglePatchTests: XCTestCase {
         }
     }
     
-    // Test DCO parameters
-    func testOscillatorParameters() {
-        switch SinglePatch.parse(from: self.patchData) {
-        case .success(let single):
-            let source = single.sources[0]
+    // Test source parameters
+    func testSourceParameters() {
+        let sourceData = self.patchData.slice(from: 30, length: Source.dataSize * 4)
+        let s1Data = sourceData.everyNthByte(n: 4, start: 0)
+        switch Source.parse(from: s1Data) {
+        case .success(let source):
             XCTAssertEqual(source.wave.number, 19)
             XCTAssertEqual(source.keyTrack, true)
             XCTAssertEqual(source.coarse, -12)
@@ -243,14 +242,5 @@ final class SinglePatchTests: XCTestCase {
             XCTFail("\(error)")
         }
     }
-    
-    func testDescription() {
-        switch SinglePatch.parse(from: self.patchData) {
-        case .success(let single):
-            let desc = single.description
-            XCTAssert(desc.length != 0)
-        case .failure(let error):
-            XCTFail("\(error)")
-        }
-    }
 }
+

@@ -14,6 +14,7 @@ public struct Amplifier: Codable, Equatable {
         public var sustain: UInt  // 0~100
         public var release: UInt  // 0~100
         
+        /// Initialize an amplifier envelope with default settings.
         public init() {
             attack = 0
             decay = 0
@@ -21,77 +22,80 @@ public struct Amplifier: Codable, Equatable {
             release = 0
         }
         
+        /// Initialize an amplifier envelope with parameters.
         public init(attack a: UInt, decay d: UInt, sustain s: UInt, release r: UInt) {
             attack = a
             decay = d
             sustain = s
             release = r
         }
+
+        /// Parse amplifier envelope from MIDI System Exclusive data bytes.
+        public static func parse(from data: ByteArray) -> Result<Envelope, ParseError> {
+            var offset: Int = 0
+            
+            let attack = UInt(data.next(&offset))
+            let decay = UInt(data.next(&offset))
+            let sustain = UInt(data.next(&offset))
+            let release = UInt(data.next(&offset))
+
+            return .success(Envelope(attack: attack, decay: decay, sustain: sustain, release: release))
+        }
     }
 
-    public static let dataSize = 11
+    public static let dataSize = 1 + Envelope.dataSize + LevelModulation.dataSize + TimeModulation.dataSize
     
     public var level: UInt  // 0~100
     public var envelope: Envelope
     public var levelModulation: LevelModulation
     public var timeModulation: TimeModulation
     
+    /// Initializes an amplifier with default settings.
     public init() {
         level = 100
         envelope = Envelope(attack: 0, decay: 50, sustain: 0, release: 50)
         levelModulation = LevelModulation()
         timeModulation = TimeModulation()
     }
-    
-    public init(bytes buffer: ByteArray) {
+
+    /// Parse amplifier from MIDI System Exclusive data bytes.
+    public static func parse(from data: ByteArray) -> Result<Amplifier, ParseError> {
         var offset: Int = 0
         var b: Byte = 0
         
-        b = buffer.next(&offset)
-        self.level = UInt(b)
+        var temp = Amplifier()
+        
+        b = data.next(&offset)
+        temp.level = UInt(b)
 
-        var e = Envelope()
+        let envelopeData = data.slice(from: offset, length: Envelope.dataSize)
+        switch Envelope.parse(from: envelopeData) {
+        case .success(let envelope):
+            temp.envelope = envelope
+        case .failure(let error):
+            return .failure(error)
+        }
+        offset += Envelope.dataSize
         
-        b = buffer.next(&offset)
-        e.attack = UInt(b)
+        let levelModulationData = data.slice(from: offset, length: LevelModulation.dataSize)
+        switch LevelModulation.parse(from: levelModulationData) {
+        case .success(let levelModulation):
+            temp.levelModulation = levelModulation
+        case .failure(let error):
+            return .failure(error)
+        }
+        offset += LevelModulation.dataSize
         
-        b = buffer.next(&offset)
-        e.decay = UInt(b)
+        let timeModulationData = data.slice(from: offset, length: TimeModulation.dataSize)
+        switch TimeModulation.parse(from: timeModulationData) {
+        case .success(let timeModulation):
+            temp.timeModulation = timeModulation
+        case .failure(let error):
+            return .failure(error)
+        }
+        offset += TimeModulation.dataSize
         
-        b = buffer.next(&offset)
-        e.sustain = UInt(b)
-        
-        b = buffer.next(&offset)
-        e.release = UInt(b)
-    
-        self.envelope = e
-        
-        //
-        // Depth values come in as 0...100,
-        // they need to be scaled to -50...50.
-        //
-
-        self.levelModulation = LevelModulation()
-
-        b = buffer.next(&offset)
-        self.levelModulation.velocityDepth = Int(b) - 50
-
-        b = buffer.next(&offset)
-        self.levelModulation.pressureDepth = Int(b) - 50
-        
-        b = buffer.next(&offset)
-        self.levelModulation.keyScalingDepth = Int(b) - 50
-        
-        self.timeModulation = TimeModulation()
-
-        b = buffer.next(&offset)
-        self.timeModulation.attackVelocity = Int(b) - 50
-        
-        b = buffer.next(&offset)
-        self.timeModulation.releaseVelocity = Int(b) - 50
-
-        b = buffer.next(&offset)
-        self.timeModulation.keyScaling = Int(b) - 50
+        return .success(temp)
     }
 }
 

@@ -9,7 +9,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     static let sourceCount = 4
     static let nameLength = 10
 
-    @PatchName public var name: String  // name (10 characters)
+    public var name: PatchName  // name (10 characters)
     public var volume: UInt  // volume 0~100
     public var effect: UInt  // effect patch number 1~32 (in SysEx 0~31)
     public var submix: Submix // A...H
@@ -33,7 +33,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 
     /// Initializes a single patch with default settings.
     public override init() {
-        name = "Single    "
+        name = PatchName("NewSingle")
         volume = 90
         effect = 1
         submix = .a
@@ -70,12 +70,17 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 
         let temp = SinglePatch()  // initialize with defaults and then fill in
         
-        // Get the patch name from 10 bytes representing ASCII characters.
-        // If that fails, use a string with 10 spaces. Also, replace any NULs with spaces.
-        let originalName = String(bytes: data.slice(from: offset, length: PatchName.length), encoding: .ascii) ?? String(repeating: " ", count: PatchName.length)
-        temp.name = originalName.replacingOccurrences(of: "\0", with: " ")
+        print("Name, offset = \(offset)")
+        let nameData = data.slice(from: offset, length: PatchName.length)
+        switch PatchName.parse(from: nameData) {
+        case .success(let name):
+            temp.name = name
+        case .failure(_):
+            return .failure(.invalidData(offset))
+        }
         offset += PatchName.length
 
+        print("Volume, offset = \(offset)")
         b = data.next(&offset)
         temp.volume = UInt(b)
 
@@ -139,8 +144,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
             temp.wheelAssign = wa
         }
         else {
-            temp.wheelAssign = .cutoff
-            print("Value out of range for wheel assign: \(index). Using default value ('\(temp.wheelAssign)').", to: &standardError)
+            return .failure(.invalidData(offset))
         }
 
         b = data.next(&offset)  // s16
@@ -151,8 +155,15 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         temp.wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
         //print("wheel depth = \(self.wheelDepth)")
         
+        print("AutoBend, offset = \(offset)")
         // s18 ... s21
-        temp.autoBend = AutoBend(bytes: data.slice(from: offset, length: AutoBend.dataSize))
+        let autoBendBytes = data.slice(from: offset, length: AutoBend.dataSize)
+        switch AutoBend.parse(from: autoBendBytes) {
+        case .success(let autoBend):
+            temp.autoBend = autoBend
+        case .failure(let error):
+            return .failure(error)
+        }
         offset += AutoBend.dataSize
         
         b = data.next(&offset)  // s22
@@ -162,79 +173,85 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         vibratoBytes.append(b)
      
         // Finally we have all the vibrato bytes
-        temp.vibrato = Vibrato(bytes: vibratoBytes)
-        
-        temp.lfo = LFO(bytes: data.slice(from: offset, length: LFO.dataSize))
+        switch Vibrato.parse(from: vibratoBytes) {
+        case .success(let vibrato):
+            temp.vibrato = vibrato
+        case .failure(let error):
+            return .failure(error)
+        }
+        // Don't adjust the offset! The vibrato bytes have been collected earlier.
+
+        print("LFO, offset = \(offset)")
+        let lfoBytes = data.slice(from: offset, length: LFO.dataSize)
+        switch LFO.parse(from: lfoBytes) {
+        case .success(let lfo):
+            temp.lfo = lfo
+        case .failure(let error):
+            return .failure(error)
+        }
         offset += LFO.dataSize
 
         b = data.next(&offset)
         temp.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
         
-        let sourceByteCount = 28
+        print("Sources, offset = \(offset)")
+        let sourceByteCount = SinglePatch.sourceCount * Source.dataSize
         let sourceBytes = data.slice(from: offset, length: sourceByteCount)
-        let sourceData: [ByteArray] = [
-            sourceBytes.everyNthByte(n: 4, start: 0),
-            sourceBytes.everyNthByte(n: 4, start: 1),
-            sourceBytes.everyNthByte(n: 4, start: 2),
-            sourceBytes.everyNthByte(n: 4, start: 3),
-        ]
-        temp.sources = [
-            Source(bytes: sourceData[0]),
-            Source(bytes: sourceData[1]),
-            Source(bytes: sourceData[2]),
-            Source(bytes: sourceData[3]),
-        ]
+        for i in 0..<SinglePatch.sourceCount {
+            let sourceData = sourceBytes.everyNthByte(n: 4, start: i)
+            switch Source.parse(from: sourceData) {
+            case .success(let source):
+                temp.sources.append(source)
+            case .failure(let error):
+                return .failure(error)
+            }
+        }
         offset += sourceByteCount
-
+        
         // Now it's time to set the active status of the sources
         for i in 0..<SinglePatch.sourceCount {
             // The description in the SysEx spec seems to be backwards:
             // actually 0 is mute OFF and 1 is mute ON.
-            if activeSourcesByte.isBitSet(i) {
-                temp.sources[i].isActive = false
-            }
-            else {
-                temp.sources[i].isActive = true
-            }
+            temp.sources[i].isActive = !activeSourcesByte.isBitSet(i)
         }
         
-        let amplifierByteCount = Amplifier.dataSize * 4
+        print("DCA, offset = \(offset)")
+        let amplifierByteCount = Amplifier.dataSize * SinglePatch.sourceCount
         let amplifierBytes = data.slice(from: offset, length: amplifierByteCount)
-        let amplifierData: [ByteArray] = [
-            amplifierBytes.everyNthByte(n: 4, start: 0),
-            amplifierBytes.everyNthByte(n: 4, start: 1),
-            amplifierBytes.everyNthByte(n: 4, start: 2),
-            amplifierBytes.everyNthByte(n: 4, start: 3),
-        ]
-        temp.amplifiers = [
-            Amplifier(bytes: amplifierData[0]),
-            Amplifier(bytes: amplifierData[1]),
-            Amplifier(bytes: amplifierData[2]),
-            Amplifier(bytes: amplifierData[3]),
-        ]
+        
+        for i in 0..<SinglePatch.sourceCount {
+            let amplifierData = amplifierBytes.everyNthByte(n: 4, start: i)
+            print("Data for DCA \(i + 1): \(amplifierData.hexDump(config: .plainConfig))")
+            switch Amplifier.parse(from: amplifierData) {
+            case .success(let amplifier):
+                temp.amplifiers.append(amplifier)
+            case .failure(let error):
+                return .failure(error)
+            }
+        }
         offset += amplifierByteCount
 
+        print("Filters, offset = \(offset)")
         let filterByteCount = Filter.dataSize * 2
         let filterBytes = data.slice(from: offset, length: filterByteCount)
-        let filterData: [ByteArray] = [
-            filterBytes.everyNthByte(n: 2, start: 0),
-            filterBytes.everyNthByte(n: 2, start: 1),
-        ]
+        
+        for i in 0..<2 {
+            let filterData = filterBytes.everyNthByte(n: 2, start: i)
+            print("Data for DCF \(i + 1): \(filterData.hexDump(config: .plainConfig))")
+            switch Filter.parse(from: filterData) {
+            case .success(let filter):
+                if i == 0 {
+                    temp.filter1 = filter
+                }
+                else {
+                    temp.filter2 = filter
+                }
+            case .failure(let error):
+                return .failure(error)
+            }
+        }
         offset += filterByteCount
         
-        temp.filter1 = Filter(d: filterData[0])
-        temp.filter2 = Filter(d: filterData[1])
-        
-    /*
-        // Read in the original checksum
-        b = data.next(&offset)
-
-        // "Check sum value (s130) is the sum of the A5H and s0 ~ s129".
-        let sum = checksum(bytes: temp.data)
-        if sum != b {
-            return .failure(.badChecksum(b, sum))
-        }
-     */
         return .success(temp)
     }
     
@@ -242,7 +259,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     public var data: ByteArray {
         var d = ByteArray()
 
-        d.append(contentsOf: _name.asData())
+        d.append(contentsOf: self.name.asData())
         d.append(Byte(volume)) // s10
         d.append(Byte(effect - 1)) // s11: 1~32 to 0~31
         
