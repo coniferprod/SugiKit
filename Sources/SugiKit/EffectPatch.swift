@@ -4,7 +4,7 @@ import SyxPack
 
 
 /// The effect type.
-public enum Effect: String, Codable, CaseIterable {
+public enum Effect: Int, Codable, CaseIterable {
     case undefined
     case reverb1
     case reverb2
@@ -23,6 +23,7 @@ public enum Effect: String, Codable, CaseIterable {
     case chorusPlusNormalDelay
     case chorusPlusStereoPanpotDelay
     
+    /// Initializes an effect from raw value.
     init?(index: Int) {
         switch index {
         case 0: self = .undefined
@@ -44,6 +45,10 @@ public enum Effect: String, Codable, CaseIterable {
         case 16: self = .chorusPlusStereoPanpotDelay
         default: return nil
         }
+    }
+    
+    public var name: String {
+        return Effect.names[self.rawValue].name
     }
     
     public struct Name: Codable {
@@ -215,7 +220,6 @@ extension EffectPatch: SystemExclusiveData {
     public var dataLength: Int { EffectPatch.dataSize }
 }
 
-
 extension SubmixSettings: SystemExclusiveData {
     public func asData() -> ByteArray {
         return [Byte(pan + 8), Byte(send1), Byte(send2)]
@@ -226,6 +230,12 @@ extension SubmixSettings: SystemExclusiveData {
 }
 
 // MARK: - CustomStringConvertible
+
+extension Effect: CustomStringConvertible {
+    public var description: String {
+        return self.name
+    }
+}
 
 extension EffectPatch: CustomStringConvertible {
     public var description: String {
