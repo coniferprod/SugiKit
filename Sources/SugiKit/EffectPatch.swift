@@ -111,42 +111,46 @@ public enum Effect: Int, Codable, CaseIterable {
     ])
 }
 
-public struct SubmixSettings: Codable, Equatable {
-    public static let dataSize = 3
-    
-    public var pan: Int  // 0~15 / 0~+/-7 (K4)
-    public var send1: UInt  // 0~99
-    public var send2: UInt  // 0~100 (from correction sheet, not 0~99)
-    
-    public init() {
-        self.pan = 0
-        self.send1 = 0
-        self.send2 = 0
+public struct SubmixSettings: Equatable {
+    public static func == (lhs: SubmixSettings, rhs: SubmixSettings) -> Bool {
+        return lhs.pan == rhs.pan && lhs.send1 == rhs.send1 && lhs.send2 == rhs.send2
     }
     
-    public init(pan: Int, send1: UInt, send2: UInt) {
-        self.pan = pan
-        self.send1 = send1
-        self.send2 = send2
+    public static let dataSize = 3
+    
+    public var pan: Pan  // 0~15 / 0~+/-7 (K4)
+    public var send1: Send1  // 0~99
+    public var send2: Send2  // 0~100 (from correction sheet, not 0~99)
+    
+    public init() {
+        self.pan = Pan(0)
+        self.send1 = Send1(0)
+        self.send2 = Send2(0)
+    }
+    
+    public init(pan: Int, send1: Int, send2: Int) {
+        self.pan = Pan(pan)
+        self.send1 = Send1(send1)
+        self.send2 = Send2(send2)
     }
 }
 
 /// Represents an effect patch.
-public class EffectPatch: HashableClass, Codable, Identifiable {
+public class EffectPatch: HashableClass, Identifiable {
     static let dataSize = 35
     static let submixCount = 8
     
     public var effect: Effect
-    public var param1: Int  // 0~7
-    public var param2: Int  // 0~7
-    public var param3: Int  // 0~31
+    public var param1: EffectParameterSmall  // 0~7
+    public var param2: EffectParameterSmall  // 0~7
+    public var param3: EffectParameterLarge  // 0~31
     public var submixes: [SubmixSettings]
     
     public override init() {
         effect = .reverb1
-        param1 = 0
-        param2 = 3
-        param3 = 16
+        param1 = EffectParameterSmall(0)
+        param2 = EffectParameterSmall(3)
+        param3 = EffectParameterLarge(16)
         submixes = Array(repeating: SubmixSettings(pan: 0, send1: 50, send2: 50), count: EffectPatch.submixCount)
     }
     
@@ -167,13 +171,13 @@ public class EffectPatch: HashableClass, Codable, Identifiable {
         temp.effect = Effect(index: Int(b + 1))!  // in SysEx 0~15, store as 1~16
         
         b = data.next(&offset)
-        temp.param1 = Int(b)
+        temp.param1 = EffectParameterSmall(Int(b))
         
         b = data.next(&offset)
-        temp.param2 = Int(b)
+        temp.param2 = EffectParameterSmall(Int(b))
         
         b = data.next(&offset)
-        temp.param3 = Int(b)
+        temp.param3 = EffectParameterLarge(Int(b))
         
         offset += 6 // skip dummy bytes
         
@@ -183,10 +187,10 @@ public class EffectPatch: HashableClass, Codable, Identifiable {
             let pan = Int(b) - 7
 
             b = data.next(&offset)
-            let send1 = UInt(b)
+            let send1 = Int(b)
 
             b = data.next(&offset)
-            let send2 = UInt(b)
+            let send2 = Int(b)
 
             let submix = SubmixSettings(pan: pan, send1: send1, send2: send2)
             temp.submixes.append(submix)
@@ -197,7 +201,8 @@ public class EffectPatch: HashableClass, Codable, Identifiable {
 
     private var data: ByteArray {
         var buf = ByteArray()
-        [effect.index - 1, param1, param2, param3, 0, 0, 0, 0, 0, 0].forEach {
+        [effect.index - 1, param1.value, param2.value, param3.value,
+            0, 0, 0, 0, 0, 0].forEach {
             buf.append(Byte($0))
         }
         self.submixes.forEach { buf.append(contentsOf: $0.asData()) }
@@ -222,7 +227,7 @@ extension EffectPatch: SystemExclusiveData {
 
 extension SubmixSettings: SystemExclusiveData {
     public func asData() -> ByteArray {
-        return [Byte(pan + 8), Byte(send1), Byte(send2)]
+        return [Byte(pan.value + 8), Byte(send1.value), Byte(send2.value)]  // TODO: or +7?
     }
     
     /// Gets the length of the data.
@@ -241,7 +246,7 @@ extension EffectPatch: CustomStringConvertible {
     public var description: String {
         var lines = [String]()
         let name = Effect.names[self.effect.index]
-        lines.append("\(name.name): \(name.parameters[0])=\(self.param1)  \(name.parameters[1])=\(self.param2)  \(name.parameters[2])=\(self.param3)")
+        lines.append("\(name.name): \(name.parameters[0])=\(self.param1.value)  \(name.parameters[1])=\(self.param2.value)  \(name.parameters[2])=\(self.param3.value)")
         for (index, submixSettings) in submixes.enumerated() {
             let submix = Submix(index: index)!
             lines.append("  \(submix.rawValue.uppercased()): \(submixSettings)")
@@ -252,6 +257,6 @@ extension EffectPatch: CustomStringConvertible {
 
 extension SubmixSettings: CustomStringConvertible {
     public var description: String {
-        return "Pan=\(pan) Send1=\(send1) Send2=\(send2)"
+        return "Pan=\(pan.value) Send1=\(send1.value) Send2=\(send2.value)"
     }
 }

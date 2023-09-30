@@ -92,7 +92,7 @@ final class SinglePatchTests: XCTestCase {
     func testVolume() {
         switch SinglePatch.parse(from: self.patchData) {
         case .success(let patch):
-            XCTAssertEqual(patch.volume, 100)
+            XCTAssertEqual(patch.volume.value, 100)
         case .failure(let error):
             XCTFail("\(error)")
         }
@@ -101,7 +101,7 @@ final class SinglePatchTests: XCTestCase {
     func testEffect() {
         switch SinglePatch.parse(from: self.patchData) {
         case .success(let patch):
-            XCTAssertEqual(patch.effect, 1)
+            XCTAssertEqual(patch.effect.value, 1)
         case .failure(let error):
             XCTFail("\(error)")
         }
@@ -133,7 +133,7 @@ final class SinglePatchTests: XCTestCase {
         switch SinglePatch.parse(from: self.patchData) {
         case .success(let single):
             let source = single.sources[0]
-            XCTAssertEqual(source.delay, 0)
+            XCTAssertEqual(source.delay.value, 0)
             XCTAssertEqual(source.velocityCurve, .curve1)
             XCTAssertEqual(source.keyScalingCurve, .curve1)
         case .failure(let error):
@@ -149,7 +149,7 @@ final class SinglePatchTests: XCTestCase {
         print("Amp 1 data: \(amp1Data.hexDump(config: .plainConfig))")
         switch Amplifier.parse(from: amp1Data) {
         case .success(let amp):
-            XCTAssertEqual(amp.level, 0x4B)
+            XCTAssertEqual(amp.level.value, 0x4B)
             XCTAssertEqual(amp.envelope, self.amplifierEnvelope)
         case .failure(let error):
             XCTFail("\(error)")
@@ -162,14 +162,14 @@ final class SinglePatchTests: XCTestCase {
         switch Amplifier.parse(from: amp1Data) {
         case .success(let amp):
             let levelMod = amp.levelModulation
-            XCTAssertEqual(levelMod.velocityDepth, 15)
-            XCTAssertEqual(levelMod.pressureDepth, 0)
-            XCTAssertEqual(levelMod.keyScalingDepth, -6)
+            XCTAssertEqual(levelMod.velocityDepth.value, 15)
+            XCTAssertEqual(levelMod.pressureDepth.value, 0)
+            XCTAssertEqual(levelMod.keyScalingDepth.value, -6)
         
             let timeMod = amp.timeModulation
-            XCTAssertEqual(timeMod.attackVelocity, 0)
-            XCTAssertEqual(timeMod.releaseVelocity, 0)
-            XCTAssertEqual(timeMod.keyScaling, 0)
+            XCTAssertEqual(timeMod.attackVelocity.value, 0)
+            XCTAssertEqual(timeMod.releaseVelocity.value, 0)
+            XCTAssertEqual(timeMod.keyScaling.value, 0)
         case .failure(let error):
             XCTFail("\(error)")
         }
@@ -200,15 +200,15 @@ final class SinglePatchTests: XCTestCase {
         case .success(let single):
             let filter = single.filter1
         
-            XCTAssertEqual(filter.envelopeDepth, 4)
-            XCTAssertEqual(filter.envelopeVelocityDepth, 0)
+            XCTAssertEqual(filter.envelopeDepth.value, 4)
+            XCTAssertEqual(filter.envelopeVelocityDepth.value, 0)
             
             XCTAssertEqual(single.filter1.envelope, Filter.Envelope(attack: 86, decay: 100, sustain: 0, release: 86))
                                    
             let timeMod = filter.timeModulation
-            XCTAssertEqual(timeMod.attackVelocity, 0)
-            XCTAssertEqual(timeMod.releaseVelocity, 0)
-            XCTAssertEqual(timeMod.keyScaling, 0)
+            XCTAssertEqual(timeMod.attackVelocity.value, 0)
+            XCTAssertEqual(timeMod.releaseVelocity.value, 0)
+            XCTAssertEqual(timeMod.keyScaling.value, 0)
         case .failure(let error):
             XCTFail("\(error)")
         }
@@ -222,8 +222,8 @@ final class SinglePatchTests: XCTestCase {
         case .success(let source):
             XCTAssertEqual(source.wave.number, 19)
             XCTAssertEqual(source.keyTrack, true)
-            XCTAssertEqual(source.coarse, -12)
-            XCTAssertEqual(source.fine, -6)
+            XCTAssertEqual(source.coarse.value, -12)
+            XCTAssertEqual(source.fine.value, -6)
             XCTAssertEqual(source.fixedKey.description, "C-1")
             XCTAssertEqual(source.pressureFrequency, false)
             XCTAssertEqual(source.vibrato, true)

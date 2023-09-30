@@ -3,26 +3,44 @@ import Foundation
 import SyxPack
 
 /// DCF settings.
-public struct Filter: Codable, Equatable {
+public struct Filter: Equatable {
+    public static func == (lhs: Filter, rhs: Filter) -> Bool {
+        return lhs.cutoff == rhs.cutoff
+        && lhs.resonance == rhs.resonance
+        && lhs.cutoffModulation == rhs.cutoffModulation
+        && lhs.isLfoModulatingCutoff == rhs.isLfoModulatingCutoff
+        && lhs.envelopeDepth == rhs.envelopeDepth
+        && lhs.envelopeVelocityDepth == rhs.envelopeVelocityDepth
+        && lhs.envelope == rhs.envelope
+        && lhs.timeModulation == rhs.timeModulation
+    }
+    
     /// DCF envelope.
-    public struct Envelope: Codable, Equatable {
-        public var attack: UInt  // 0~100
-        public var decay: UInt  // 0~100
-        public var sustain: Int  // -50~+50, in SysEx 0~100 (also manual has an error)
-        public var release: UInt  // 0~100
+    public struct Envelope: Equatable {
+        public static func == (lhs: Filter.Envelope, rhs: Filter.Envelope) -> Bool {
+            return lhs.attack == rhs.attack
+            && lhs.decay == rhs.decay
+            && lhs.sustain == rhs.sustain
+            && lhs.release == rhs.release
+        }
+        
+        public var attack: Level  // 0~100
+        public var decay: Level  // 0~100
+        public var sustain: Depth  // -50~+50, in SysEx 0~100 (also manual has an error)
+        public var release: Level  // 0~100
         
         public init() {
-            attack = 0
-            decay = 0
-            sustain = 0
-            release = 0
+            attack = Level()
+            decay = Level()
+            sustain = Depth()
+            release = Level()
         }
 
-        public init(attack a: UInt, decay d: UInt, sustain s: Int, release r: UInt) {
-            attack = a
-            decay = d
-            sustain = s
-            release = r
+        public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
+            attack = Level(a)
+            decay = Level(d)
+            sustain = Depth(s)
+            release = Level(r)
         }
         
         public static func parse(from data: ByteArray) -> Result<Envelope, ParseError> {
@@ -32,16 +50,16 @@ public struct Filter: Codable, Equatable {
             var temp = Envelope()
             
             b = data.next(&offset)
-            temp.attack = UInt(b & 0x7f)
+            temp.attack = Level(Int(b & 0x7f))
 
             b = data.next(&offset)
-            temp.decay = UInt(b & 0x7f)
+            temp.decay = Level(Int(b & 0x7f))
 
             b = data.next(&offset)
-            temp.sustain = Int(b & 0x7f) - 50  // error in manual and SysEx: actually -50~+50, not 0~100
+            temp.sustain = Depth(Int(b & 0x7f) - 50)  // error in manual and SysEx: actually -50~+50, not 0~100
 
             b = data.next(&offset)
-            temp.release = UInt(b & 0x7f)
+            temp.release = Level(Int(b & 0x7f))
             
             return .success(temp)
         }
@@ -49,7 +67,7 @@ public struct Filter: Codable, Equatable {
         private var data: ByteArray {
             var buf = ByteArray()
             
-            [Byte(attack), Byte(decay), Byte(sustain + 50), Byte(release)].forEach {
+            [Byte(attack.value), Byte(decay.value), Byte(sustain.value + 50), Byte(release.value)].forEach {
                 buf.append($0)
             }
             
@@ -61,33 +79,33 @@ public struct Filter: Codable, Equatable {
 
     public static let dataSize = 14
     
-    public var cutoff: UInt  // 0~100
-    public var resonance: UInt  // 0~7
+    public var cutoff: Level  // 0~100
+    public var resonance: Resonance  // 0~7
     public var cutoffModulation: LevelModulation
     public var isLfoModulatingCutoff: Bool
-    public var envelopeDepth: Int  // -50~+50
-    public var envelopeVelocityDepth: Int // -50~+50
+    public var envelopeDepth: Depth  // -50~+50
+    public var envelopeVelocityDepth: Depth // -50~+50
     public var envelope: Envelope
     public var timeModulation: TimeModulation
     
     public init() {
-        cutoff = 100
-        resonance = 0
+        cutoff = Level(100)
+        resonance = Resonance(0)
         cutoffModulation = LevelModulation()
         isLfoModulatingCutoff = false
-        envelopeDepth = 0
-        envelopeVelocityDepth = 0
+        envelopeDepth = Depth(0)
+        envelopeVelocityDepth = Depth(0)
         envelope = Envelope(attack: 0, decay: 50, sustain: 0, release: 50)
         timeModulation = TimeModulation()
     }
     
-    public init(cutoff: UInt, resonance: UInt, cutoffModulation: LevelModulation, isLfoModulatingCutoff: Bool, envelopeDepth: Int, envelopeVelocityDepth: Int, envelope: Envelope, timeModulation: TimeModulation) {
-        self.cutoff = cutoff
-        self.resonance = resonance
+    public init(cutoff: Int, resonance: Int, cutoffModulation: LevelModulation, isLfoModulatingCutoff: Bool, envelopeDepth: Int, envelopeVelocityDepth: Int, envelope: Envelope, timeModulation: TimeModulation) {
+        self.cutoff = Level(cutoff)
+        self.resonance = Resonance(resonance)
         self.cutoffModulation = cutoffModulation
         self.isLfoModulatingCutoff = isLfoModulatingCutoff
-        self.envelopeDepth = envelopeDepth
-        self.envelopeVelocityDepth = envelopeVelocityDepth
+        self.envelopeDepth = Depth(envelopeDepth)
+        self.envelopeVelocityDepth = Depth(envelopeVelocityDepth)
         self.envelope = envelope
         self.timeModulation = timeModulation
     }
@@ -99,10 +117,10 @@ public struct Filter: Codable, Equatable {
         var temp = Filter()
         
         b = data.next(&offset)
-        temp.cutoff = UInt(b)
+        temp.cutoff = Level(Int(b))
         
         b = data.next(&offset)
-        temp.resonance = UInt(b & 0x07)  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
+        temp.resonance = Resonance(Int(b & 0x07))  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
         temp.isLfoModulatingCutoff = b.isBitSet(3)
 
         let cutoffModulationData = data.slice(from: offset, length: LevelModulation.dataSize)
@@ -115,10 +133,10 @@ public struct Filter: Codable, Equatable {
         offset += LevelModulation.dataSize
         
         b = data.next(&offset)
-        temp.envelopeDepth = Int(b & 0x7f) - 50
+        temp.envelopeDepth = Depth(Int(b & 0x7f) - 50)
 
         b = data.next(&offset)
-        temp.envelopeVelocityDepth = Int(b & 0x7f) - 50
+        temp.envelopeVelocityDepth = Depth(Int(b & 0x7f) - 50)
 
         let envelopeData = data.slice(from: offset, length: Envelope.dataSize)
         switch Envelope.parse(from: envelopeData) {
@@ -144,18 +162,18 @@ public struct Filter: Codable, Equatable {
     private var data: ByteArray {
         var buf = ByteArray()
         
-        buf.append(Byte(cutoff))
+        buf.append(Byte(cutoff.value))
         
         // s104/105
-        var s104 = Byte(resonance)
+        var s104 = Byte(resonance.value)
         if isLfoModulatingCutoff {
             s104.setBit(3)
         }
         buf.append(s104)
         
         buf.append(contentsOf: cutoffModulation.asData())
-        buf.append(Byte(envelopeDepth + 50))
-        buf.append(Byte(envelopeVelocityDepth + 50))
+        buf.append(Byte(envelopeDepth.value + 50))
+        buf.append(Byte(envelopeVelocityDepth.value + 50))
         buf.append(contentsOf: envelope.asData())
         buf.append(contentsOf: timeModulation.asData())
 

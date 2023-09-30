@@ -4,14 +4,14 @@ import SyxPack
 
 
 /// Represents a single patch.
-public class SinglePatch: HashableClass, Codable, Identifiable {
+public class SinglePatch: HashableClass, Identifiable {
     static let dataSize = 131
     static let sourceCount = 4
     static let nameLength = 10
 
     public var name: PatchName  // name (10 characters)
-    public var volume: UInt  // volume 0~100
-    public var effect: UInt  // effect patch number 1~32 (in SysEx 0~31)
+    public var volume: Level  // volume 0~100
+    public var effect: EffectNumber  // effect patch number 1~32 (in SysEx 0~31)
     public var submix: Submix // A...H
         
     public var sourceMode: SourceMode
@@ -19,10 +19,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     public var am12: Bool
     public var am34: Bool
         
-    public var benderRange: UInt  // 0~12 in semitones
-    public var pressFreq: Int // -50~+50 (0~100 in SysEx)
+    public var benderRange: BenderRange  // 0~12 in semitones
+    public var pressFreq: Depth // -50~+50 (0~100 in SysEx)
     public var wheelAssign: WheelAssign
-    public var wheelDepth: Int  // -50 ... +50
+    public var wheelDepth: Depth  // -50 ... +50
     public var autoBend: AutoBend
     public var vibrato: Vibrato
     public var lfo: LFO
@@ -34,8 +34,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
     /// Initializes a single patch with default settings.
     public override init() {
         name = PatchName("NewSingle")
-        volume = 90
-        effect = 1
+        volume = Level(90)
+        effect = EffectNumber(1)
         submix = .a
         
         sourceMode = .normal
@@ -43,10 +43,10 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         am12 = false
         am34 = false
                 
-        benderRange = 0
-        pressFreq = 0
+        benderRange = BenderRange(0)
+        pressFreq = Depth(0)
         wheelAssign = .cutoff
-        wheelDepth = 0
+        wheelDepth = Depth(0)
         autoBend = AutoBend()
         vibrato = Vibrato()
         lfo = LFO()
@@ -82,12 +82,12 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 
         print("Volume, offset = \(offset)")
         b = data.next(&offset)
-        temp.volume = UInt(b)
+        temp.volume = Level(Int(b))
 
         // effect = s11 bits 0...4
         b = data.next(&offset)
         //print("effect byte s11 = 0x\(String(b, radix: 16))")
-        temp.effect = UInt(Int(b & 0b00011111) + 1)  // mask out top three bits just in case, then bring into range 1~32
+        temp.effect = EffectNumber(Int(b & 0b00011111) + 1)  // mask out top three bits just in case, then bring into range 1~32
 
         // output select = s12 bits 0...2
         b = data.next(&offset)
@@ -135,7 +135,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 
         b = data.next(&offset)  // s15
         // Pitch bend = s15 bits 0...3
-        temp.benderRange = UInt(b.bitField(start: 0, end: 4))
+        temp.benderRange = BenderRange(Int(b.bitField(start: 0, end: 4)))
         //print("bender range = \(benderRange)", to: &standardError)
         
         // Wheel assign = s15 bits 4...5
@@ -152,7 +152,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
 
         b = data.next(&offset)  // s17
         // Wheel depth = s17 bits 0...6
-        temp.wheelDepth = Int((b & 0x7f)) - 50  // 0~100 to ±50
+        temp.wheelDepth = Depth(Int((b & 0x7f)) - 50)  // 0~100 to ±50
         //print("wheel depth = \(self.wheelDepth)")
         
         print("AutoBend, offset = \(offset)")
@@ -192,7 +192,7 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         offset += LFO.dataSize
 
         b = data.next(&offset)
-        temp.pressFreq = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.pressFreq = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
         
         print("Sources, offset = \(offset)")
         let sourceByteCount = SinglePatch.sourceCount * Source.dataSize
@@ -260,8 +260,8 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         var d = ByteArray()
 
         d.append(contentsOf: self.name.asData())
-        d.append(Byte(volume)) // s10
-        d.append(Byte(effect - 1)) // s11: 1~32 to 0~31
+        d.append(Byte(volume.value)) // s10
+        d.append(Byte(effect.value - 1)) // s11: 1~32 to 0~31
         
         let submixNames = ["a", "b", "c", "d", "e", "f", "g", "h"]
         let submixIndex = submixNames.firstIndex(of: submix.rawValue)
@@ -288,14 +288,14 @@ public class SinglePatch: HashableClass, Codable, Identifiable {
         }
         d.append(s14)
         
-        d.append((Byte(wheelAssign.index) << 4) | Byte(benderRange))  // s15
-        d.append(Byte(vibrato.speed)) // s16
-        d.append(Byte(wheelDepth + 50))  // s17
+        d.append((Byte(wheelAssign.index) << 4) | Byte(benderRange.value))  // s15
+        d.append(Byte(vibrato.speed.value)) // s16
+        d.append(Byte(wheelDepth.value + 50))  // s17
         d.append(contentsOf: autoBend.asData())  // s18 ... s21
-        d.append(Byte(vibrato.pressureDepth + 50))  // s22
-        d.append(Byte(vibrato.depth + 50))  // s23
+        d.append(Byte(vibrato.pressureDepth.value + 50))  // s22
+        d.append(Byte(vibrato.depth.value + 50))  // s23
         d.append(contentsOf: lfo.asData())  // s24 ... s28
-        d.append(Byte(pressFreq + 50))  // s29
+        d.append(Byte(pressFreq.value + 50))  // s29
 
         // The source data are interleaved, with one byte from each first,
         // then the second, etc. That's why they are emitted in this slightly

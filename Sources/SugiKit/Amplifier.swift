@@ -4,40 +4,54 @@ import SyxPack
 
 
 /// DCA settings.
-public struct Amplifier: Codable, Equatable {
+public struct Amplifier: Equatable {
+    public static func == (lhs: Amplifier, rhs: Amplifier) -> Bool {
+        return lhs.level == rhs.level
+        && lhs.envelope == rhs.envelope
+        && lhs.levelModulation == rhs.levelModulation
+        && lhs.timeModulation == rhs.timeModulation
+    }
+    
     /// DCA envelope.
-    public struct Envelope: Codable, Equatable {
+    public struct Envelope: Equatable {
+        public static func == (lhs: Amplifier.Envelope, rhs: Amplifier.Envelope) -> Bool {
+            return lhs.attack == rhs.attack
+            && lhs.decay == rhs.decay
+            && lhs.sustain == rhs.sustain
+            && lhs.release == rhs.release
+        }
+        
         public static let dataSize = 4
         
-        public var attack: UInt  // 0~100
-        public var decay: UInt  // 0~100
-        public var sustain: UInt  // 0~100
-        public var release: UInt  // 0~100
+        public var attack: Level  // 0~100
+        public var decay: Level  // 0~100
+        public var sustain: Level  // 0~100
+        public var release: Level  // 0~100
         
         /// Initialize an amplifier envelope with default settings.
         public init() {
-            attack = 0
-            decay = 0
-            sustain = 0
-            release = 0
+            attack = Level()
+            decay = Level()
+            sustain = Level()
+            release = Level()
         }
         
         /// Initialize an amplifier envelope with parameters.
-        public init(attack a: UInt, decay d: UInt, sustain s: UInt, release r: UInt) {
-            attack = a
-            decay = d
-            sustain = s
-            release = r
+        public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
+            attack = Level(a)
+            decay = Level(d)
+            sustain = Level(s)
+            release = Level(r)
         }
 
         /// Parse amplifier envelope from MIDI System Exclusive data bytes.
         public static func parse(from data: ByteArray) -> Result<Envelope, ParseError> {
             var offset: Int = 0
             
-            let attack = UInt(data.next(&offset))
-            let decay = UInt(data.next(&offset))
-            let sustain = UInt(data.next(&offset))
-            let release = UInt(data.next(&offset))
+            let attack = Int(data.next(&offset))
+            let decay = Int(data.next(&offset))
+            let sustain = Int(data.next(&offset))
+            let release = Int(data.next(&offset))
 
             return .success(Envelope(attack: attack, decay: decay, sustain: sustain, release: release))
         }
@@ -45,14 +59,14 @@ public struct Amplifier: Codable, Equatable {
 
     public static let dataSize = 1 + Envelope.dataSize + LevelModulation.dataSize + TimeModulation.dataSize
     
-    public var level: UInt  // 0~100
+    public var level: Level  // 0~100
     public var envelope: Envelope
     public var levelModulation: LevelModulation
     public var timeModulation: TimeModulation
     
     /// Initializes an amplifier with default settings.
     public init() {
-        level = 100
+        level = Level(100)
         envelope = Envelope(attack: 0, decay: 50, sustain: 0, release: 50)
         levelModulation = LevelModulation()
         timeModulation = TimeModulation()
@@ -66,7 +80,7 @@ public struct Amplifier: Codable, Equatable {
         var temp = Amplifier()
         
         b = data.next(&offset)
-        temp.level = UInt(b)
+        temp.level = Level(Int(b))
 
         let envelopeData = data.slice(from: offset, length: Envelope.dataSize)
         switch Envelope.parse(from: envelopeData) {
@@ -105,7 +119,7 @@ extension Amplifier: SystemExclusiveData {
     public func asData() -> ByteArray {
         var buf = ByteArray()
             
-        buf.append(Byte(level))
+        buf.append(Byte(level.value))
         buf.append(contentsOf: self.envelope.asData())
         buf.append(contentsOf: self.levelModulation.asData())
         buf.append(contentsOf: self.timeModulation.asData())
@@ -120,7 +134,7 @@ extension Amplifier: SystemExclusiveData {
 extension Amplifier.Envelope: SystemExclusiveData {
     public func asData() -> ByteArray {
         var buf = ByteArray()
-        [attack, decay, sustain, release].forEach { buf.append(Byte($0)) }
+        [attack, decay, sustain, release].forEach { buf.append(Byte($0.value)) }
         return buf
     }
     

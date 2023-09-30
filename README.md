@@ -47,6 +47,11 @@ index of the enumeration value:
 
 Why this instead of `rawValue`? Can't remember.
 
+### RangedInt
+
+Many of the synth parameters are expressed as an immutable struct that conforms
+to the `RangedInt` protocol.
+
 ### Generating System Exclusive messages
 
 Most synth blocks have a computed property `data` that provides the raw

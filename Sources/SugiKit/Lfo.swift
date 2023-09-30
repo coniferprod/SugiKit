@@ -3,7 +3,15 @@ import Foundation
 import SyxPack
 
 /// LFO settings.
-public struct LFO: Codable, Equatable {
+public struct LFO: Equatable {
+    public static func == (lhs: LFO, rhs: LFO) -> Bool {
+        return lhs.shape == rhs.shape
+        && lhs.speed == rhs.speed
+        && lhs.delay == rhs.delay
+        && lhs.depth == rhs.depth
+        && lhs.pressureDepth == rhs.pressureDepth
+    }
+    
     /// LFO shapes.
     public enum Shape: String, Codable, CaseIterable {
         case triangle
@@ -23,29 +31,29 @@ public struct LFO: Codable, Equatable {
     }
 
     public var shape: Shape
-    public var speed: UInt  // 0~100
-    public var delay: UInt  // 0~100
-    public var depth: Int  // -50~+50
-    public var pressureDepth: Int  // -50~+50
+    public var speed: Level  // 0~100
+    public var delay: Level  // 0~100
+    public var depth: Depth  // -50~+50
+    public var pressureDepth: Depth  // -50~+50
     
     static let dataSize = 5
     
     /// Initializes an LFO with default values.
     public init() {
         shape = .triangle
-        speed = 0
-        delay = 0
-        depth = 0
-        pressureDepth = 0
+        speed = Level(0)
+        delay = Level(0)
+        depth = Depth(0)
+        pressureDepth = Depth(0)
     }
     
     /// Initializes an LFO with the specified values.
-    public init(shape: Shape, speed: UInt, delay: UInt, depth: Int, pressureDepth: Int) {
+    public init(shape: Shape, speed: Int, delay: Int, depth: Int, pressureDepth: Int) {
         self.shape = shape
-        self.speed = speed
-        self.delay = delay
-        self.depth = depth
-        self.pressureDepth = pressureDepth
+        self.speed = Level(speed)
+        self.delay = Level(delay)
+        self.depth = Depth(depth)
+        self.pressureDepth = Depth(pressureDepth)
     }
 
     /// Parses an LFO from MIDI System Exclusive data bytes.
@@ -66,39 +74,46 @@ public struct LFO: Codable, Equatable {
         }
 
         b = data.next(&offset)
-        temp.speed = UInt(b & 0x7f)
+        temp.speed = Level(Int(b & 0x7f))
 
         b = data.next(&offset)
-        temp.delay = UInt(b & 0x7f)
+        temp.delay = Level(Int(b & 0x7f))
 
         b = data.next(&offset)
-        temp.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.depth = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
 
         b = data.next(&offset)
-        temp.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.pressureDepth = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
 
         return .success(temp)
     }
 }
 
-public struct Vibrato: Codable, Equatable {
+public struct Vibrato: Equatable {
+    public static func == (lhs: Vibrato, rhs: Vibrato) -> Bool {
+        return lhs.shape == rhs.shape
+        && lhs.speed == rhs.speed
+        && lhs.depth == rhs.depth
+        && lhs.pressureDepth == rhs.pressureDepth
+    }
+    
     public var shape: LFO.Shape
-    public var speed: UInt  // 0~100
-    public var depth: Int  // -50+~50
-    public var pressureDepth: Int  // -50+~+50
+    public var speed: Level  // 0~100
+    public var depth: Depth  // -50+~50
+    public var pressureDepth: Depth  // -50+~+50
     
     public init() {
         shape = .triangle
-        speed = 0
-        depth = 0
-        pressureDepth = 0
+        speed = Level(0)
+        depth = Depth(0)
+        pressureDepth = Depth(0)
     }
     
-    public init(shape: LFO.Shape, speed: UInt, depth: Int, pressureDepth: Int) {
+    public init(shape: LFO.Shape, speed: Int, depth: Int, pressureDepth: Int) {
         self.shape = shape
-        self.speed = speed
-        self.depth = depth
-        self.pressureDepth = pressureDepth
+        self.speed = Level(speed)
+        self.depth = Depth(depth)
+        self.pressureDepth = Depth(pressureDepth)
     }
     
     public static func parse(from data: ByteArray) -> Result<Vibrato, ParseError> {
@@ -119,13 +134,13 @@ public struct Vibrato: Codable, Equatable {
 
         b = data.next(&offset)
         // Vibrato speed = s16 bits 0...6
-        temp.speed = UInt(b & 0x7f)
+        temp.speed = Level(Int(b & 0x7f))
         
         b = data.next(&offset)
-        temp.pressureDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.pressureDepth = Depth(Int(b & 0x7f) - 50) // 0~100 to ±50
         
         b = data.next(&offset)
-        temp.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.depth = Depth(Int(b & 0x7f) - 50) // 0~100 to ±50
 
         return .success(temp)
     }
@@ -134,9 +149,9 @@ public struct Vibrato: Codable, Equatable {
         var buf = ByteArray()
         
         buf.append(Byte(shape.index))
-        buf.append(Byte(speed))
-        buf.append(Byte(depth + 50))
-        buf.append(Byte(pressureDepth + 50))
+        buf.append(Byte(speed.value))
+        buf.append(Byte(depth.value + 50))
+        buf.append(Byte(pressureDepth.value + 50))
 
         return buf
     }
@@ -155,10 +170,10 @@ extension LFO: SystemExclusiveData {
         var buf = ByteArray()
         
         buf.append(Byte(shape.index))
-        buf.append(Byte(speed))
-        buf.append(Byte(delay))
-        buf.append(Byte(depth + 50))
-        buf.append(Byte(pressureDepth + 50))
+        buf.append(Byte(speed.value))
+        buf.append(Byte(delay.value))
+        buf.append(Byte(depth.value + 50))
+        buf.append(Byte(pressureDepth.value + 50))
 
         return buf
     }
@@ -172,9 +187,9 @@ extension Vibrato: SystemExclusiveData {
         var buf = ByteArray()
         
         buf.append(Byte(shape.index))
-        buf.append(Byte(speed))
-        buf.append(Byte(depth + 50))
-        buf.append(Byte(pressureDepth + 50))
+        buf.append(Byte(speed.value))
+        buf.append(Byte(depth.value + 50))
+        buf.append(Byte(pressureDepth.value + 50))
         
         return buf
     }

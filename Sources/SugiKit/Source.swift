@@ -4,15 +4,15 @@ import SyxPack
 
 
 /// Represents one source in a single patch.
-public struct Source: Codable {
+public struct Source {
     static let dataSize = 7
 
     public var isActive: Bool
-    public var delay: Int // 0~100
+    public var delay: Level // 0~100
     public var wave: Wave
     public var keyTrack:  Bool
-    public var coarse: Int  // -24~+24
-    public var fine: Int  // -50~+50
+    public var coarse: Coarse  // -24~+24
+    public var fine: Fine  // -50~+50
     public var fixedKey: Key  // key represents C-1 to G8
     public var pressureFrequency: Bool
     public var vibrato: Bool
@@ -22,11 +22,11 @@ public struct Source: Codable {
     /// Initializes the source with default settings.
     public init() {
         isActive = false
-        delay = 0
+        delay = Level(0)
         wave = Wave(number: 10)
         keyTrack = true
-        coarse = 0
-        fine = 0
+        coarse = Coarse(0)
+        fine = Fine(0)
         fixedKey = Key(note: 60)
         pressureFrequency = true
         vibrato = true
@@ -46,7 +46,7 @@ public struct Source: Codable {
         
         // s30/s31/s32/s33
         b = data.next(&offset)
-        temp.delay = Int(b & 0x7f)
+        temp.delay = Level(Int(b & 0x7f))
 
         // s34/s35/s36/s37
         b = data.next(&offset)
@@ -69,14 +69,14 @@ public struct Source: Codable {
         // and b6 is the key tracking bit (b7 is zero).
         
         temp.keyTrack = b.isBitSet(6)
-        temp.coarse = Int((b & 0x3f)) - 24  // 00 ~ 48 to ±24
+        temp.coarse = Coarse(Int((b & 0x3f)) - 24)  // 00 ~ 48 to ±24
         
         b = data.next(&offset)
         let key = b & 0x7f
         temp.fixedKey = Key(note: Int(key))
 
         b = data.next(&offset)
-        temp.fine = Int((b & 0x7f)) - 50
+        temp.fine = Fine(Int((b & 0x7f)) - 50)
 
         b = data.next(&offset)
         temp.pressureFrequency = b.isBitSet(0)
@@ -96,7 +96,7 @@ extension Source: SystemExclusiveData {
         
         // isActive is not emitted, that information is in the single
                     
-        buf.append(Byte(delay))
+        buf.append(Byte(delay.value))
         
         // s34/s35/s36/s37 wave select h and ks
         let ksCurve = keyScalingCurve.rawValue - 1  // bring KS curve to range 0~7
@@ -113,7 +113,7 @@ extension Source: SystemExclusiveData {
         buf.append(s38)
     
         // s42/s43/s44/s45 key track and coarse
-        var s42 = Byte(coarse + 24)  // bring into 0~48
+        var s42 = Byte(coarse.value + 24)  // bring into 0~48
         if keyTrack {
             s42.setBit(6)
         }
@@ -123,7 +123,7 @@ extension Source: SystemExclusiveData {
         buf.append(Byte(fixedKey.note))
         
         // s50/s51/s52/s53
-        buf.append(Byte(fine + 50))  // bring into 0~100
+        buf.append(Byte(fine.value + 50))  // bring into 0~100
         
         // s54/s55/s56/s57 vel curve, vib/a.bend, prs/freq
         var s54 = Byte(velocityCurve.rawValue - 1) << 2

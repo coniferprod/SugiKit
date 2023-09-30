@@ -3,21 +3,28 @@ import Foundation
 import SyxPack
 
 /// Drum patch.
-public struct Drum: Codable, Equatable {
+public struct Drum: Equatable {
     /// Common settings of the drum patch.
-    public struct Common: Codable, Equatable {
+    public struct Common: Equatable {
+        public static func == (lhs: Drum.Common, rhs: Drum.Common) -> Bool {
+            return lhs.channel == rhs.channel
+            && lhs.volume == rhs.volume
+            && lhs.velocityDepth == rhs.velocityDepth
+            && lhs.commonChecksum == rhs.commonChecksum
+        }
+        
         public static let dataSize = 11
 
-        public var channel: Byte  // drm rcv ch, store 0...15 as 1...16
-        public var volume: UInt  // drm vol, 0~100
-        public var velocityDepth: Int  // drm vel depth, -50~+50 (0~100 in SysEx)
+        public var channel: MIDIChannel  // drm rcv ch, store 0...15 as 1...16
+        public var volume: Level  // drm vol, 0~100
+        public var velocityDepth: Depth  // drm vel depth, -50~+50 (0~100 in SysEx)
         public var commonChecksum: Byte
 
         /// Initializes the drum patch common settings with default values.
         public init() {
-            channel = 1
-            volume = 100
-            velocityDepth = 0
+            channel = MIDIChannel(1)
+            volume = Level(100)
+            velocityDepth = Depth(0)
             commonChecksum = 0x00
         }
         
@@ -35,14 +42,14 @@ public struct Drum: Codable, Equatable {
             var b: Byte = 0
 
             b = data.next(&offset)
-            tempCommon.channel = b + 1
+            tempCommon.channel = MIDIChannel(Int(b + 1))  // adjust to 1...16
 
             b = data.next(&offset)
-            tempCommon.volume = UInt(b)
+            tempCommon.volume = Level(Int(b))
             
             b = data.next(&offset)
             // DRUM velocity depth is actually -50...+50
-            tempCommon.velocityDepth = Int(b) - 50  // adjust from 0~100
+            tempCommon.velocityDepth = Depth(Int(b) - 50)  // adjust from 0~100
             
             b = data.next(&offset)
             tempCommon.commonChecksum = b  // save the original checksum from SysEx for now
@@ -52,27 +59,34 @@ public struct Drum: Codable, Equatable {
     }
 
     /// Source for drum patch.
-    public struct Source: Codable, Equatable {
+    public struct Source: Equatable {
+        public static func == (lhs: Drum.Source, rhs: Drum.Source) -> Bool {
+            return lhs.wave == rhs.wave
+            && lhs.decay == rhs.decay
+            && lhs.tune == rhs.tune
+            && lhs.level == rhs.level
+        }
+        
         public static let dataSize = 5
         
         public var wave: Wave
-        public var decay: UInt // 0~100
-        public var tune: Int // -50~+50 (in SysEx 0~100)
-        public var level: UInt // 0~100 (from correction sheet, not 0~99)
+        public var decay: Level // 0~100
+        public var tune: Depth // -50~+50 (in SysEx 0~100)
+        public var level: Level // 0~100 (from correction sheet, not 0~99)
         
         /// Initializes the drum source with default values.
         public init() {
             wave = Wave(number: 97) // "KICK"
-            decay = 0
-            tune = 0
-            level = 100
+            decay = Level(0)
+            tune = Depth(0)
+            level = Level(100)
         }
         
-        public init(wave: Wave, decay: UInt, tune: Int, level: UInt) {
+        public init(wave: Wave, decay: Int, tune: Int, level: Int) {
             self.wave = wave
-            self.decay = decay
-            self.tune = tune
-            self.level = level
+            self.decay = Level(decay)
+            self.tune = Depth(tune)
+            self.level = Level(level)
         }
         
         /// Parse drum source data from MIDI System Exclusive data bytes.
@@ -90,16 +104,16 @@ public struct Drum: Codable, Equatable {
             let lowByte = data[1]
             tempSource.wave = Wave(highByte: highByte, lowByte: lowByte)
 
-            tempSource.decay = UInt(data[2])
-            tempSource.tune = Int(data[3]) - 50
-            tempSource.level = UInt(data[4])
+            tempSource.decay = Level(Int(data[2]))
+            tempSource.tune = Depth(Int(data[3]) - 50)
+            tempSource.level = Level(Int(data[4]))
             
             return .success(tempSource)
         }
     }
 
     /// Represents a note in the drum patch.
-    public struct Note: Codable, Equatable {
+    public struct Note: Equatable {
         public static let dataSize = 11
         
         public var submix: Submix
@@ -239,9 +253,9 @@ extension Drum.Common: SystemExclusiveData {
         var buf = ByteArray()
         
         let data: ByteArray = [
-            channel - 1,
-            Byte(volume),
-            Byte(velocityDepth),
+            Byte(channel.value - 1),  // adjust to 0...15
+            Byte(volume.value),
+            Byte(velocityDepth.value),
             0, 0, 0, 0, 0, 0, 0 // seven dummy bytes (d03...d09)
         ]
         
@@ -260,9 +274,9 @@ extension Drum.Source: SystemExclusiveData {
 
         buf.append(contentsOf: self.wave.asData())
         buf.append(contentsOf: [
-            Byte(decay),
-            Byte(tune + 50),
-            Byte(level)
+            Byte(decay.value),
+            Byte(tune.value + 50),
+            Byte(level.value)
         ])
         
         return buf

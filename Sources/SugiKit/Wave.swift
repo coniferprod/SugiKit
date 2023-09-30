@@ -9,7 +9,7 @@ import SyxPack
 // - the combined wave number is xwwwwwww 0~255
 public typealias WaveSelect = (high: Bit, low: BitArray)
 
-public struct Wave: Codable, Equatable {
+public struct Wave: Equatable {
     public static var names = [
         "(not used)",  // just to bring the index in line with the one-based wave number
         

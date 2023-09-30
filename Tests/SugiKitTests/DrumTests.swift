@@ -28,7 +28,7 @@ final class DrumTests: XCTestCase {
     func testVolume() {
         switch self.drum {
         case .success(let drum):
-            XCTAssertEqual(drum.common.volume, 100)
+            XCTAssertEqual(drum.common.volume.value, 100)
         case .failure(let error):
             XCTFail(error.localizedDescription)
         }
@@ -37,7 +37,7 @@ final class DrumTests: XCTestCase {
     func testChannel() {
         switch self.drum {
         case .success(let drum):
-            XCTAssertEqual(drum.common.channel, 10)
+            XCTAssertEqual(drum.common.channel.value, 10)
         case .failure(let error):
             XCTFail(error.localizedDescription)
         }
@@ -46,7 +46,7 @@ final class DrumTests: XCTestCase {
     func testVelocityDepth() {
         switch self.drum {
         case .success(let drum):
-            XCTAssertEqual(drum.common.velocityDepth, 50)
+            XCTAssertEqual(drum.common.velocityDepth.value, 50)
         case .failure(let error):
             XCTFail(error.localizedDescription)
         }
