@@ -25,7 +25,7 @@ final class SystemExclusiveTests: XCTestCase {
         switch Header.parse(from: data) {
         case .success(let header):
             // Channel byte is zero going in, adjusted to 1 coming out:
-            XCTAssertEqual(header.channel, 1)
+            XCTAssertEqual(header.channel.value, 1)
         case .failure(let error):
             XCTFail("\(error)")
         }

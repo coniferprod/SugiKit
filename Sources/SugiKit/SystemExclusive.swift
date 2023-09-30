@@ -6,39 +6,36 @@ import SyxPack
 /// K4 System Exclusive Message header
 public struct Header {
     public static let dataSize = 6
+    
+    public static let group: Byte = 0x00 // synth group = 0x00
+    public static let machineID: Byte = 0x04 // machine ID for K4/K4r
 
-    public var channel: Int  // pass it in as 1...16
+    public var channel: MIDIChannel
     public var function: Function
-    public var group: Byte
-    public var machineID: Byte
     public var substatus1: Byte
     public var substatus2: Byte
 
     /// Initializes a header with default values.
     public init() {
-        self.channel = 1
+        self.channel = MIDIChannel(1)
         self.function = .onePatchDataDump
-        self.group = 0x00  // synth group = 0x00
-        self.machineID = 0x04 // machine ID for K4/K4r
         self.substatus1 = 0x00
         self.substatus2 = 0x00
     }
     
     public init(channel: Int, function: Function, substatus1: Byte, substatus2: Byte) {
-        self.channel = channel
+        self.channel = MIDIChannel(channel)
         self.function = function
-        self.group = 0x00  // synth group = 0x00
-        self.machineID = 0x04 // machine ID for K4/K4r
         self.substatus1 = substatus1
         self.substatus2 = substatus2
     }
     
     private var data: ByteArray {
         return [
-            Byte(self.channel - 1),  // adjust back to 0...15 for SysEx
+            Byte(self.channel.value - 1),  // adjust back to 0...15 for SysEx
             self.function.rawValue,
-            self.group,
-            self.machineID,
+            Header.group,
+            Header.machineID,
             self.substatus1,
             self.substatus2
         ]
@@ -47,7 +44,7 @@ public struct Header {
     public static func parse(from data: ByteArray) -> Result<Header, ParseError> {
         var temp = Header()
         
-        temp.channel = Int(data[0] + 1)  // adjust to 1...16
+        temp.channel = MIDIChannel(Int(data[0] + 1))  // adjust to 1...16
         
         if let fn = Function(index: Int(data[1])) {
             temp.function = fn
@@ -55,9 +52,12 @@ public struct Header {
         else {
             return .failure(.invalidData(1))
         }
-                            
-        temp.group = data[2]
-        temp.machineID = data[3]
+
+        let ok = (data[2] == Header.group && data[3] == Header.machineID)
+        if !ok {
+            return .failure(.invalidData(2))
+        }
+        
         temp.substatus1 = data[4]
         temp.substatus2 = data[5]
         
