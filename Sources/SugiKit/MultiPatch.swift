@@ -65,8 +65,6 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             // channel, velocity switch, and section mute are all in M15
             b = data.next(&offset)
 
-            //print("multi M15 = \(b.toHex(digits: 2))")
-            
             temp.channel = b.bitField(start: 0, end: 4) + 1
 
             index = Int(b.bitField(start: 4, end: 6))
@@ -229,7 +227,6 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         // M12 / M20 / M28 / M36 / M44 / M52 / M60 / M68
         for section in sections {
             let sd = section.asData()
-            print(sd.count)
             d.append(contentsOf: section.asData())
         }
 

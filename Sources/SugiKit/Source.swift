@@ -55,7 +55,6 @@ public struct Source {
         // and KS curve = bits 4...6
         index = Int(b.bitField(start: 4, end: 7))
         temp.keyScalingCurve = KeyScalingCurve.allCases[index]
-        //print("KS curve = \(keyScalingCurve)")
 
         // This byte has the wave select low value 0~127 in bits 0...6
         let b2 = data.next(&offset)

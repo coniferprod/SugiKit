@@ -20,7 +20,7 @@ final class MultiPatchTests: XCTestCase {
         var offset = 0
 
         self.multis = [MultiPatch]()
-        for i in 0..<Bank.multiPatchCount {
+        for _ in 0..<Bank.multiPatchCount {
             let multiData = ByteArray(allMultiData.slice(from: offset, length: MultiPatch.dataSize))
             switch MultiPatch.parse(from: multiData) {
             case .success(let patch):
@@ -37,7 +37,6 @@ final class MultiPatchTests: XCTestCase {
     }
     
     func testLength() {
-        //print("multis[0].asData.count = \(multis[0].asData().count)")
         XCTAssertEqual(multis[0].asData().count, MultiPatch.dataSize)
     }
     
@@ -89,7 +88,6 @@ final class MultiPatchTests: XCTestCase {
         let b: Byte = 0x20
         let channel = Int(b.bitField(start: 0, end: 4) + 1)
         let vs = b.bitField(start: 4, end: 6)
-        print("vs = \(vs.toHex(digits: 2))")
         var velocitySwitch: VelocitySwitch = .all
         switch vs {
         case 0:

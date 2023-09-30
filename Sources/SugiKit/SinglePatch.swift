@@ -70,7 +70,6 @@ public class SinglePatch: HashableClass, Identifiable {
 
         let temp = SinglePatch()  // initialize with defaults and then fill in
         
-        print("Name, offset = \(offset)")
         let nameData = data.slice(from: offset, length: PatchName.length)
         switch PatchName.parse(from: nameData) {
         case .success(let name):
@@ -80,13 +79,11 @@ public class SinglePatch: HashableClass, Identifiable {
         }
         offset += PatchName.length
 
-        print("Volume, offset = \(offset)")
         b = data.next(&offset)
         temp.volume = Level(Int(b))
 
         // effect = s11 bits 0...4
         b = data.next(&offset)
-        //print("effect byte s11 = 0x\(String(b, radix: 16))")
         temp.effect = EffectNumber(Int(b & 0b00011111) + 1)  // mask out top three bits just in case, then bring into range 1~32
 
         // output select = s12 bits 0...2
@@ -119,9 +116,7 @@ public class SinglePatch: HashableClass, Identifiable {
         }
         
         temp.am12 = b.isBitSet(4)
-        //print("AM 1>2 = \(self.am12)")
         temp.am34 = b.isBitSet(5)
-        //print("AM 3>4 = \(self.am34)")
 
         b = data.next(&offset)
         let activeSourcesByte = b  // save this byte for later
@@ -136,7 +131,6 @@ public class SinglePatch: HashableClass, Identifiable {
         b = data.next(&offset)  // s15
         // Pitch bend = s15 bits 0...3
         temp.benderRange = BenderRange(Int(b.bitField(start: 0, end: 4)))
-        //print("bender range = \(benderRange)", to: &standardError)
         
         // Wheel assign = s15 bits 4...5
         index = Int(b.bitField(start: 4, end: 6))
@@ -153,9 +147,7 @@ public class SinglePatch: HashableClass, Identifiable {
         b = data.next(&offset)  // s17
         // Wheel depth = s17 bits 0...6
         temp.wheelDepth = Depth(Int((b & 0x7f)) - 50)  // 0~100 to ±50
-        //print("wheel depth = \(self.wheelDepth)")
         
-        print("AutoBend, offset = \(offset)")
         // s18 ... s21
         let autoBendBytes = data.slice(from: offset, length: AutoBend.dataSize)
         switch AutoBend.parse(from: autoBendBytes) {
@@ -181,7 +173,6 @@ public class SinglePatch: HashableClass, Identifiable {
         }
         // Don't adjust the offset! The vibrato bytes have been collected earlier.
 
-        print("LFO, offset = \(offset)")
         let lfoBytes = data.slice(from: offset, length: LFO.dataSize)
         switch LFO.parse(from: lfoBytes) {
         case .success(let lfo):
@@ -194,7 +185,6 @@ public class SinglePatch: HashableClass, Identifiable {
         b = data.next(&offset)
         temp.pressFreq = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
         
-        print("Sources, offset = \(offset)")
         let sourceByteCount = SinglePatch.sourceCount * Source.dataSize
         let sourceBytes = data.slice(from: offset, length: sourceByteCount)
         for i in 0..<SinglePatch.sourceCount {
@@ -215,13 +205,11 @@ public class SinglePatch: HashableClass, Identifiable {
             temp.sources[i].isActive = !activeSourcesByte.isBitSet(i)
         }
         
-        print("DCA, offset = \(offset)")
         let amplifierByteCount = Amplifier.dataSize * SinglePatch.sourceCount
         let amplifierBytes = data.slice(from: offset, length: amplifierByteCount)
         
         for i in 0..<SinglePatch.sourceCount {
             let amplifierData = amplifierBytes.everyNthByte(n: 4, start: i)
-            print("Data for DCA \(i + 1): \(amplifierData.hexDump(config: .plainConfig))")
             switch Amplifier.parse(from: amplifierData) {
             case .success(let amplifier):
                 temp.amplifiers.append(amplifier)
@@ -231,13 +219,11 @@ public class SinglePatch: HashableClass, Identifiable {
         }
         offset += amplifierByteCount
 
-        print("Filters, offset = \(offset)")
         let filterByteCount = Filter.dataSize * 2
         let filterBytes = data.slice(from: offset, length: filterByteCount)
         
         for i in 0..<2 {
             let filterData = filterBytes.everyNthByte(n: 2, start: i)
-            print("Data for DCF \(i + 1): \(filterData.hexDump(config: .plainConfig))")
             switch Filter.parse(from: filterData) {
             case .success(let filter):
                 if i == 0 {

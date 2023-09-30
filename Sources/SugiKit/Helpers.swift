@@ -58,16 +58,11 @@ extension Byte {
             return 0
         }
 
-        //print("getting bit field from \(start) to \(end)")
-        
         // shift the bits we want to the bottom of the byte
         let allBits = self >> start
-        //print("shifted right by \(start) to get \(allBits)")
         
         let length = end - start
-        //print("length is \(length)")
         let fieldBits = allBits & (1 << length)
-        //print("allBits & (1 << length) = \(allBits) & (1 << \(length)) = \(allBits) & \(1 << length) = \(fieldBits)")
         return fieldBits
     }
 }
@@ -119,11 +114,9 @@ extension Byte {
     public static func fromBits(bits: BitArray) -> Byte {
         var myBits = bits
         
-        //print("initially myBits has \(myBits.count) Bit elements")
         while myBits.count < 8 {
             myBits.append(.zero)
         }
-        //print("after checking it has \(myBits.count) Bit elements")
         
         var byte: Byte = 0
         for (position, bit) in myBits.enumerated() {

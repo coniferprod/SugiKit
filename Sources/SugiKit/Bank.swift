@@ -71,7 +71,6 @@ public struct Bank: Equatable {
         }
 
         let drumBytes = data.slice(from: offset, length: Drum.dataSize)
-        //print("drum:\n\(drumBytes.hexDump)")
         switch Drum.parse(from: drumBytes) {
         case .success(let drum):
             tempDrum = drum

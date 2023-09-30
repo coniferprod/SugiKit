@@ -144,9 +144,7 @@ final class SinglePatchTests: XCTestCase {
     // Test DCA parameters
     func testAmplifierParameters() {
         let ampData = self.patchData.slice(from: 58, length: Amplifier.dataSize * 4)
-        print("Amp data:\n\(ampData.hexDump(config: .plainConfig))")
         let amp1Data = ampData.everyNthByte(n: 4, start: 0)
-        print("Amp 1 data: \(amp1Data.hexDump(config: .plainConfig))")
         switch Amplifier.parse(from: amp1Data) {
         case .success(let amp):
             XCTAssertEqual(amp.level.value, 0x4B)
