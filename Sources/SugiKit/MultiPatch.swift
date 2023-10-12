@@ -251,9 +251,11 @@ extension MultiPatch: SystemExclusiveData {
 }
 
 extension MultiPatch.Section: SystemExclusiveData {
+    /// Gets the System Exclusive data for the multi section.
     public func asData() -> ByteArray {
         return self.data
     }
     
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { MultiPatch.Section.dataSize }
 }

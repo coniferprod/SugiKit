@@ -20,6 +20,7 @@ public struct Bank: Equatable {
     public var drum: Drum
     public var effects: [EffectPatch]
     
+    /// Initializes a bank with default patches.
     public init() {
         singles = Array(repeating: SinglePatch(), count: Bank.singlePatchCount)
         multis = Array(repeating: MultiPatch(), count: Bank.multiPatchCount)
@@ -97,7 +98,10 @@ public struct Bank: Equatable {
         tempBank.drum = tempDrum
         return .success(tempBank)
     }
-    
+
+    /// Gets the name of the patch with the given number.
+    /// - Parameter patchNumber: the number of the patch 0...63
+    /// - Returns: the patch name in the format A-1 ... D-16
     public static func nameFor(patchNumber: Int) -> String {
         let bankIndex = patchNumber / 16
         let bankLetter = ["A", "B", "C", "D"][bankIndex]

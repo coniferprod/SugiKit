@@ -57,6 +57,8 @@ public struct LFO: Equatable {
     }
 
     /// Parses an LFO from MIDI System Exclusive data bytes.
+    /// - Parameter data: the System Exclusive data
+    /// - Returns: A result type with valid `LFO` data, or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<LFO, ParseError> {
         var offset = 0
         var b: Byte = 0x00
@@ -90,6 +92,7 @@ public struct LFO: Equatable {
 }
 
 public struct Vibrato: Equatable {
+    /// Compares two vibrato instances.
     public static func == (lhs: Vibrato, rhs: Vibrato) -> Bool {
         return lhs.shape == rhs.shape
         && lhs.speed == rhs.speed
@@ -102,6 +105,7 @@ public struct Vibrato: Equatable {
     public var depth: Depth  // -50+~50
     public var pressureDepth: Depth  // -50+~+50
     
+    /// Initializes vibrato with default settings.
     public init() {
         shape = .triangle
         speed = Level(0)
@@ -109,6 +113,7 @@ public struct Vibrato: Equatable {
         pressureDepth = Depth(0)
     }
     
+    /// Initializes vibrato with the specified settings as primitive values.
     public init(shape: LFO.Shape, speed: Int, depth: Int, pressureDepth: Int) {
         self.shape = shape
         self.speed = Level(speed)
@@ -116,6 +121,17 @@ public struct Vibrato: Equatable {
         self.pressureDepth = Depth(pressureDepth)
     }
     
+    /// Initializes vibrato with the specified Level and Depth values.
+    public init(shape: LFO.Shape, speed: Level, depth: Depth, pressureDepth: Depth) {
+        self.shape = shape
+        self.speed = speed
+        self.depth = depth
+        self.pressureDepth = pressureDepth
+    }
+    
+    /// Parses vibrato from MIDI System Exclusive data bytes.
+    /// - Parameter data: the System Exclusive data
+    /// - Returns: A result type with valid `Vibrato` data, or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<Vibrato, ParseError> {
         var offset = 0
         var b: Byte = 0x00
@@ -166,6 +182,7 @@ public struct Vibrato: Equatable {
 // MARK: - SystemExclusiveData conformance
 
 extension LFO: SystemExclusiveData {
+    /// Gets the System Exclusive data for the LFO.
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
@@ -178,11 +195,12 @@ extension LFO: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { LFO.dataSize }
 }
 
 extension Vibrato: SystemExclusiveData {
+    /// Gets the System Exclusive data for the vibrato.
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
@@ -194,5 +212,6 @@ extension Vibrato: SystemExclusiveData {
         return buf
     }
     
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { Vibrato.dataSize }
 }

@@ -47,15 +47,22 @@ public enum Effect: Int, Codable, CaseIterable {
         }
     }
     
+    /// Gets the effect name.
     public var name: String {
         return Effect.names[self.rawValue].name
     }
     
+    /// Helper struct with the effect name and the names of its parameters.
     public struct Name: Codable {
+        /// Effect name
         public var name: String
+        
+        /// Effect parameters names
         public var parameters: [String]
     }
     
+    /// Proprety to access effect names by effect number.
+    /// Indexed by effect number 1...16, so that index 0 is unused.
     public static let names = [Name]([
         Name(
             name: "unknown",
@@ -111,23 +118,33 @@ public enum Effect: Int, Codable, CaseIterable {
     ])
 }
 
+/// Effect submix settings.
 public struct SubmixSettings: Equatable {
+    /// Compares two submix setting instances.
+    /// - Parameter lhs: left-hand side
+    /// - Parameter rgs: right-hand side
     public static func == (lhs: SubmixSettings, rhs: SubmixSettings) -> Bool {
         return lhs.pan == rhs.pan && lhs.send1 == rhs.send1 && lhs.send2 == rhs.send2
     }
     
+    /// Data size of submix settings.
     public static let dataSize = 3
     
     public var pan: Pan  // 0~15 / 0~+/-7 (K4)
     public var send1: Send1  // 0~99
     public var send2: Send2  // 0~100 (from correction sheet, not 0~99)
-    
+
+    /// Initializes submix settings to default values.
     public init() {
         self.pan = Pan(0)
         self.send1 = Send1(0)
         self.send2 = Send2(0)
     }
     
+    /// Initializes submix settings with the specified values.
+    /// - Parameter pan: the pan value
+    /// - Parameter send1: the send 1 value
+    /// - Parameter send2: the send 2 value
     public init(pan: Int, send1: Int, send2: Int) {
         self.pan = Pan(pan)
         self.send1 = Send1(send1)
@@ -137,8 +154,8 @@ public struct SubmixSettings: Equatable {
 
 /// Represents an effect patch.
 public class EffectPatch: HashableClass, Identifiable {
-    static let dataSize = 35
-    static let submixCount = 8
+    public static let dataSize = 35
+    public static let submixCount = 8
     
     public var effect: Effect
     public var param1: EffectParameterSmall  // 0~7
@@ -146,12 +163,16 @@ public class EffectPatch: HashableClass, Identifiable {
     public var param3: EffectParameterLarge  // 0~31
     public var submixes: [SubmixSettings]
     
+    /// Initializes an effect patch with default settings.
     public override init() {
         effect = .reverb1
         param1 = EffectParameterSmall(0)
         param2 = EffectParameterSmall(3)
         param3 = EffectParameterLarge(16)
-        submixes = Array(repeating: SubmixSettings(pan: 0, send1: 50, send2: 50), count: EffectPatch.submixCount)
+        submixes = Array(
+            repeating: SubmixSettings(pan: 0, send1: 50, send2: 50),
+            count: EffectPatch.submixCount
+        )
     }
     
     /// Parse effect patch data from MIDI System Exclusive data bytes.
@@ -213,6 +234,8 @@ public class EffectPatch: HashableClass, Identifiable {
 // MARK: - SystemExclusiveData
 
 extension EffectPatch: SystemExclusiveData {
+    /// Gets the System Exclusive data for the effect patch.
+    /// - Returns: A byte array with the data
     public func asData() -> ByteArray {
         var buf = ByteArray()
         let d = self.data
@@ -221,28 +244,32 @@ extension EffectPatch: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { EffectPatch.dataSize }
 }
 
 extension SubmixSettings: SystemExclusiveData {
+    /// Gets the System Exclusive data for the submix settings.
+    /// - Returns: A byte array with the data
     public func asData() -> ByteArray {
         return [Byte(pan.value + 8), Byte(send1.value), Byte(send2.value)]  // TODO: or +7?
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { SubmixSettings.dataSize }
 }
 
 // MARK: - CustomStringConvertible
 
 extension Effect: CustomStringConvertible {
+    /// A printable description of the effect.
     public var description: String {
         return self.name
     }
 }
 
 extension EffectPatch: CustomStringConvertible {
+    /// A printable description of the effect patch.
     public var description: String {
         var lines = [String]()
         let name = Effect.names[self.effect.index]
@@ -256,6 +283,7 @@ extension EffectPatch: CustomStringConvertible {
 }
 
 extension SubmixSettings: CustomStringConvertible {
+    /// A printable description of the submix settings
     public var description: String {
         return "Pan=\(pan.value) Send1=\(send1.value) Send2=\(send2.value)"
     }

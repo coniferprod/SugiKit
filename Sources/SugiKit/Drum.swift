@@ -6,6 +6,10 @@ import SyxPack
 public struct Drum: Equatable {
     /// Common settings of the drum patch.
     public struct Common: Equatable {
+        /// Compares two drum common instances.
+        /// - Parameter lhs: the left-hand side
+        /// - Parameter rhs: the right-hand side
+        /// - Returns: `true` if instances are equal, `false` if not
         public static func == (lhs: Drum.Common, rhs: Drum.Common) -> Bool {
             return lhs.channel == rhs.channel
             && lhs.volume == rhs.volume
@@ -81,7 +85,12 @@ public struct Drum: Equatable {
             tune = Depth(0)
             level = Level(100)
         }
-        
+
+        /// Initializes the drum source with the specified values.
+        /// - Parameter wave: the wave to use for this drum source
+        /// - Parameter decay: the decay time for the wave
+        /// - Parameter tune: the tuning of the wave
+        /// - Parameter level: the volume level of the wave
         public init(wave: Wave, decay: Int, tune: Int, level: Int) {
             self.wave = wave
             self.decay = Level(decay)
@@ -119,13 +128,18 @@ public struct Drum: Equatable {
         public var submix: Submix
         public var source1: Source
         public var source2: Source
-        
+
+        /// Initializes a drum note with default values.
         public init() {
             submix = .a
             source1 = Source()
             source2 = Source()
         }
         
+        /// Initializes a drum note with the specified values.
+        /// - Parameter submix: the submix settings
+        /// - Parameter source1: source 1 settings
+        /// - Parameter source2: source 2 settings
         public init(submix: Submix, source1: Source, source2: Source) {
             self.submix = submix
             self.source1 = source1
@@ -187,6 +201,7 @@ public struct Drum: Equatable {
     public var common: Common
     public var notes: [Note]
     
+    /// Initializes the drum patch with default settings.
     public init() {
         common = Common()        
         notes = Array(repeating: Note(), count: Drum.noteCount)
@@ -233,6 +248,8 @@ public struct Drum: Equatable {
 // MARK: - SystemExclusiveData
 
 extension Drum: SystemExclusiveData {
+    /// Gets the drum patch System Exclusive data.
+    /// - Returns: a byte array with the data
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
@@ -244,11 +261,13 @@ extension Drum: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { Drum.dataSize }
 }
 
 extension Drum.Common: SystemExclusiveData {
+    /// Gets the System Exclusive data for the drum common settings.
+    /// - Returns: a byte array with the data
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
@@ -264,11 +283,13 @@ extension Drum.Common: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { Drum.Common.dataSize }
 }
 
 extension Drum.Source: SystemExclusiveData {
+    /// Gets the System Exclusive data for the drum source settings.
+    /// - Returns: a byte array with the data
     public func asData() -> ByteArray {
         var buf = ByteArray()
 
@@ -282,10 +303,13 @@ extension Drum.Source: SystemExclusiveData {
         return buf
     }
     
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { Drum.Source.dataSize }
 }
 
 extension Drum.Note: SystemExclusiveData {
+    /// Gets the System Exclusive data for the drum note.
+    /// - Returns: a byte array with the data
     public func asData() -> ByteArray {
         var buf = ByteArray()
         let d = self.data
@@ -294,6 +318,6 @@ extension Drum.Note: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { Drum.Note.dataSize }
 }

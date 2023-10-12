@@ -36,12 +36,20 @@ public struct Amplifier: Equatable {
             release = Level()
         }
         
-        /// Initialize an amplifier envelope with parameters.
+        /// Initialize an amplifier envelope with raw Int parameters.
         public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
             attack = Level(a)
             decay = Level(d)
             sustain = Level(s)
             release = Level(r)
+        }
+        
+        /// Initializes an amplifier envelope with Level parameters.
+        public init(attack a: Level, decay d: Level, sustain s: Level, release r: Level) {
+            attack = a
+            decay = d
+            sustain = s
+            release = r
         }
 
         /// Parse amplifier envelope from MIDI System Exclusive data bytes.

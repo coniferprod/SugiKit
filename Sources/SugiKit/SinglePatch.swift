@@ -5,9 +5,9 @@ import SyxPack
 
 /// Represents a single patch.
 public class SinglePatch: HashableClass, Identifiable {
-    static let dataSize = 131
-    static let sourceCount = 4
-    static let nameLength = 10
+    public static let dataSize = 131
+    public static let sourceCount = 4
+    public static let nameLength = 10
 
     public var name: PatchName  // name (10 characters)
     public var volume: Level  // volume 0~100
@@ -58,7 +58,7 @@ public class SinglePatch: HashableClass, Identifiable {
     
     /// Parse single patch data from MIDI System Exclusive data bytes.
     /// - Parameter data: The data bytes.
-    /// - Returns: A result type with valid `SinglePatch` data or an instance of `ParseError`.
+    /// - Returns: A result type with valid `SinglePatch` data, or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<SinglePatch, ParseError> {
         guard data.count >= SinglePatch.dataSize else {
             return .failure(.notEnoughData(data.count, SinglePatch.dataSize))

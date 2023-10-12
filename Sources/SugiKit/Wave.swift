@@ -9,7 +9,9 @@ import SyxPack
 // - the combined wave number is xwwwwwww 0~255
 public typealias WaveSelect = (high: Bit, low: BitArray)
 
+/// Represents the waveform to use in a single or drum patch source.
 public struct Wave: Equatable {
+    /// Names of the waveforms.
     public static var names = [
         "(not used)",  // just to bring the index in line with the one-based wave number
         
@@ -281,6 +283,7 @@ public struct Wave: Equatable {
         "LOOP 12"
     ]
     
+    /// Name of the waveform.
     public var name: String {
         get {
             return Wave.names[Int(number)]
@@ -289,14 +292,20 @@ public struct Wave: Equatable {
     
     public var number: UInt  // store as 1...256
     
+    /// Initializes the waveform to the first one.
     public init() {
         number = 1
     }
     
+    /// Initializes a waveform with the specified wave number.
+    /// - Parameter number: wave number from 1...256
     public init(number: UInt) {
         self.number = number
     }
     
+    /// Initializes a waveform from the System Exclusive bytes.
+    /// - Parameter highByte: the most significant byte of the wave number
+    /// - Paramater lowByte: the least significant byte of the wave number
     public init(highByte: Byte, lowByte: Byte) {
         let high = UInt(highByte & 0x01)  // `wave select h` is b0 of s34/s35/s36/s37
         let low = UInt(lowByte & 0x7f)    // `wave select l` is bits 0...6 of s38/s39/s40/s41
@@ -305,6 +314,7 @@ public struct Wave: Equatable {
         self.number = ((high << 7) | low) + 1
     }
     
+    /// Gets the wave select bits for this waveform.
     public var select: WaveSelect {
         let waveNumber = Byte(self.number - 1)  // bring into range 0~255 for SysEx
         
@@ -322,6 +332,7 @@ public struct Wave: Equatable {
 // MARK: - CustomStringConvertible
 
 extension Wave: CustomStringConvertible {
+    /// Printable description of the wave.
     public var description: String {
         return "\(self.number) \(self.name)"
     }
@@ -330,12 +341,14 @@ extension Wave: CustomStringConvertible {
 // MARK: - Identifiable
 
 extension Wave: Identifiable {
+    /// The wave number.
     public var id: UInt { number }
 }
 
 // MARK: - SystemExclusiveData
 
 extension Wave: SystemExclusiveData {
+    /// Gets the System Exclusive data for the waveform.
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
@@ -352,7 +365,7 @@ extension Wave: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { 2 }
 }
 

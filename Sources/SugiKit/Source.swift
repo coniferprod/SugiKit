@@ -35,6 +35,8 @@ public struct Source {
     }
 
     /// Parses a single patch source from MIDI System Exclusive data bytes.
+    /// - Parameter data: the System Exclusive data
+    /// - Returns: A result type with valid `Source` data, or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<Source, ParseError> {
         var temp = Source()
         
@@ -90,6 +92,7 @@ public struct Source {
 // MARK: - SystemExclusiveData
 
 extension Source: SystemExclusiveData {
+    /// Gets the System Exclusive data for the source.
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
@@ -137,7 +140,7 @@ extension Source: SystemExclusiveData {
         return buf
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { Source.dataSize }
 }
 

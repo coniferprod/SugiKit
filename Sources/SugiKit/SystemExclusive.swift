@@ -3,7 +3,7 @@ import Foundation
 import SyxPack
 
 
-/// K4 System Exclusive Message header
+/// The System Exclusive message header.
 public struct Header {
     public static let dataSize = 6
     
@@ -22,7 +22,12 @@ public struct Header {
         self.substatus1 = 0x00
         self.substatus2 = 0x00
     }
-    
+
+    /// Initializes a header with the specified values.
+    /// - Parameter channel: the MIDI channel to use
+    /// - Parameter function: the Kawai K4 function to use
+    /// - Parameter substatus1: the sub status 1 byte
+    /// - Parameter substatus2: the sub status 2 byte
     public init(channel: Int, function: Function, substatus1: Byte, substatus2: Byte) {
         self.channel = MIDIChannel(channel)
         self.function = function
@@ -41,6 +46,9 @@ public struct Header {
         ]
     }
     
+    /// Parse System Exclusive header from data bytes.
+    /// - Parameter data: The data bytes.
+    /// - Returns: A result type with a valid `Header`, or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<Header, ParseError> {
         var temp = Header()
         
@@ -66,18 +74,19 @@ public struct Header {
 }
 
 extension Header: CustomStringConvertible {
+    /// Printable description of the System Exclusive header.
     public var description: String {
-        return "Ch: \(channel)  Fn: \(function.rawValue.toHex()), Sub1: \(substatus1.toHex()) Sub2: \(substatus2.toHex())"
+        return "Ch: \(channel.value)  Fn: \(function.rawValue.toHex()), Sub1: \(substatus1.toHex()) Sub2: \(substatus2.toHex())"
     }
 }
 
 extension Header: SystemExclusiveData {
-    /// Gets the data as a byte array.
+    /// Gets the System Exclusive data for the header as a byte array.
     public func asData() -> ByteArray {
         return self.data
     }
     
-    /// Gets the length of the data.
+    /// Gets the length of the System Exclusive data.
     public var dataLength: Int { Header.dataSize }
 }
 
@@ -119,6 +128,7 @@ public enum Function: Byte {
 }
 
 extension Function: CustomStringConvertible {
+    /// Printable description for the Kawai K4 function.
     public var description: String {
         switch self {
         case .onePatchDumpRequest:
@@ -150,12 +160,15 @@ extension Function: CustomStringConvertible {
         }
     }
 }
+
+/// The locality of the data (internal or external).
 public enum Locality {
     case `internal`  // must enclose in quotes because it is a Swift keyword
     case external
 }
 
 extension Locality: CustomStringConvertible {
+    /// Printable description of the locality.
     public var description: String {
         switch self {
         case .internal:
@@ -240,6 +253,7 @@ public enum SystemExclusiveKind {
 }
 
 extension SystemExclusiveKind: CustomStringConvertible {
+    /// Printable description of the System Exclusive kind.
     public var description: String {
         switch self {
         case .all(let locality, _):

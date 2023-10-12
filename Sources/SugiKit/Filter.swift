@@ -4,6 +4,7 @@ import SyxPack
 
 /// DCF settings.
 public struct Filter: Equatable {
+    /// Compares two filter instances.
     public static func == (lhs: Filter, rhs: Filter) -> Bool {
         return lhs.cutoff == rhs.cutoff
         && lhs.resonance == rhs.resonance
@@ -17,6 +18,7 @@ public struct Filter: Equatable {
     
     /// DCF envelope.
     public struct Envelope: Equatable {
+        /// Compares two filter enveloper instances.
         public static func == (lhs: Filter.Envelope, rhs: Filter.Envelope) -> Bool {
             return lhs.attack == rhs.attack
             && lhs.decay == rhs.decay
@@ -29,6 +31,7 @@ public struct Filter: Equatable {
         public var sustain: Depth  // -50~+50, in SysEx 0~100 (also manual has an error)
         public var release: Level  // 0~100
         
+        /// Initializes a filter envelope with default values.
         public init() {
             attack = Level()
             decay = Level()
@@ -36,6 +39,7 @@ public struct Filter: Equatable {
             release = Level()
         }
 
+        /// Initializes a filter envelope with raw integer values.
         public init(attack a: Int, decay d: Int, sustain s: Int, release r: Int) {
             attack = Level(a)
             decay = Level(d)
@@ -43,6 +47,17 @@ public struct Filter: Equatable {
             release = Level(r)
         }
         
+        /// Initializes a filter envelope with Level and Depth values.
+        public init(attack a: Level, decay d: Level, sustain s: Depth, release r: Level) {
+            attack = a
+            decay = d
+            sustain = s
+            release = r
+        }
+        
+        /// Parses filter envelope data from MIDI System Exclusive data bytes.
+        /// - Parameter data: The data bytes.
+        /// - Returns: A result type with valid `Filter.Envelope` data, or an instance of `ParseError`.
         public static func parse(from data: ByteArray) -> Result<Envelope, ParseError> {
             var offset: Int = 0
             var b: Byte = 0
@@ -88,6 +103,7 @@ public struct Filter: Equatable {
     public var envelope: Envelope
     public var timeModulation: TimeModulation
     
+    /// Initializes the filter with default settings.
     public init() {
         cutoff = Level(100)
         resonance = Resonance(0)
@@ -99,6 +115,7 @@ public struct Filter: Equatable {
         timeModulation = TimeModulation()
     }
     
+    /// Initializes a filter with the specified settings.
     public init(cutoff: Int, resonance: Int, cutoffModulation: LevelModulation, isLfoModulatingCutoff: Bool, envelopeDepth: Int, envelopeVelocityDepth: Int, envelope: Envelope, timeModulation: TimeModulation) {
         self.cutoff = Level(cutoff)
         self.resonance = Resonance(resonance)
@@ -110,6 +127,9 @@ public struct Filter: Equatable {
         self.timeModulation = timeModulation
     }
     
+    /// Parses filter data from MIDI System Exclusive data bytes.
+    /// - Parameter data: The data bytes.
+    /// - Returns: A result type with valid `Filter` data, or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<Filter, ParseError> {
         var offset: Int = 0
         var b: Byte = 0
@@ -206,12 +226,14 @@ extension Filter: SystemExclusiveData {
 // MARK: - CustomStringConvertible
 
 extension Filter: CustomStringConvertible {
+    /// Printable description of the filter.
     public var description: String {
         return "Cutoff=\(self.cutoff) Resonance=\(self.resonance) CutOffMod=\(self.cutoffModulation) LFO=\(self.isLfoModulatingCutoff) Env.Depth=\(self.envelopeDepth) Env.Vel.Depth=\(self.envelopeVelocityDepth) Env=\(self.envelope) TimeMod=\(self.timeModulation)"
     }
 }
 
 extension Filter.Envelope: CustomStringConvertible {
+    /// Printable description of the filter envelope.
     public var description: String {
         return "A=\(self.attack) D=\(self.decay) S=\(self.sustain) R=\(self.release)"
     }
