@@ -4,38 +4,38 @@ import SyxPack
 
 
 /// Represents a multi patch.
-public class MultiPatch: HashableClass, Codable, Identifiable {
+public class MultiPatch: HashableClass, Identifiable {
     /// Represents one section of a multi patch.
-    public struct Section: Codable, Equatable {
+    public struct Section: Equatable {
         public static let dataSize = 8
         
-        public var singlePatchNumber: Int  // 0~63 / A-1 ~ D-16
-        public var zone: Zone  // 0~127 / C-2 ~G8
-        public var channel: Byte  // 0...15 / 1...16
+        public var singlePatchNumber: InstrumentNumber  // 0~63 / A-1 ~ D-16
+        public var zone: Zone  // 0~127 / C-2 ~ G8
+        public var channel: MIDIChannel  // 0...15 / 1...16
         public var velocitySwitch: VelocitySwitch
         public var isMuted: Bool
         public var submix: Submix
         public var playMode: PlayMode
-        public var level: Int  // 0~100
-        public var transpose: Int  // 0~48 / +/- 24
-        public var tune: Int  // 0~100 / +/- 50
+        public var level: Level  // 0~100
+        public var transpose: Transpose  // 0~48 / +/- 24
+        public var tune: Depth  // 0~100 / +/- 50
         
         /// Initialize a multi patch section with default settings.
         public init() {
-            singlePatchNumber = 0
+            singlePatchNumber = InstrumentNumber()
             
             zone = Zone()
             zone.high = 0
             zone.low = 127
             
-            channel = 1
+            channel = MIDIChannel(1)
             velocitySwitch = .all
             isMuted = false
             submix = .a
             playMode = .keyboard
-            level = 100
-            transpose = 0
-            tune = 0
+            level = Level(100)
+            transpose = Transpose()
+            tune = Depth()
         }
         
         /// Parse multi patch section from MIDI System Exclusive data bytes.
@@ -53,7 +53,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             var temp = Section()  // initialize with defaults, then fill in
             
             b = data.next(&offset)
-            temp.singlePatchNumber = Int(b)
+            temp.singlePatchNumber = InstrumentNumber(Int(b))
 
             b = data.next(&offset)
             temp.zone = Zone()
@@ -65,7 +65,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             // channel, velocity switch, and section mute are all in M15
             b = data.next(&offset)
 
-            temp.channel = b.bitField(start: 0, end: 4) + 1
+            temp.channel = MIDIChannel(Int(b.bitField(start: 0, end: 4) + 1))
 
             index = Int(b.bitField(start: 4, end: 6))
             if let vs = VelocitySwitch(index: index) {
@@ -97,13 +97,13 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             }
 
             b = data.next(&offset)
-            temp.level = Int(b)
+            temp.level = Level(Int(b))
             
             b = data.next(&offset)
-            temp.transpose = Int(b) - 24
+            temp.transpose = Transpose(Int(b) - 24)
             
             b = data.next(&offset)
-            temp.tune = Int(b) - 50
+            temp.tune = Depth(Int(b) - 50)
 
             return .success(temp)
         }
@@ -113,7 +113,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             var d = ByteArray()
             
             // M12 / M20 etc.
-            d.append(Byte(singlePatchNumber))
+            d.append(Byte(singlePatchNumber.value))
             
             // M13 / M21 etc.
             d.append(Byte(zone.low))
@@ -122,7 +122,7 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             d.append(Byte(zone.high))
             
             // M15
-            var m15 = channel - 1
+            var m15 = Byte(channel.value - 1)
             m15 |= Byte(velocitySwitch.index) << 4
             if isMuted {
                 m15.setBit(6)
@@ -135,13 +135,13 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
             d.append(m16)
 
             // M17
-            d.append(Byte(level))
+            d.append(Byte(level.value))
             
             // M18
-            d.append(Byte(transpose + 24))
+            d.append(Byte(transpose.value + 24))
             
             // M19
-            d.append(Byte(tune + 50))
+            d.append(Byte(tune.value + 50))
             
             return d
         }
@@ -152,16 +152,16 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
 
     public var name: PatchName // 10 ASCII characters
     
-    public var volume: Int  // 0~100 (from correction sheet, not 0~99)
-    public var effect: Int  // 0~31/1~32
+    public var volume: Level  // 0~100 (from correction sheet, not 0~99)
+    public var effect: EffectNumber  // 0~31/1~32
     
     public var sections = [Section]()
     
     /// Initializes a multi patch with default settings.
     public override init() {
         name = PatchName("NewMulti")
-        volume = 100
-        effect = 1
+        volume = Level(100)
+        effect = EffectNumber(1)
         
         sections = Array(repeating: Section(), count: MultiPatch.sectionCount)
     }
@@ -189,10 +189,10 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         offset += PatchName.length
 
         b = data.next(&offset)
-        temp.volume = Int(b)
+        temp.volume = Level(Int(b))
 
         b = data.next(&offset)
-        temp.effect = Int(b + 1) // bring 0~31 to 1~32
+        temp.effect = EffectNumber(Int(b + 1)) // bring 0~31 to 1~32
         
         // Clear out the section data first!
         temp.sections.removeAll()
@@ -219,14 +219,13 @@ public class MultiPatch: HashableClass, Codable, Identifiable {
         d.append(contentsOf: self.name.asData())
 
         // M10
-        d.append(Byte(volume))
+        d.append(Byte(volume.value))
         
         // M11
-        d.append(Byte(effect - 1)) // 1~32 to 0~31
+        d.append(Byte(effect.value - 1)) // 1~32 to 0~31
         
         // M12 / M20 / M28 / M36 / M44 / M52 / M60 / M68
         for section in sections {
-            let sd = section.asData()
             d.append(contentsOf: section.asData())
         }
 

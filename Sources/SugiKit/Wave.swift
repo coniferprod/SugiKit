@@ -286,21 +286,25 @@ public struct Wave: Equatable {
     /// Name of the waveform.
     public var name: String {
         get {
-            return Wave.names[Int(number)]
+            return Wave.names[number.value]
         }
     }
     
-    public var number: UInt  // store as 1...256
+    public var number: WaveNumber  // store as 1...256
     
     /// Initializes the waveform to the first one.
     public init() {
-        number = 1
+        number = WaveNumber(1)
     }
     
     /// Initializes a waveform with the specified wave number.
     /// - Parameter number: wave number from 1...256
     public init(number: UInt) {
-        self.number = number
+        self.number = WaveNumber(Int(number))
+    }
+    
+    public init(number: Int) {
+        self.number = WaveNumber(number)
     }
     
     /// Initializes a waveform from the System Exclusive bytes.
@@ -311,12 +315,12 @@ public struct Wave: Equatable {
         let low = UInt(lowByte & 0x7f)    // `wave select l` is bits 0...6 of s38/s39/s40/s41
 
         // Combine the h and l to one 8-bit value and make it 1~256
-        self.number = ((high << 7) | low) + 1
+        self.number = WaveNumber(Int(((high << 7) | low) + 1))
     }
     
     /// Gets the wave select bits for this waveform.
     public var select: WaveSelect {
-        let waveNumber = Byte(self.number - 1)  // bring into range 0~255 for SysEx
+        let waveNumber = Byte(self.number.value - 1)  // bring into range 0~255 for SysEx
         
         var highBit: Bit = .zero
         if waveNumber.isBitSet(0) {
@@ -342,7 +346,7 @@ extension Wave: CustomStringConvertible {
 
 extension Wave: Identifiable {
     /// The wave number.
-    public var id: UInt { number }
+    public var id: UInt { UInt(number.value) }
 }
 
 // MARK: - SystemExclusiveData
@@ -368,4 +372,3 @@ extension Wave: SystemExclusiveData {
     /// Gets the length of the System Exclusive data.
     public var dataLength: Int { 2 }
 }
-

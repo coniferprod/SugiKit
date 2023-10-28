@@ -7,10 +7,10 @@ import SyxPack
 protocol RangedInt {
     // The current value of the wrapped Int
     var value: Int { get }
-    
+
     // The range where the Int must be in.
     static var range: ClosedRange<Int> { get }
-    
+
     // The default value for the Int.
     static var defaultValue: Int { get }
 
@@ -24,7 +24,7 @@ extension RangedInt {
     static var randomValue: Int {
         return Int.random(in: Self.range)
     }
-    
+
     // Predicate for checking if a potential value would be inside the range.
     // This is a default implementation.
     static func isValid(value: Int) -> Bool {
@@ -75,11 +75,11 @@ public struct Level: Equatable {
 extension Level: RangedInt {
     public static let range: ClosedRange<Int> = 0...100
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -96,11 +96,11 @@ public struct MIDIChannel: Equatable {
 extension MIDIChannel: RangedInt {
     public static let range: ClosedRange<Int> = 1...16
     public static let defaultValue = 1
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -117,11 +117,11 @@ public struct Pan: Equatable {
 extension Pan: RangedInt {
     public static let range: ClosedRange<Int> = -7...7
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -138,11 +138,11 @@ public struct Send1: Equatable {
 extension Send1: RangedInt {
     public static let range: ClosedRange<Int> = 0...99
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -159,11 +159,11 @@ public struct Send2: Equatable {
 extension Send2: RangedInt {
     public static let range: ClosedRange<Int> = 0...100
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -180,11 +180,11 @@ public struct EffectParameterSmall: Equatable {
 extension EffectParameterSmall: RangedInt {
     public static let range: ClosedRange<Int> = 0...7
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -201,11 +201,11 @@ public struct EffectParameterLarge: Equatable {
 extension EffectParameterLarge: RangedInt {
     public static let range: ClosedRange<Int> = 0...31
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -222,11 +222,11 @@ public struct Resonance: Equatable {
 extension Resonance: RangedInt {
     public static let range: ClosedRange<Int> = 0...7
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -243,11 +243,11 @@ public struct EffectNumber: Equatable {
 extension EffectNumber: RangedInt {
     public static let range: ClosedRange<Int> = 1...32
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -264,11 +264,11 @@ public struct BenderRange: Equatable {
 extension BenderRange: RangedInt {
     public static let range: ClosedRange<Int> = 0...12  // semitones
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -285,11 +285,11 @@ public struct Coarse: Equatable {
 extension Coarse: RangedInt {
     public static let range: ClosedRange<Int> = -24...24
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -306,11 +306,74 @@ public struct Fine: Equatable {
 extension Fine: RangedInt {
     public static let range: ClosedRange<Int> = -50...50
     public static let defaultValue = 0
-    
+
     public init() {
         _value = Self.defaultValue
     }
-    
+
+    public init(_ value: Int) {
+        _value = Self.range.clamp(value)
+    }
+
+    public var value: Int {
+        return _value
+    }
+}
+
+public struct Transpose: Equatable {
+    private var _value: Int
+}
+
+extension Transpose: RangedInt {
+    public static let range: ClosedRange<Int> = -24...24
+    public static let defaultValue = 0
+
+    public init() {
+        _value = Self.defaultValue
+    }
+
+    public init(_ value: Int) {
+        _value = Self.range.clamp(value)
+    }
+
+    public var value: Int {
+        return _value
+    }
+}
+
+public struct InstrumentNumber: Equatable {
+    private var _value: Int
+}
+
+extension InstrumentNumber: RangedInt {
+    public static let range: ClosedRange<Int> = 0...63
+    public static let defaultValue = 0
+
+    public init() {
+        _value = Self.defaultValue
+    }
+
+    public init(_ value: Int) {
+        _value = Self.range.clamp(value)
+    }
+
+    public var value: Int {
+        return _value
+    }
+}
+
+public struct WaveNumber: Equatable {
+    private var _value: Int
+}
+
+extension WaveNumber: RangedInt {
+    public static let range: ClosedRange<Int> = 1...256
+    public static let defaultValue = 1
+
+    public init() {
+        _value = Self.defaultValue
+    }
+
     public init(_ value: Int) {
         _value = Self.range.clamp(value)
     }
@@ -343,7 +406,7 @@ public enum VelocityCurve: Int, Codable, CaseIterable {
     case curve6
     case curve7
     case curve8
-    
+
     init?(index: Int) {
         switch index {
         case 1: self = .curve1
@@ -368,7 +431,7 @@ public enum KeyScalingCurve: Int, Codable, CaseIterable {
     case curve6
     case curve7
     case curve8
-    
+
     init?(index: Int) {
         switch index {
         case 1: self = .curve1
@@ -388,7 +451,7 @@ public struct Zone: Codable, Equatable {
     public var low: Int
     public var high: Int
     public var velocitySwitch: VelocitySwitch
-    
+
     public init() {
         low = 0
         high = 0
@@ -415,7 +478,7 @@ public enum VelocitySwitch: String, Codable, CaseIterable, Equatable {
     case soft
     case loud
     case all
-    
+
     init?(index: Int) {
         switch index {
         case 0: self = .soft
@@ -435,7 +498,7 @@ public enum Submix: String, Codable, CaseIterable, Equatable {
     case f = "f"
     case g = "g"
     case h = "h"
-    
+
     init?(index: Int) {
         switch index {
         case 0: self = .a
@@ -455,7 +518,7 @@ public enum SourceMode: String, Codable, CaseIterable {
     case normal
     case twin
     case double
-    
+
     init?(index: Int) {
         switch index {
         case 0: self = .normal
@@ -498,96 +561,108 @@ public enum WheelAssign: String, Codable, CaseIterable {
     }
 }
 
-public struct AutoBend: Codable, Equatable, CustomStringConvertible {
-    static let dataSize = 4
-    
-    public var time: UInt  // 0~100
-    public var depth: Int  // -50~+50
-    public var keyScalingTime: Int  // -50~+50
-    public var velocityDepth: Int  // -50~+50
-    
+public struct AutoBend: Equatable, CustomStringConvertible {
+    public var time: Level  // 0~100
+    public var depth: Depth  // -50~+50
+    public var keyScalingTime: Depth  // -50~+50
+    public var velocityDepth: Depth  // -50~+50
+
     public init() {
-        time = 0
-        depth = 0
-        keyScalingTime = 0
-        velocityDepth = 0
+        time = Level()
+        depth = Depth()
+        keyScalingTime = Depth()
+        velocityDepth = Depth()
     }
-    
-    public init(time: UInt, depth: Int, keyScalingTime: Int, velocityDepth: Int) {
-        self.time = time
-        self.depth = depth
-        self.keyScalingTime = keyScalingTime
-        self.velocityDepth = velocityDepth
+
+    public init(time: Int, depth: Int, keyScalingTime: Int, velocityDepth: Int) {
+        self.time = Level(time)
+        self.depth = Depth(depth)
+        self.keyScalingTime = Depth(keyScalingTime)
+        self.velocityDepth = Depth(velocityDepth)
     }
-    
+
     public static func parse(from data: ByteArray) -> Result<AutoBend, ParseError> {
         var offset = 0
         var b: Byte = 0x00
-        
+
         var temp = AutoBend()
-        
-        b = data.next(&offset)
-        temp.time = UInt(b & 0x7f)
 
         b = data.next(&offset)
-        temp.depth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.time = Level(Int(b & 0x7f))
 
         b = data.next(&offset)
-        temp.keyScalingTime = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.depth = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
 
         b = data.next(&offset)
-        temp.velocityDepth = Int((b & 0x7f)) - 50 // 0~100 to ±50
+        temp.keyScalingTime = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
+
+        b = data.next(&offset)
+        temp.velocityDepth = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
 
         return .success(temp)
     }
-    
+
     public var description: String {
         return "Auto bend settings: time = \(time), depth = \(depth), KS time = \(keyScalingTime), vel depth = \(velocityDepth)"
+    }
+    
+    private var data: ByteArray {
+        var buf = ByteArray()
+        buf.append(contentsOf: [
+            Byte(self.time.value),
+            Byte(self.depth.value + 50),
+            Byte(self.keyScalingTime.value + 50),
+            Byte(self.velocityDepth.value + 50)
+        ])
+        return buf
+    }
+    
+    public static let dataSize = 4
+    
+    public static func ==(lhs: AutoBend, rhs: AutoBend) -> Bool {
+        return lhs.time == rhs.time &&
+            lhs.depth == rhs.depth &&
+            lhs.keyScalingTime == rhs.keyScalingTime &&
+            lhs.velocityDepth == rhs.velocityDepth
     }
 }
 
 
 public struct LevelModulation: Equatable, CustomStringConvertible {
-    /*
-    private enum CodingKeys: String, CodingKey {
-        case velocityDepth, pressureDepth, keyScalingDepth
-    }
-    */
-    
     public var velocityDepth: Depth
     public var pressureDepth: Depth
     public var keyScalingDepth: Depth
-    
+
     public init() {
         velocityDepth = Depth()
         pressureDepth = Depth()
         keyScalingDepth = Depth()
     }
-    
+
     public init(velocityDepth: Int, pressureDepth: Int, keyScalingDepth: Int) {
         self.velocityDepth = Depth(velocityDepth)
         self.pressureDepth = Depth(pressureDepth)
         self.keyScalingDepth = Depth(keyScalingDepth)
     }
-    
+
     public static func parse(from data: ByteArray) -> Result<LevelModulation, ParseError> {
         var offset = 0
         var b: Byte = 0x00
-        
+
         var temp = LevelModulation()
-        
+
         b = data.next(&offset)
         temp.velocityDepth = Depth(Int(b) - 50)
 
         b = data.next(&offset)
         temp.pressureDepth = Depth(Int(b) - 50)
-        
+
         b = data.next(&offset)
         temp.keyScalingDepth = Depth(Int(b) - 50)
-        
+
         return .success(temp)
     }
-    
+
     private var data: ByteArray {
         var buf = ByteArray()
         buf.append(contentsOf: [
@@ -597,13 +672,13 @@ public struct LevelModulation: Equatable, CustomStringConvertible {
         ])
         return buf
     }
-    
+
     public static let dataSize = 3
-    
+
     public var description: String {
         return "Vel.depth=\(velocityDepth) Prs.depth=\(pressureDepth) KSDepth=\(keyScalingDepth)"
     }
-    
+
     public static func ==(lhs: LevelModulation, rhs: LevelModulation) -> Bool {
         return lhs.velocityDepth == rhs.velocityDepth &&
             lhs.pressureDepth == rhs.pressureDepth &&
@@ -615,25 +690,25 @@ public struct TimeModulation: Equatable, CustomStringConvertible {
     public var attackVelocity: Depth
     public var releaseVelocity: Depth
     public var keyScaling: Depth
-    
+
     public init() {
         attackVelocity = Depth()
         releaseVelocity = Depth()
         keyScaling = Depth()
     }
-    
+
     public init(attackVelocity: Int, releaseVelocity: Int, keyScaling: Int) {
         self.attackVelocity = Depth(attackVelocity)
         self.releaseVelocity = Depth(releaseVelocity)
         self.keyScaling = Depth(keyScaling)
     }
-    
+
     public static func parse(from data: ByteArray) -> Result<TimeModulation, ParseError> {
         var offset = 0
         var b: Byte = 0x00
-        
+
         var temp = TimeModulation()
-        
+
         b = data.next(&offset)
         let attack = Int(b) - 50
         if Depth.isValid(value: attack) {
@@ -642,7 +717,7 @@ public struct TimeModulation: Equatable, CustomStringConvertible {
         else {
             return .failure(.invalidData(offset))
         }
-        
+
         b = data.next(&offset)
         let release = Int(b) - 50
         if Depth.isValid(value: release) {
@@ -673,13 +748,13 @@ public struct TimeModulation: Equatable, CustomStringConvertible {
         ])
         return buf
     }
-    
+
     public static let dataSize = 3
-    
+
     public var description: String {
         return "AtkVel=\(attackVelocity) RelVel=\(releaseVelocity) KS=\(keyScaling)"
     }
-    
+
     public static func ==(lhs: TimeModulation, rhs: TimeModulation) -> Bool {
         return lhs.attackVelocity == rhs.attackVelocity &&
             lhs.releaseVelocity == rhs.releaseVelocity &&
@@ -692,7 +767,7 @@ public struct Key: Codable, Equatable, CustomStringConvertible {
     static let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
     public var note: Int
-    
+
     /// Name of the key.
     public var name: String {
         let octave = self.note / 12 - 1
@@ -704,17 +779,17 @@ public struct Key: Codable, Equatable, CustomStringConvertible {
     public init(note: Int) {
         self.note = note
     }
-    
+
     /// Get the key corresponding to a note name.
     public static func key(for name: String) -> Key? {
         let notes = CharacterSet(charactersIn: "CDEFGAB")
-        
+
         var i = 0
         var notePart = ""
         var octavePart = ""
         while i < name.count {
             let c = name[i ..< i + 1]
-            
+
             let isNote = c.unicodeScalars.allSatisfy { notes.contains($0) }
             if isNote {
                 notePart += c
@@ -722,14 +797,14 @@ public struct Key: Codable, Equatable, CustomStringConvertible {
             else {
                 return nil
             }
-     
+
             if c == "#" {
                 notePart += c
             }
             if c == "-" {
                 octavePart += c
             }
-            
+
             let isDigit = c.unicodeScalars.allSatisfy { CharacterSet.decimalDigits.contains($0) }
             if isDigit {
                 octavePart += c
@@ -744,7 +819,7 @@ public struct Key: Codable, Equatable, CustomStringConvertible {
 
         return nil
     }
-    
+
     public var description: String {
         return self.name
     }
@@ -754,13 +829,9 @@ public struct Key: Codable, Equatable, CustomStringConvertible {
 
 extension AutoBend: SystemExclusiveData {
     public func asData() -> ByteArray {
-        var buf = ByteArray()
-        [Byte(time), Byte(depth + 50), Byte(keyScalingTime + 50), Byte(velocityDepth + 50)].forEach {
-            buf.append($0)
-        }
-        return buf
+        return self.data
     }
-    
+
     public var dataLength: Int { AutoBend.dataSize }
 }
 
