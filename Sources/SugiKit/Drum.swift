@@ -17,6 +17,7 @@ public struct Drum: Equatable {
             && lhs.commonChecksum == rhs.commonChecksum
         }
         
+        /// Data size of drum common settings.
         public static let dataSize = 11
 
         public var channel: MIDIChannel  // drm rcv ch, store 0...15 as 1...16
@@ -64,6 +65,7 @@ public struct Drum: Equatable {
 
     /// Source for drum patch.
     public struct Source: Equatable {
+        /// Compares two drum patch sources.
         public static func == (lhs: Drum.Source, rhs: Drum.Source) -> Bool {
             return lhs.wave == rhs.wave
             && lhs.decay == rhs.decay
@@ -71,6 +73,7 @@ public struct Drum: Equatable {
             && lhs.level == rhs.level
         }
         
+        /// Data size of this drum source.
         public static let dataSize = 5
         
         public var wave: Wave

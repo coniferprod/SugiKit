@@ -5,10 +5,12 @@ import SyxPack
 
 /// Represents a single patch.
 public class SinglePatch: HashableClass, Identifiable {
+    /// The data size of a single patch.
     public static let dataSize = 131
+    
+    /// The number of sources in a single patch.
     public static let sourceCount = 4
-    public static let nameLength = 10
-
+    
     public var name: PatchName  // name (10 characters)
     public var volume: Level  // volume 0~100
     public var effect: EffectNumber  // effect patch number 1~32 (in SysEx 0~31)
@@ -241,7 +243,7 @@ public class SinglePatch: HashableClass, Identifiable {
         return .success(temp)
     }
     
-    /// Gets the System Exclusive data for this single patch.
+    // Gets the System Exclusive data for this single patch.
     private var data: ByteArray {
         var d = ByteArray()
 

@@ -7,6 +7,7 @@ import SyxPack
 public class MultiPatch: HashableClass, Identifiable {
     /// Represents one section of a multi patch.
     public struct Section: Equatable {
+        /// The data size of this multi section.
         public static let dataSize = 8
         
         public var singlePatchNumber: InstrumentNumber  // 0~63 / A-1 ~ D-16
@@ -108,7 +109,7 @@ public class MultiPatch: HashableClass, Identifiable {
             return .success(temp)
         }
         
-        /// Gets the SysEx data for the multi patch section.
+        // Gets the SysEx data for the multi patch section.
         private var data: ByteArray {
             var d = ByteArray()
             
@@ -147,7 +148,10 @@ public class MultiPatch: HashableClass, Identifiable {
         }
     }
 
+    /// The data size of this multi patch.
     public static let dataSize = 77
+    
+    /// The number of sections in a multi patch.
     public static let sectionCount = 8
 
     public var name: PatchName // 10 ASCII characters

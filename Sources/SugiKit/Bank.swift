@@ -9,6 +9,7 @@ public struct Bank: Equatable {
     public static let multiPatchCount = 64
     public static let effectPatchCount = 32
     
+    /// Data size of this bank.
     public static let dataSize =
         singlePatchCount * SinglePatch.dataSize +
         multiPatchCount * MultiPatch.dataSize +
@@ -107,6 +108,10 @@ public struct Bank: Equatable {
         let bankLetter = ["A", "B", "C", "D"][bankIndex]
         let patchIndex = (patchNumber % 16) + 1
         return "\(bankLetter)-\(patchIndex)"
+    }
+    
+    public static func nameFor(patchNumber: InstrumentNumber) -> String {
+        return Bank.nameFor(patchNumber: patchNumber.value)
     }
 }
 

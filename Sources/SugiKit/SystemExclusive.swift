@@ -3,11 +3,15 @@ import Foundation
 import SyxPack
 
 
-/// The System Exclusive message header.
+/// The Kawai K4 System Exclusive message header.
 public struct Header {
+    /// The data size of a System Exclusive message header.
     public static let dataSize = 6
-    
+
+    /// Identifier for synth group (Kawai)
     public static let group: Byte = 0x00 // synth group = 0x00
+    
+    /// Identifier for machine (Kawai K4/K4r)
     public static let machineID: Byte = 0x04 // machine ID for K4/K4r
 
     public var channel: MIDIChannel

@@ -4,6 +4,7 @@ import SyxPack
 
 /// LFO settings.
 public struct LFO: Equatable {
+    /// Compares two LFO instances.
     public static func == (lhs: LFO, rhs: LFO) -> Bool {
         return lhs.shape == rhs.shape
         && lhs.speed == rhs.speed
@@ -19,7 +20,7 @@ public struct LFO: Equatable {
         case square
         case random
         
-        init?(index: Int) {
+        public init?(index: Int) {
             switch index {
             case 0: self = .triangle
             case 1: self = .sawtooth
@@ -35,8 +36,9 @@ public struct LFO: Equatable {
     public var delay: Level  // 0~100
     public var depth: Depth  // -50~+50
     public var pressureDepth: Depth  // -50~+50
-    
-    static let dataSize = 5
+
+    /// The data size of this LFO.
+    public static let dataSize = 5
     
     /// Initializes an LFO with default values.
     public init() {
@@ -172,6 +174,7 @@ public struct Vibrato: Equatable {
         return buf
     }
     
+    /// The data size of this vibrato instance.
     public static let dataSize = 4
 }
 

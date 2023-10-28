@@ -89,9 +89,11 @@ public struct Filter: Equatable {
             return buf
         }
         
+        /// The data size of a DCF envelope.
         public static let dataSize = 4
     }
 
+    /// The data size of a DCF.
     public static let dataSize = 14
     
     public var cutoff: Level  // 0~100

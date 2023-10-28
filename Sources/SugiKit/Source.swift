@@ -5,7 +5,8 @@ import SyxPack
 
 /// Represents one source in a single patch.
 public struct Source {
-    static let dataSize = 7
+    /// The data size of a source.
+    public static let dataSize = 7
 
     public var isActive: Bool
     public var delay: Level // 0~100

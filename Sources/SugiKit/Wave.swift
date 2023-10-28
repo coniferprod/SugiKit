@@ -7,6 +7,8 @@ import SyxPack
 // - wave select h is one bit x
 // - wave select l is seven bits wwwwwww
 // - the combined wave number is xwwwwwww 0~255
+
+/// The components of a "wave select" in MIDI System Exclusive data.
 public typealias WaveSelect = (high: Bit, low: BitArray)
 
 /// Represents the waveform to use in a single or drum patch source.
@@ -290,6 +292,7 @@ public struct Wave: Equatable {
         }
     }
     
+    /// Wave number.
     public var number: WaveNumber  // store as 1...256
     
     /// Initializes the waveform to the first one.
@@ -302,7 +305,9 @@ public struct Wave: Equatable {
     public init(number: UInt) {
         self.number = WaveNumber(Int(number))
     }
-    
+
+    /// Initializes a waveform with the specified wave number.
+    /// - Parameter number: wave number from 1...256
     public init(number: Int) {
         self.number = WaveNumber(number)
     }

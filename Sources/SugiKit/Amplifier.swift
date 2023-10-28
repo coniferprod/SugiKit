@@ -5,6 +5,7 @@ import SyxPack
 
 /// DCA settings.
 public struct Amplifier: Equatable {
+    /// Compares two `Amplifier` instances.
     public static func == (lhs: Amplifier, rhs: Amplifier) -> Bool {
         return lhs.level == rhs.level
         && lhs.envelope == rhs.envelope
@@ -14,6 +15,7 @@ public struct Amplifier: Equatable {
     
     /// DCA envelope.
     public struct Envelope: Equatable {
+        /// Compares two `Envelope` instances.
         public static func == (lhs: Amplifier.Envelope, rhs: Amplifier.Envelope) -> Bool {
             return lhs.attack == rhs.attack
             && lhs.decay == rhs.decay
@@ -21,6 +23,7 @@ public struct Amplifier: Equatable {
             && lhs.release == rhs.release
         }
         
+        /// Data size in bytes
         public static let dataSize = 4
         
         public var attack: Level  // 0~100
@@ -65,6 +68,7 @@ public struct Amplifier: Equatable {
         }
     }
 
+    /// DCA SysEx data size
     public static let dataSize = 1 + Envelope.dataSize + LevelModulation.dataSize + TimeModulation.dataSize
     
     public var level: Level  // 0~100
@@ -124,6 +128,7 @@ public struct Amplifier: Equatable {
 // MARK: - SystemExclusiveData
 
 extension Amplifier: SystemExclusiveData {
+    /// Gets the MIDI System Exclusive data for this DCA.
     public func asData() -> ByteArray {
         var buf = ByteArray()
             
@@ -140,6 +145,7 @@ extension Amplifier: SystemExclusiveData {
 }
 
 extension Amplifier.Envelope: SystemExclusiveData {
+    /// Gets the MIDI System Exclusive data for this DCA envelope.
     public func asData() -> ByteArray {
         var buf = ByteArray()
         [attack, decay, sustain, release].forEach { buf.append(Byte($0.value)) }
@@ -153,12 +159,14 @@ extension Amplifier.Envelope: SystemExclusiveData {
 // MARK: - CustomStringConvertible
 
 extension Amplifier: CustomStringConvertible {
+    /// Printable description of this DCA.
     public var description: String {
         return "Env=\(self.envelope) LevelMod=\(self.levelModulation) TimeMod=\(self.timeModulation)"
     }
 }
 
 extension Amplifier.Envelope: CustomStringConvertible {
+    /// Printable description of this DCA envelope.
     public var description: String {
         return "A=\(attack) D=\(decay) S=\(sustain) R=\(release)"
     }

@@ -154,7 +154,10 @@ public struct SubmixSettings: Equatable {
 
 /// Represents an effect patch.
 public class EffectPatch: HashableClass, Identifiable {
+    /// Data size of an effect patch.
     public static let dataSize = 35
+    
+    /// Number of submixes in an effect patch.
     public static let submixCount = 8
     
     public var effect: Effect
@@ -186,7 +189,7 @@ public class EffectPatch: HashableClass, Identifiable {
         var offset = 0
         var b: Byte = 0
 
-        var temp = EffectPatch()  // init with defaults, then fill in
+        let temp = EffectPatch()  // init with defaults, then fill in
         
         b = data.next(&offset)
         temp.effect = Effect(index: Int(b + 1))!  // in SysEx 0~15, store as 1~16

@@ -68,10 +68,12 @@ extension Byte {
 }
 
 extension Byte {
+    /// Converts this byte to a binary string representation.
     public func toBinary() -> String {
         return String(self, radix: 2)
     }
     
+    /// Converts this byte to a hexadecimal string representation.
     public func toHex(digits: Int = 2) -> String {
         return String(format: "%0\(digits)x", self)
     }
@@ -79,8 +81,10 @@ extension Byte {
 
 // The Bit enum and the bits -> [Bit] function: https://stackoverflow.com/a/44808203/1016326
 public enum Bit: Byte, CustomStringConvertible {
-    case zero, one
+    case zero
+    case one
 
+    /// Gets a printable description of this bit.
     public var description: String {
         switch self {
         case .one:
@@ -91,10 +95,11 @@ public enum Bit: Byte, CustomStringConvertible {
     }
 }
 
+/// Type of an array of bits.
 public typealias BitArray = [Bit]
 
 extension Byte {
-    /// Returns an array of exactly eight Bit objects, with bit #0 first
+    /// Returns an array of exactly eight `Bit` objects, with bit #0 first
     public var bits: BitArray {
         var byte = self
         var bits = BitArray(repeating: .zero, count: 8)
@@ -109,7 +114,7 @@ extension Byte {
         return bits
     }
     
-    /// Returns a byte constructed from an array of Bit objects, with bit #0 first.
+    /// Returns a `Byte` constructed from an array of `Bit` objects, with bit #0 first.
     /// If the array has less than eight bits, pad it with zero bits from the left.
     public static func fromBits(bits: BitArray) -> Byte {
         var myBits = bits
@@ -130,6 +135,7 @@ extension Byte {
 }
 
 extension Data {
+    /// Returns a hex dump of the data as a string.
     public var hexDump: String {
         var s = ""
         for d in self {
@@ -141,6 +147,7 @@ extension Data {
 }
 
 extension ByteArray {
+    /// Returns a hex dump of this `ByteArray`.
     public var hexDump: String {
         var s = ""
         var count = 1
@@ -168,6 +175,7 @@ extension ByteArray {
         return ByteArray(self[offset ..< offset + length])
     }
     
+    /// Returns a new `ByteArray` with every nth bytes of this array.
     public func everyNthByte(n: Int, start: Int = 0) -> ByteArray {
         var result = ByteArray()
         
@@ -191,7 +199,7 @@ extension Double {
 
 // https://ericasadun.com/2018/12/14/more-fun-with-swift-5-string-interpolation-radix-formatting/
 public extension String.StringInterpolation {
-    /// Represents a single numeric radix
+    // Represents a single numeric radix
     enum Radix: Int {
         case binary = 2, octal = 8, decimal = 10, hex = 16
         
@@ -201,7 +209,7 @@ public extension String.StringInterpolation {
         }
     }
     
-    /// Return padded version of the value using a specified radix
+    // Returns a padded version of the value using the specified radix
     mutating func appendInterpolation<I: BinaryInteger>(_ value: I, radix: Radix, prefix: Bool = false, toWidth width: Int = 0) {
         
         // Values are uppercased, producing `FF` instead of `ff`
@@ -222,7 +230,8 @@ public extension String.StringInterpolation {
 }
 
 extension String {
-    var length: Int {
+    /// Alias for the character count.
+    public var length: Int {
         return count
     }
 
@@ -230,11 +239,11 @@ extension String {
         return self[i ..< i + 1]
     }
 
-    func substring(fromIndex: Int) -> String {
+    public func substring(fromIndex: Int) -> String {
         return self[min(fromIndex, length) ..< length]
     }
 
-    func substring(toIndex: Int) -> String {
+    public func substring(toIndex: Int) -> String {
         return self[0 ..< max(0, toIndex)]
     }
 
@@ -269,6 +278,8 @@ extension String {
 }
 
 extension String {
+    /// Returns this string adjusted to the given length, and padded as necessary
+    /// with the given character from the right.
     public func adjusted(length: Int, pad: String = " ") -> String {
         // If longer, truncate to `length`.
         // If shorter, pad from right with `pad` to the length `length`.
@@ -287,29 +298,6 @@ func checksum(bytes: ByteArray) -> Byte {
     totalSum += 0xa5
     return Byte(totalSum & 0x7f)
 }
-
-/*
-@propertyWrapper public struct PatchName: Codable {
-    public static let length = 10
-    
-    public var wrappedValue: String {
-        didSet {
-            wrappedValue = wrappedValue.adjusted(length: PatchName.length)
-        }
-    }
-    
-    public init(wrappedValue: String) {
-        self.wrappedValue = wrappedValue.adjusted(length: PatchName.length)
-    }
-    
-    public static func bankNameForNumber(n: Int) -> String {
-        let bankIndex = n / 16
-        let bankLetter = ["A", "B", "C", "D"][bankIndex]
-        let patchIndex = (n % 16) + 1
-        return "\(bankLetter)-\(patchIndex)"
-    }
-}
-*/
 
 /// Represents the name of a single or multi patch.
 public struct PatchName: Equatable, Codable {
@@ -360,6 +348,7 @@ public struct PatchName: Equatable, Codable {
 // MARK: - SystemExclusiveData
 
 extension PatchName: SystemExclusiveData {
+    /// Gets the System Exclusive data for this patch name.
     public func asData() -> ByteArray {
         var d = ByteArray()
         for codeUnit in self.value.utf8 {

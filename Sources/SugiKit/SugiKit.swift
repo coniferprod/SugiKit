@@ -27,6 +27,7 @@ public enum ParseError: Error {
 }
 
 extension ParseError: CustomStringConvertible {
+    /// Gets a printable description of this parse error.
     public var description: String {
         switch self {
         case .notEnoughData(let actual, let expected):
