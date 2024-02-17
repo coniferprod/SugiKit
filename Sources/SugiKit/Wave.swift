@@ -286,26 +286,16 @@ public struct Wave: Equatable {
     ]
     
     /// Name of the waveform.
-    public var name: String {
-        get {
-            return Wave.names[number.value]
-        }
-    }
+    public var name: String { Wave.names[number.value] }
     
     /// Wave number.
-    public var number: WaveNumber  // store as 1...256
+    public var number: WaveNumber  // stored as 1...256
     
     /// Initializes the waveform to the first one.
     public init() {
         number = WaveNumber(1)
     }
     
-    /// Initializes a waveform with the specified wave number.
-    /// - Parameter number: wave number from 1...256
-    public init(number: UInt) {
-        self.number = WaveNumber(Int(number))
-    }
-
     /// Initializes a waveform with the specified wave number.
     /// - Parameter number: wave number from 1...256
     public init(number: Int) {
@@ -351,7 +341,7 @@ extension Wave: CustomStringConvertible {
 
 extension Wave: Identifiable {
     /// The wave number.
-    public var id: UInt { UInt(number.value) }
+    public var id: Int { self.number.value }
 }
 
 // MARK: - SystemExclusiveData
