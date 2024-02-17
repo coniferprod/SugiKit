@@ -105,7 +105,9 @@ public struct Drum: Equatable {
         /// - Parameter data: The data bytes.
         /// - Returns: A result type with a valid `Source` or an instance of `ParseError`.
         public static func parse(from data: ByteArray) -> Result<Source, ParseError> {
-            guard data.count >= Source.dataSize else {
+            guard 
+                data.count >= Source.dataSize
+            else {
                 return .failure(.notEnoughData(data.count, Source.dataSize))
             }
             
@@ -163,7 +165,9 @@ public struct Drum: Equatable {
         /// - Parameter data: The data bytes.
         /// - Returns: A result type with valid `Note` data or an instance of `ParseError`.
         public static func parse(from data: ByteArray) -> Result<Note, ParseError> {
-            guard data.count >= Note.dataSize else {
+            guard 
+                data.count >= Note.dataSize
+            else {
                 return .failure(.notEnoughData(data.count, Note.dataSize))
             }
             
@@ -214,33 +218,37 @@ public struct Drum: Equatable {
     /// - Parameter data: The data bytes.
     /// - Returns: A result type with valid `Drum` data or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<Drum, ParseError> {
-        guard data.count >= Drum.dataSize else {
+        guard 
+            data.count >= Drum.dataSize
+        else {
             return .failure(.notEnoughData(data.count, Drum.dataSize))
         }
         
         var temp = Drum()  // everything initialized to default values
         
         var offset = 0
+        var size = Common.dataSize
         
-        switch Common.parse(from: data.slice(from: offset, length: Common.dataSize)) {
+        switch Common.parse(from: data.slice(from: offset, length: size)) {
             case .success(let common):
                 temp.common = common
             case .failure(let error):
                 return .failure(error)
         }
         
-        offset += Common.dataSize
-
+        offset += size
+        
+        size = Note.dataSize
         var tempNotes = [Note]()
         for _ in 0..<Drum.noteCount {
-            let noteBytes = data.slice(from: offset, length: Note.dataSize)
+            let noteBytes = data.slice(from: offset, length: size)
             switch Note.parse(from: noteBytes) {
             case .success(let note):
                 tempNotes.append(note)
             case .failure(let error):
                 return .failure(error)
             }
-            offset += Note.dataSize
+            offset += size
         }
         
         temp.notes = tempNotes

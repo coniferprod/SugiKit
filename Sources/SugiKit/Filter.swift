@@ -82,7 +82,12 @@ public struct Filter: Equatable {
         private var data: ByteArray {
             var buf = ByteArray()
             
-            [Byte(attack.value), Byte(decay.value), Byte(sustain.value + 50), Byte(release.value)].forEach {
+            [
+                Byte(attack.value),
+                Byte(decay.value),
+                Byte(sustain.value + 50),
+                Byte(release.value)
+            ].forEach {
                 buf.append($0)
             }
             
@@ -145,14 +150,15 @@ public struct Filter: Equatable {
         temp.resonance = Resonance(Int(b & 0x07))  // resonance is 0...7 also in the UI, even though the SysEx spec says 0~7 means 1~8
         temp.isLfoModulatingCutoff = b.isBitSet(3)
 
-        let cutoffModulationData = data.slice(from: offset, length: LevelModulation.dataSize)
+        var size = LevelModulation.dataSize
+        let cutoffModulationData = data.slice(from: offset, length: size)
         switch LevelModulation.parse(from: cutoffModulationData) {
         case .success(let cutoffModulation):
             temp.cutoffModulation = cutoffModulation
         case .failure(let error):
             return .failure(error)
         }
-        offset += LevelModulation.dataSize
+        offset += size
         
         b = data.next(&offset)
         temp.envelopeDepth = Depth(Int(b & 0x7f) - 50)
@@ -160,23 +166,25 @@ public struct Filter: Equatable {
         b = data.next(&offset)
         temp.envelopeVelocityDepth = Depth(Int(b & 0x7f) - 50)
 
-        let envelopeData = data.slice(from: offset, length: Envelope.dataSize)
+        size = Envelope.dataSize
+        let envelopeData = data.slice(from: offset, length: size)
         switch Envelope.parse(from: envelopeData) {
         case .success(let envelope):
             temp.envelope = envelope
         case .failure(let error):
             return .failure(error)
         }
-        offset += Envelope.dataSize
+        offset += size
 
-        let timeModulationData = data.slice(from: offset, length: TimeModulation.dataSize)
+        size = TimeModulation.dataSize
+        let timeModulationData = data.slice(from: offset, length: size)
         switch TimeModulation.parse(from: timeModulationData) {
         case .success(let timeModulation):
             temp.timeModulation = timeModulation
         case .failure(let error):
             return .failure(error)
         }
-        offset += TimeModulation.dataSize
+        offset += size
 
         return .success(temp)
     }
@@ -207,9 +215,7 @@ public struct Filter: Equatable {
 
 extension Filter.Envelope: SystemExclusiveData {
     /// Gets the filter envelope data as MIDI System Exclusive bytes.
-    public func asData() -> ByteArray {
-        return self.data
-    }
+    public func asData() -> ByteArray { self.data }
     
     /// Gets the length of the filter envelope data.
     public var dataLength: Int { Filter.Envelope.dataSize }
@@ -217,9 +223,7 @@ extension Filter.Envelope: SystemExclusiveData {
 
 extension Filter: SystemExclusiveData {
     /// Gets the filter data as MIDI System Exclusive bytes.
-    public func asData() -> ByteArray {
-        return self.data
-    }
+    public func asData() -> ByteArray { self.data }
     
     /// Gets the length of the filter data.
     public var dataLength: Int { Filter.dataSize }

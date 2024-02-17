@@ -62,7 +62,9 @@ public class SinglePatch: HashableClass, Identifiable {
     /// - Parameter data: The data bytes.
     /// - Returns: A result type with valid `SinglePatch` data, or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<SinglePatch, ParseError> {
-        guard data.count >= SinglePatch.dataSize else {
+        guard 
+            data.count >= SinglePatch.dataSize
+        else {
             return .failure(.notEnoughData(data.count, SinglePatch.dataSize))
         }
         
@@ -72,14 +74,15 @@ public class SinglePatch: HashableClass, Identifiable {
 
         let temp = SinglePatch()  // initialize with defaults and then fill in
         
-        let nameData = data.slice(from: offset, length: PatchName.length)
+        var size = PatchName.length
+        let nameData = data.slice(from: offset, length: size)
         switch PatchName.parse(from: nameData) {
         case .success(let name):
             temp.name = name
         case .failure(_):
             return .failure(.invalidData(offset))
         }
-        offset += PatchName.length
+        offset += size
 
         b = data.next(&offset)
         temp.volume = Level(Int(b))
@@ -150,15 +153,16 @@ public class SinglePatch: HashableClass, Identifiable {
         // Wheel depth = s17 bits 0...6
         temp.wheelDepth = Depth(Int((b & 0x7f)) - 50)  // 0~100 to ±50
         
+        size = AutoBend.dataSize
         // s18 ... s21
-        let autoBendBytes = data.slice(from: offset, length: AutoBend.dataSize)
+        let autoBendBytes = data.slice(from: offset, length: size)
         switch AutoBend.parse(from: autoBendBytes) {
         case .success(let autoBend):
             temp.autoBend = autoBend
         case .failure(let error):
             return .failure(error)
         }
-        offset += AutoBend.dataSize
+        offset += size
         
         b = data.next(&offset)  // s22
         vibratoBytes.append(b)
@@ -175,20 +179,21 @@ public class SinglePatch: HashableClass, Identifiable {
         }
         // Don't adjust the offset! The vibrato bytes have been collected earlier.
 
-        let lfoBytes = data.slice(from: offset, length: LFO.dataSize)
+        size = LFO.dataSize
+        let lfoBytes = data.slice(from: offset, length: size)
         switch LFO.parse(from: lfoBytes) {
         case .success(let lfo):
             temp.lfo = lfo
         case .failure(let error):
             return .failure(error)
         }
-        offset += LFO.dataSize
+        offset += size
 
         b = data.next(&offset)
         temp.pressFreq = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
-        
-        let sourceByteCount = SinglePatch.sourceCount * Source.dataSize
-        let sourceBytes = data.slice(from: offset, length: sourceByteCount)
+
+        size = SinglePatch.sourceCount * Source.dataSize
+        let sourceBytes = data.slice(from: offset, length: size)
         for i in 0..<SinglePatch.sourceCount {
             let sourceData = sourceBytes.everyNthByte(n: 4, start: i)
             switch Source.parse(from: sourceData) {
@@ -198,7 +203,7 @@ public class SinglePatch: HashableClass, Identifiable {
                 return .failure(error)
             }
         }
-        offset += sourceByteCount
+        offset += size
         
         // Now it's time to set the active status of the sources
         for i in 0..<SinglePatch.sourceCount {
@@ -206,9 +211,9 @@ public class SinglePatch: HashableClass, Identifiable {
             // actually 0 is mute OFF and 1 is mute ON.
             temp.sources[i].isActive = !activeSourcesByte.isBitSet(i)
         }
-        
-        let amplifierByteCount = Amplifier.dataSize * SinglePatch.sourceCount
-        let amplifierBytes = data.slice(from: offset, length: amplifierByteCount)
+
+        size = Amplifier.dataSize * SinglePatch.sourceCount
+        let amplifierBytes = data.slice(from: offset, length: size)
         
         for i in 0..<SinglePatch.sourceCount {
             let amplifierData = amplifierBytes.everyNthByte(n: 4, start: i)
@@ -219,10 +224,10 @@ public class SinglePatch: HashableClass, Identifiable {
                 return .failure(error)
             }
         }
-        offset += amplifierByteCount
+        offset += size
 
-        let filterByteCount = Filter.dataSize * 2
-        let filterBytes = data.slice(from: offset, length: filterByteCount)
+        size = Filter.dataSize * 2
+        let filterBytes = data.slice(from: offset, length: size)
         
         for i in 0..<2 {
             let filterData = filterBytes.everyNthByte(n: 2, start: i)
@@ -238,7 +243,7 @@ public class SinglePatch: HashableClass, Identifiable {
                 return .failure(error)
             }
         }
-        offset += filterByteCount
+        offset += size
         
         return .success(temp)
     }

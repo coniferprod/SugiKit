@@ -33,14 +33,10 @@ public struct Bank: Equatable {
     /// - Parameter data: The data bytes.
     /// - Returns: A result type with valid `Bank` data or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<Bank, ParseError> {
-        let totalDataSize =
-            Bank.singlePatchCount * SinglePatch.dataSize +
-            Bank.multiPatchCount * MultiPatch.dataSize +
-            Bank.effectPatchCount * EffectPatch.dataSize +
-            Drum.dataSize
-        
-        guard data.count >= totalDataSize else {
-            return .failure(.notEnoughData(data.count, totalDataSize))
+        guard
+            data.count >= Bank.dataSize
+        else {
+            return .failure(.notEnoughData(data.count, Bank.dataSize))
         }
 
         var tempSingles = [SinglePatch]()
@@ -49,47 +45,53 @@ public struct Bank: Equatable {
         var tempDrum = Drum()
 
         var offset = 0
+        var size = SinglePatch.dataSize
         
         for _ in 0 ..< Bank.singlePatchCount {
-            let singleData = data.slice(from: offset, length: SinglePatch.dataSize)
+            let singleData = data.slice(from: offset, length: size)
             switch SinglePatch.parse(from: singleData) {
             case .success(let patch):
                 tempSingles.append(patch)
             case .failure(let error):
                 return .failure(error)
             }
-            offset += SinglePatch.dataSize
+            offset += size
         }
         
+        size = MultiPatch.dataSize
+        
         for _ in 0 ..< Bank.multiPatchCount {
-            let multiData = data.slice(from: offset, length: MultiPatch.dataSize)
+            let multiData = data.slice(from: offset, length: size)
             switch MultiPatch.parse(from: multiData) {
             case .success(let patch):
                 tempMultis.append(patch)
             case .failure(let error):
                 return .failure(error)
             }
-            offset += MultiPatch.dataSize
+            offset += size
         }
+        
+        size = Drum.dataSize
 
-        let drumBytes = data.slice(from: offset, length: Drum.dataSize)
+        let drumBytes = data.slice(from: offset, length: size)
         switch Drum.parse(from: drumBytes) {
         case .success(let drum):
             tempDrum = drum
         case .failure(let error):
             return .failure(error)
         }
-        offset += Drum.dataSize
+        offset += size
         
+        size = EffectPatch.dataSize
         for _ in 0 ..< Bank.effectPatchCount {
-            let effectData = data.slice(from: offset, length: EffectPatch.dataSize)
+            let effectData = data.slice(from: offset, length: size)
             switch EffectPatch.parse(from: effectData) {
             case .success(let patch):
                 tempEffects.append(patch)
             case .failure(let error):
                 return .failure(error)
             }
-            offset += EffectPatch.dataSize
+            offset += size
         }
 
         var tempBank = Bank()

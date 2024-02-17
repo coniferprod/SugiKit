@@ -87,6 +87,7 @@ public struct Amplifier: Equatable {
     /// Parse amplifier from MIDI System Exclusive data bytes.
     public static func parse(from data: ByteArray) -> Result<Amplifier, ParseError> {
         var offset: Int = 0
+        var size: Int = 0
         var b: Byte = 0
         
         var temp = Amplifier()
@@ -94,32 +95,35 @@ public struct Amplifier: Equatable {
         b = data.next(&offset)
         temp.level = Level(Int(b))
 
-        let envelopeData = data.slice(from: offset, length: Envelope.dataSize)
+        size = Envelope.dataSize
+        let envelopeData = data.slice(from: offset, length: size)
         switch Envelope.parse(from: envelopeData) {
         case .success(let envelope):
             temp.envelope = envelope
         case .failure(let error):
             return .failure(error)
         }
-        offset += Envelope.dataSize
+        offset += size
         
-        let levelModulationData = data.slice(from: offset, length: LevelModulation.dataSize)
+        size = LevelModulation.dataSize
+        let levelModulationData = data.slice(from: offset, length: size)
         switch LevelModulation.parse(from: levelModulationData) {
         case .success(let levelModulation):
             temp.levelModulation = levelModulation
         case .failure(let error):
             return .failure(error)
         }
-        offset += LevelModulation.dataSize
+        offset += size
         
-        let timeModulationData = data.slice(from: offset, length: TimeModulation.dataSize)
+        size = TimeModulation.dataSize
+        let timeModulationData = data.slice(from: offset, length: size)
         switch TimeModulation.parse(from: timeModulationData) {
         case .success(let timeModulation):
             temp.timeModulation = timeModulation
         case .failure(let error):
             return .failure(error)
         }
-        offset += TimeModulation.dataSize
+        offset += size
         
         return .success(temp)
     }

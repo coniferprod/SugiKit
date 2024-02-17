@@ -182,7 +182,9 @@ public class EffectPatch: HashableClass, Identifiable {
     /// - Parameter data: The data bytes.
     /// - Returns: A result type with valid `EffectPatch` data or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<EffectPatch, ParseError> {
-        guard data.count >= EffectPatch.dataSize else {
+        guard 
+            data.count >= EffectPatch.dataSize
+        else {
             return .failure(.notEnoughData(data.count, EffectPatch.dataSize))
         }
         
@@ -266,9 +268,7 @@ extension SubmixSettings: SystemExclusiveData {
 
 extension Effect: CustomStringConvertible {
     /// A printable description of the effect.
-    public var description: String {
-        return self.name
-    }
+    public var description: String { self.name }
 }
 
 extension EffectPatch: CustomStringConvertible {

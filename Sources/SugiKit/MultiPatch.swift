@@ -41,7 +41,9 @@ public class MultiPatch: HashableClass, Identifiable {
         /// - Parameter data: The data bytes.
         /// - Returns: A result type with valid `Section` data or an instance of `ParseError`.
         public static func parse(from data: ByteArray) -> Result<Section, ParseError> {
-            guard data.count >= Section.dataSize else {
+            guard 
+                data.count >= Section.dataSize
+            else {
                 return .failure(.notEnoughData(data.count, Section.dataSize))
             }
             
@@ -172,7 +174,9 @@ public class MultiPatch: HashableClass, Identifiable {
     /// - Parameter data: The data bytes.
     /// - Returns: A result type with valid `Multi` data or an instance of `ParseError`.
     public static func parse(from data: ByteArray) -> Result<MultiPatch, ParseError> {
-        guard data.count >= MultiPatch.dataSize else {
+        guard 
+            data.count >= MultiPatch.dataSize
+        else {
             return .failure(.notEnoughData(data.count, MultiPatch.dataSize))
         }
         
@@ -253,9 +257,7 @@ extension MultiPatch: SystemExclusiveData {
 
 extension MultiPatch.Section: SystemExclusiveData {
     /// Gets the System Exclusive data for the multi section.
-    public func asData() -> ByteArray {
-        return self.data
-    }
+    public func asData() -> ByteArray { self.data }
     
     /// Gets the length of the System Exclusive data.
     public var dataLength: Int { MultiPatch.Section.dataSize }

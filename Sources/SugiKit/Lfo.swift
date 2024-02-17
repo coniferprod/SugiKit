@@ -189,12 +189,17 @@ extension LFO: SystemExclusiveData {
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
-        buf.append(Byte(shape.index))
-        buf.append(Byte(speed.value))
-        buf.append(Byte(delay.value))
-        buf.append(Byte(depth.value + 50))
-        buf.append(Byte(pressureDepth.value + 50))
-
+        [
+            shape.index,
+            speed.value,
+            delay.value,
+            depth.value + 50,
+            pressureDepth.value + 50
+        ]
+        .forEach {
+            buf.append(Byte($0))
+        }
+        
         return buf
     }
     
@@ -207,10 +212,15 @@ extension Vibrato: SystemExclusiveData {
     public func asData() -> ByteArray {
         var buf = ByteArray()
         
-        buf.append(Byte(shape.index))
-        buf.append(Byte(speed.value))
-        buf.append(Byte(depth.value + 50))
-        buf.append(Byte(pressureDepth.value + 50))
+        [
+            shape.index,
+            speed.value,
+            depth.value + 50,
+            pressureDepth.value + 50
+        ]
+        .forEach {
+            buf.append(Byte($0))
+        }
         
         return buf
     }
