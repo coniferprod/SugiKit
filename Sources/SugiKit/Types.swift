@@ -110,6 +110,27 @@ extension MIDIChannel: RangedInt {
     }
 }
 
+public struct MIDINote: Equatable {
+    private var _value: Int
+}
+
+extension MIDINote: RangedInt {
+    public static let range: ClosedRange<Int> = 0...127
+    public static let defaultValue = 60  // middle C
+
+    public init() {
+        _value = Self.defaultValue
+    }
+
+    public init(_ value: Int) {
+        _value = Self.range.clamp(value)
+    }
+
+    public var value: Int {
+        return _value
+    }
+}
+
 public struct Pan: Equatable {
     private var _value: Int
 }
@@ -447,15 +468,19 @@ public enum KeyScalingCurve: Int, Codable, CaseIterable {
     }
 }
 
-public struct Zone: Codable, Equatable {
-    public var low: Int
-    public var high: Int
+public struct Zone: Equatable {
+    public var low: Key
+    public var high: Key
     public var velocitySwitch: VelocitySwitch
 
     public init() {
-        low = 0
-        high = 0
+        low = Key(note: MIDINote(MIDINote.range.lowerBound))
+        high = Key(note: MIDINote(MIDINote.range.upperBound))
         velocitySwitch = .all
+    }
+    
+    public var description: String {
+        return "\(self.low) - \(self.high)"
     }
 }
 
@@ -485,6 +510,14 @@ public enum VelocitySwitch: String, Codable, CaseIterable, Equatable {
         case 1: self = .loud
         case 2: self = .all
         default: return nil
+        }
+    }
+    
+    public var description: String {
+        switch self {
+        case .soft: return "Soft"
+        case .loud: return "Loud"
+        case .all: return "All"
         }
     }
 }
@@ -763,20 +796,21 @@ public struct TimeModulation: Equatable, CustomStringConvertible {
 }
 
 /// Key with note number and name.
-public struct Key: Codable, Equatable, CustomStringConvertible {
+public struct Key: Equatable, CustomStringConvertible {
     static let noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
-    public var note: Int
+    public var note: MIDINote
 
     /// Name of the key.
     public var name: String {
-        let octave = self.note / 12 - 1
-        let name = Key.noteNames[self.note % 12]
+        let n = self.note.value
+        let octave = n / 12 - 1
+        let name = Key.noteNames[n % 12]
         return "\(name)\(octave)"
     }
 
     /// Initialize the key with a note number.
-    public init(note: Int) {
+    public init(note: MIDINote) {
         self.note = note
     }
 
@@ -814,7 +848,7 @@ public struct Key: Codable, Equatable, CustomStringConvertible {
         }
 
         if let octave = Int(octavePart), let noteIndex = Key.noteNames.firstIndex(where: { $0 == notePart }) {
-            return Key(note: (octave + 1) * 12 + noteIndex)
+            return Key(note: MIDINote((octave + 1) * 12 + noteIndex))
         }
 
         return nil
