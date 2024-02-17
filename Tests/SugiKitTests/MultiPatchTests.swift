@@ -57,25 +57,25 @@ final class MultiPatchTests: XCTestCase {
 */
     
     func testVolume() {
-        XCTAssertEqual(multis[0].volume, 80)
+        XCTAssertEqual(multis[0].volume.value, 80)
     }
 
     func testEffect() {
-        XCTAssertEqual(multis[0].effect, 11)
+        XCTAssertEqual(multis[0].effect.value, 11)
     }
 
     func testSectionInstrumentParameters() {
         let section1 = multis[0].sections[0]
         let section2 = multis[0].sections[1]
 
-        XCTAssertEqual(section1.singlePatchNumber, 14)  // IA-15 YorFatnes8
-        XCTAssertEqual(section2.singlePatchNumber, 63)  // ID-16 Taurs4Pole
+        XCTAssertEqual(section1.singlePatchNumber.value, 14)  // IA-15 YorFatnes8
+        XCTAssertEqual(section2.singlePatchNumber.value, 63)  // ID-16 Taurs4Pole
     }
     
     func testSectionZoneParameters() {
         let section = multis[0].sections[0]
-        XCTAssertEqual(section.zone.low, 0)  // C-2
-        XCTAssertEqual(section.zone.high, 127) // G8
+        XCTAssertEqual(section.zone.low.note.value, 0)  // C-2
+        XCTAssertEqual(section.zone.high.note.value, 127) // G8
         XCTAssertEqual(section.velocitySwitch, .all)  // see testByteM15Parsing()
     }
 
@@ -112,14 +112,14 @@ final class MultiPatchTests: XCTestCase {
     
     func testSectionChannelParameters() {
         let section = multis[0].sections[0]
-        XCTAssertEqual(section.channel, 1)
+        XCTAssertEqual(section.channel.value, 1)
     }
     
     func testSectionLevelParameters() {
         let section = multis[0].sections[0]
-        XCTAssertEqual(section.level, 100)
-        XCTAssertEqual(section.transpose, 0)
-        XCTAssertEqual(section.tune, 0)
+        XCTAssertEqual(section.level.value, 100)
+        XCTAssertEqual(section.transpose.value, 0)
+        XCTAssertEqual(section.tune.value, 0)
         XCTAssertEqual(section.submix, .e)
     }
     
