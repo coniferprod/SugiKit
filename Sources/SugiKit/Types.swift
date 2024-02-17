@@ -242,7 +242,7 @@ public struct EffectNumber: Equatable {
 
 extension EffectNumber: RangedInt {
     public static let range: ClosedRange<Int> = 1...32
-    public static let defaultValue = 0
+    public static let defaultValue = 1
 
     public init() {
         _value = Self.defaultValue
