@@ -213,6 +213,17 @@ public enum SystemExclusiveKind {
             // The raw data is everything in the payload after the header.
             let rawData = ByteArray(payload.suffix(from: Header.dataSize))
             
+            // Header substatus1 values:
+            // 0x00 = INT for single/multi or program change
+            // 0x02 = EXT for single/multi or program change
+            // 0x01 = INT for drum/effect
+            // 0x03 = EXT for drum/effect
+            
+            // Header substatus2 values:
+            // For single/multi: 0...63 = single, 64...127 = multi
+            // For drum/effect: 0...31 = effect, 32 = drum
+            // For block dump: 0x00 = all singles, 0x40 = all multis / all effects
+            
             switch (header.function, header.substatus1, header.substatus2) {
             case (.onePatchDataDump, 0x00, let number) where (0...63).contains(number):
                 return .success(.oneSingle(Int(number), .internal, rawData))
