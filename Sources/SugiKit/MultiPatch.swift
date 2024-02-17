@@ -25,9 +25,7 @@ public class MultiPatch: HashableClass, Identifiable {
         public init() {
             singlePatchNumber = InstrumentNumber()
             
-            zone = Zone()
-            zone.high = 0
-            zone.low = 127
+            zone = Zone()  // defaults to low=0 high=127
             
             channel = MIDIChannel(1)
             velocitySwitch = .all
@@ -58,10 +56,10 @@ public class MultiPatch: HashableClass, Identifiable {
 
             b = data.next(&offset)
             temp.zone = Zone()
-            temp.zone.low = Int(b)
+            temp.zone.low = Key(note: MIDINote(Int(b)))
             
             b = data.next(&offset)
-            temp.zone.high = Int(b)
+            temp.zone.high = Key(note: MIDINote(Int(b)))
             
             // channel, velocity switch, and section mute are all in M15
             b = data.next(&offset)
@@ -117,10 +115,10 @@ public class MultiPatch: HashableClass, Identifiable {
             d.append(Byte(singlePatchNumber.value))
             
             // M13 / M21 etc.
-            d.append(Byte(zone.low))
+            d.append(Byte(zone.low.note.value))
             
             // M14
-            d.append(Byte(zone.high))
+            d.append(Byte(zone.high.note.value))
             
             // M15
             var m15 = Byte(channel.value - 1)

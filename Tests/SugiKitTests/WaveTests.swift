@@ -13,7 +13,7 @@ final class WaveTests: XCTestCase {
 
     func testWaveNumber() {
         let wave = Wave(number: 96)
-        XCTAssertEqual(wave.number, 96)
+        XCTAssertEqual(wave.number.value, 96)
     }
     
     func testWaveNumberFromSystemExclusive() {
@@ -21,6 +21,6 @@ final class WaveTests: XCTestCase {
         let lowByte: Byte = 0b0001_0010   // 0x12 (ws l)
         // These make up the wave number 18, which is adjusted by +1
         let wave = Wave(highByte: highByte, lowByte: lowByte)
-        XCTAssertEqual(wave.number, 19)
+        XCTAssertEqual(wave.number.value, 19)
     }
 }

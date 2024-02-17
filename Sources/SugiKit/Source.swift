@@ -28,7 +28,7 @@ public struct Source {
         keyTrack = true
         coarse = Coarse(0)
         fine = Fine(0)
-        fixedKey = Key(note: 60)
+        fixedKey = Key(note: MIDINote(60))
         pressureFrequency = true
         vibrato = true
         velocityCurve = .curve1
@@ -75,7 +75,7 @@ public struct Source {
         
         b = data.next(&offset)
         let key = b & 0x7f
-        temp.fixedKey = Key(note: Int(key))
+        temp.fixedKey = Key(note: MIDINote(Int(key)))
 
         b = data.next(&offset)
         temp.fine = Fine(Int((b & 0x7f)) - 50)
@@ -123,7 +123,7 @@ extension Source: SystemExclusiveData {
         buf.append(s42)
         
         // s46/s47/s48/s49
-        buf.append(Byte(fixedKey.note))
+        buf.append(Byte(fixedKey.note.value))
         
         // s50/s51/s52/s53
         buf.append(Byte(fine.value + 50))  // bring into 0~100

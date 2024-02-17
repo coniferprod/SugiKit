@@ -218,7 +218,7 @@ final class SinglePatchTests: XCTestCase {
         let s1Data = sourceData.everyNthByte(n: 4, start: 0)
         switch Source.parse(from: s1Data) {
         case .success(let source):
-            XCTAssertEqual(source.wave.number, 19)
+            XCTAssertEqual(source.wave.number.value, 19)
             XCTAssertEqual(source.keyTrack, true)
             XCTAssertEqual(source.coarse.value, -12)
             XCTAssertEqual(source.fine.value, -6)
