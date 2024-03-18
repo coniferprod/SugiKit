@@ -15,4 +15,9 @@ final class SugiKitTests: XCTestCase {
         let field = b.bitField(start: 3, end: 6)  // bits 3, 4, and 5
         XCTAssertEqual(field, 0b0000_0110)
     }
+    
+    func testPatchNameFromStringLiteral() {
+        let name = PatchName("MeloVox1")  // from string literal
+        XCTAssertEqual(name.value, "MeloVox1  ")  // should be padded to length 10
+    }
 }

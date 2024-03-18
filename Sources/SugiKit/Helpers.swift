@@ -372,3 +372,19 @@ extension PatchName: SystemExclusiveData {
     /// Gets the length of the data.
     public var dataLength: Int { PatchName.length }
 }
+
+// MARK: - CustomStringConvertible
+
+extension PatchName: CustomStringConvertible {
+    public var description: String {
+        return self.value
+    }
+}
+
+// MARK: - ExpressibleByStringLiteral
+
+extension PatchName: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self = PatchName(value)
+    }
+}

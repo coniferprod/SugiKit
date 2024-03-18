@@ -35,7 +35,7 @@ public class SinglePatch: HashableClass, Identifiable {
 
     /// Initializes a single patch with default settings.
     public override init() {
-        name = PatchName("NewSingle")
+        name = "NewSingle"
         volume = 90
         effect = 1
         submix = .a

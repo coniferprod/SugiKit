@@ -163,7 +163,7 @@ public class MultiPatch: HashableClass, Identifiable {
     
     /// Initializes a multi patch with default settings.
     public override init() {
-        name = PatchName("NewMulti")
+        name = "NewMulti"
         volume = 100
         effect = 1
         
