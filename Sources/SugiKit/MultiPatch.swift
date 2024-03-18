@@ -27,12 +27,12 @@ public class MultiPatch: HashableClass, Identifiable {
             
             zone = Zone()  // defaults to low=0 high=127
             
-            channel = MIDIChannel(1)
+            channel = 1
             velocitySwitch = .all
             isMuted = false
             submix = .a
             playMode = .keyboard
-            level = Level(100)
+            level = 100
             transpose = Transpose()
             tune = Depth()
         }
@@ -164,8 +164,8 @@ public class MultiPatch: HashableClass, Identifiable {
     /// Initializes a multi patch with default settings.
     public override init() {
         name = PatchName("NewMulti")
-        volume = Level(100)
-        effect = EffectNumber(1)
+        volume = 100
+        effect = 1
         
         sections = Array(repeating: Section(), count: MultiPatch.sectionCount)
     }

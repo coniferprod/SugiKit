@@ -36,8 +36,8 @@ public class SinglePatch: HashableClass, Identifiable {
     /// Initializes a single patch with default settings.
     public override init() {
         name = PatchName("NewSingle")
-        volume = Level(90)
-        effect = EffectNumber(1)
+        volume = 90
+        effect = 1
         submix = .a
         
         sourceMode = .normal
@@ -45,10 +45,10 @@ public class SinglePatch: HashableClass, Identifiable {
         am12 = false
         am34 = false
                 
-        benderRange = BenderRange(0)
-        pressFreq = Depth(0)
+        benderRange = 0
+        pressFreq = 0
         wheelAssign = .cutoff
-        wheelDepth = Depth(0)
+        wheelDepth = 0
         autoBend = AutoBend()
         vibrato = Vibrato()
         lfo = LFO()

@@ -4,15 +4,6 @@ import SyxPack
 
 /// LFO settings.
 public struct LFO: Equatable {
-    /// Compares two LFO instances.
-    public static func == (lhs: LFO, rhs: LFO) -> Bool {
-        return lhs.shape == rhs.shape
-        && lhs.speed == rhs.speed
-        && lhs.delay == rhs.delay
-        && lhs.depth == rhs.depth
-        && lhs.pressureDepth == rhs.pressureDepth
-    }
-    
     /// LFO shapes.
     public enum Shape: String, Codable, CaseIterable {
         case triangle
@@ -43,10 +34,10 @@ public struct LFO: Equatable {
     /// Initializes an LFO with default values.
     public init() {
         shape = .triangle
-        speed = Level(0)
-        delay = Level(0)
-        depth = Depth(0)
-        pressureDepth = Depth(0)
+        speed = 0
+        delay = 0
+        depth = 0
+        pressureDepth = 0
     }
     
     /// Initializes an LFO with the specified values.
@@ -91,17 +82,18 @@ public struct LFO: Equatable {
 
         return .success(temp)
     }
+    
+    /// Compares two LFO instances.
+    public static func == (lhs: LFO, rhs: LFO) -> Bool {
+        return lhs.shape == rhs.shape
+            && lhs.speed == rhs.speed
+            && lhs.delay == rhs.delay
+            && lhs.depth == rhs.depth
+            && lhs.pressureDepth == rhs.pressureDepth
+    }
 }
 
 public struct Vibrato: Equatable {
-    /// Compares two vibrato instances.
-    public static func == (lhs: Vibrato, rhs: Vibrato) -> Bool {
-        return lhs.shape == rhs.shape
-        && lhs.speed == rhs.speed
-        && lhs.depth == rhs.depth
-        && lhs.pressureDepth == rhs.pressureDepth
-    }
-    
     public var shape: LFO.Shape
     public var speed: Level  // 0~100
     public var depth: Depth  // -50+~50
@@ -110,9 +102,9 @@ public struct Vibrato: Equatable {
     /// Initializes vibrato with default settings.
     public init() {
         shape = .triangle
-        speed = Level(0)
-        depth = Depth(0)
-        pressureDepth = Depth(0)
+        speed = 0
+        depth = 0
+        pressureDepth = 0
     }
     
     /// Initializes vibrato with the specified settings as primitive values.
@@ -161,6 +153,14 @@ public struct Vibrato: Equatable {
         temp.depth = Depth(Int(b & 0x7f) - 50) // 0~100 to ±50
 
         return .success(temp)
+    }
+    
+    /// Compares two vibrato instances.
+    public static func == (lhs: Vibrato, rhs: Vibrato) -> Bool {
+        return lhs.shape == rhs.shape
+            && lhs.speed == rhs.speed
+            && lhs.depth == rhs.depth
+            && lhs.pressureDepth == rhs.pressureDepth
     }
     
     private var data: ByteArray {

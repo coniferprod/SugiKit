@@ -5,24 +5,8 @@ import SyxPack
 
 /// DCA settings.
 public struct Amplifier: Equatable {
-    /// Compares two `Amplifier` instances.
-    public static func == (lhs: Amplifier, rhs: Amplifier) -> Bool {
-        return lhs.level == rhs.level
-        && lhs.envelope == rhs.envelope
-        && lhs.levelModulation == rhs.levelModulation
-        && lhs.timeModulation == rhs.timeModulation
-    }
-    
     /// DCA envelope.
     public struct Envelope: Equatable {
-        /// Compares two `Envelope` instances.
-        public static func == (lhs: Amplifier.Envelope, rhs: Amplifier.Envelope) -> Bool {
-            return lhs.attack == rhs.attack
-            && lhs.decay == rhs.decay
-            && lhs.sustain == rhs.sustain
-            && lhs.release == rhs.release
-        }
-        
         /// Data size in bytes
         public static let dataSize = 4
         
@@ -65,6 +49,14 @@ public struct Amplifier: Equatable {
             let release = Int(data.next(&offset))
 
             return .success(Envelope(attack: attack, decay: decay, sustain: sustain, release: release))
+        }
+        
+        /// Compares two `Envelope` instances.
+        public static func == (lhs: Amplifier.Envelope, rhs: Amplifier.Envelope) -> Bool {
+            return lhs.attack == rhs.attack
+                && lhs.decay == rhs.decay
+                && lhs.sustain == rhs.sustain
+                && lhs.release == rhs.release
         }
     }
 
@@ -126,6 +118,14 @@ public struct Amplifier: Equatable {
         offset += size
         
         return .success(temp)
+    }
+    
+    /// Compares two `Amplifier` instances.
+    public static func == (lhs: Amplifier, rhs: Amplifier) -> Bool {
+        return lhs.level == rhs.level
+            && lhs.envelope == rhs.envelope
+            && lhs.levelModulation == rhs.levelModulation
+            && lhs.timeModulation == rhs.timeModulation
     }
 }
 

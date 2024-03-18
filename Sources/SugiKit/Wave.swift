@@ -293,7 +293,7 @@ public struct Wave: Equatable {
     
     /// Initializes the waveform to the first one.
     public init() {
-        number = WaveNumber(1)
+        number = 1
     }
     
     /// Initializes a waveform with the specified wave number.

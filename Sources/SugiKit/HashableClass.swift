@@ -4,7 +4,7 @@ open class HashableClass {
     public init() {}
 }
 
-// MARK: - <Hashable>
+// MARK: - Hashable
 
 extension HashableClass: Hashable {
     public func hash(into hasher: inout Hasher) {
@@ -12,7 +12,7 @@ extension HashableClass: Hashable {
     }
 }
 
-// MARK: - <Equatable>
+// MARK: - Equatable
 
 extension HashableClass: Equatable {
     public static func ==(lhs: HashableClass, rhs: HashableClass) -> Bool {

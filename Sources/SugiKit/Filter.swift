@@ -7,13 +7,13 @@ public struct Filter: Equatable {
     /// Compares two filter instances.
     public static func == (lhs: Filter, rhs: Filter) -> Bool {
         return lhs.cutoff == rhs.cutoff
-        && lhs.resonance == rhs.resonance
-        && lhs.cutoffModulation == rhs.cutoffModulation
-        && lhs.isLfoModulatingCutoff == rhs.isLfoModulatingCutoff
-        && lhs.envelopeDepth == rhs.envelopeDepth
-        && lhs.envelopeVelocityDepth == rhs.envelopeVelocityDepth
-        && lhs.envelope == rhs.envelope
-        && lhs.timeModulation == rhs.timeModulation
+            && lhs.resonance == rhs.resonance
+            && lhs.cutoffModulation == rhs.cutoffModulation
+            && lhs.isLfoModulatingCutoff == rhs.isLfoModulatingCutoff
+            && lhs.envelopeDepth == rhs.envelopeDepth
+            && lhs.envelopeVelocityDepth == rhs.envelopeVelocityDepth
+            && lhs.envelope == rhs.envelope
+            && lhs.timeModulation == rhs.timeModulation
     }
     
     /// DCF envelope.
@@ -87,7 +87,8 @@ public struct Filter: Equatable {
                 Byte(decay.value),
                 Byte(sustain.value + 50),
                 Byte(release.value)
-            ].forEach {
+            ]
+            .forEach {
                 buf.append($0)
             }
             
@@ -112,12 +113,12 @@ public struct Filter: Equatable {
     
     /// Initializes the filter with default settings.
     public init() {
-        cutoff = Level(100)
-        resonance = Resonance(0)
+        cutoff = 100
+        resonance = 0
         cutoffModulation = LevelModulation()
         isLfoModulatingCutoff = false
-        envelopeDepth = Depth(0)
-        envelopeVelocityDepth = Depth(0)
+        envelopeDepth = 0
+        envelopeVelocityDepth = 0
         envelope = Envelope(attack: 0, decay: 50, sustain: 0, release: 50)
         timeModulation = TimeModulation()
     }

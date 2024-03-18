@@ -124,7 +124,9 @@ public struct SubmixSettings: Equatable {
     /// - Parameter lhs: left-hand side
     /// - Parameter rgs: right-hand side
     public static func == (lhs: SubmixSettings, rhs: SubmixSettings) -> Bool {
-        return lhs.pan == rhs.pan && lhs.send1 == rhs.send1 && lhs.send2 == rhs.send2
+        return lhs.pan == rhs.pan 
+            && lhs.send1 == rhs.send1
+            && lhs.send2 == rhs.send2
     }
     
     /// Data size of submix settings.
@@ -136,9 +138,9 @@ public struct SubmixSettings: Equatable {
 
     /// Initializes submix settings to default values.
     public init() {
-        self.pan = Pan(0)
-        self.send1 = Send1(0)
-        self.send2 = Send2(0)
+        self.pan = 0
+        self.send1 = 0
+        self.send2 = 0
     }
     
     /// Initializes submix settings with the specified values.
@@ -169,9 +171,9 @@ public class EffectPatch: HashableClass, Identifiable {
     /// Initializes an effect patch with default settings.
     public override init() {
         effect = .reverb1
-        param1 = EffectParameterSmall(0)
-        param2 = EffectParameterSmall(3)
-        param3 = EffectParameterLarge(16)
+        param1 = 0
+        param2 = 3
+        param3 = 16
         submixes = Array(
             repeating: SubmixSettings(pan: 0, send1: 50, send2: 50),
             count: EffectPatch.submixCount
@@ -227,11 +229,18 @@ public class EffectPatch: HashableClass, Identifiable {
 
     private var data: ByteArray {
         var buf = ByteArray()
-        [effect.index - 1, param1.value, param2.value, param3.value,
-            0, 0, 0, 0, 0, 0].forEach {
+        
+        [
+            effect.index - 1,
+            param1.value, param2.value, param3.value,
+            0, 0, 0, 0, 0, 0
+        ]
+        .forEach {
             buf.append(Byte($0))
         }
+        
         self.submixes.forEach { buf.append(contentsOf: $0.asData()) }
+        
         return buf
     }    
 }
@@ -257,7 +266,11 @@ extension SubmixSettings: SystemExclusiveData {
     /// Gets the System Exclusive data for the submix settings.
     /// - Returns: A byte array with the data
     public func asData() -> ByteArray {
-        return [Byte(pan.value + 8), Byte(send1.value), Byte(send2.value)]  // TODO: or +7?
+        return [
+            Byte(pan.value + 8), // TODO: or +7?
+            Byte(send1.value),
+            Byte(send2.value)
+        ]
     }
     
     /// Gets the length of the System Exclusive data.

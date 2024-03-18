@@ -68,6 +68,20 @@ extension Depth: RangedInt {
     }
 }
 
+extension Depth: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Depth: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct Level: Equatable {
     private var _value: Int
 }
@@ -86,6 +100,20 @@ extension Level: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension Level: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Level: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -110,6 +138,20 @@ extension MIDIChannel: RangedInt {
     }
 }
 
+extension MIDIChannel: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension MIDIChannel: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct MIDINote: Equatable {
     private var _value: Int
 }
@@ -128,6 +170,20 @@ extension MIDINote: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension MIDINote: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension MIDINote: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -152,6 +208,20 @@ extension Pan: RangedInt {
     }
 }
 
+extension Pan: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Pan: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct Send1: Equatable {
     private var _value: Int
 }
@@ -170,6 +240,20 @@ extension Send1: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension Send1: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Send1: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -194,6 +278,20 @@ extension Send2: RangedInt {
     }
 }
 
+extension Send2: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Send2: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct EffectParameterSmall: Equatable {
     private var _value: Int
 }
@@ -212,6 +310,20 @@ extension EffectParameterSmall: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension EffectParameterSmall: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension EffectParameterSmall: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -236,6 +348,20 @@ extension EffectParameterLarge: RangedInt {
     }
 }
 
+extension EffectParameterLarge: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension EffectParameterLarge: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct Resonance: Equatable {
     private var _value: Int
 }
@@ -254,6 +380,20 @@ extension Resonance: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension Resonance: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Resonance: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -278,6 +418,20 @@ extension EffectNumber: RangedInt {
     }
 }
 
+extension EffectNumber: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension EffectNumber: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct BenderRange: Equatable {
     private var _value: Int
 }
@@ -296,6 +450,20 @@ extension BenderRange: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension BenderRange: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension BenderRange: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -320,6 +488,20 @@ extension Coarse: RangedInt {
     }
 }
 
+extension Coarse: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Coarse: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct Fine: Equatable {
     private var _value: Int
 }
@@ -338,6 +520,20 @@ extension Fine: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension Fine: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Fine: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -362,6 +558,20 @@ extension Transpose: RangedInt {
     }
 }
 
+extension Transpose: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension Transpose: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct InstrumentNumber: Equatable {
     private var _value: Int
 }
@@ -383,6 +593,20 @@ extension InstrumentNumber: RangedInt {
     }
 }
 
+extension InstrumentNumber: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension InstrumentNumber: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
 public struct WaveNumber: Equatable {
     private var _value: Int
 }
@@ -401,6 +625,20 @@ extension WaveNumber: RangedInt {
 
     public var value: Int {
         return _value
+    }
+}
+
+extension WaveNumber: ExpressibleByIntegerLiteral {
+    /// Initialize with an integer literal.
+    public init(integerLiteral value: Int) {
+        _value = Self.range.clamp(value)
+    }
+}
+
+extension WaveNumber: CustomStringConvertible {
+    // Generates a string representation of the value.
+    public var description: String {
+        return "\(self.value)"
     }
 }
 
@@ -713,9 +951,9 @@ public struct LevelModulation: Equatable, CustomStringConvertible {
     }
 
     public static func ==(lhs: LevelModulation, rhs: LevelModulation) -> Bool {
-        return lhs.velocityDepth == rhs.velocityDepth &&
-            lhs.pressureDepth == rhs.pressureDepth &&
-            lhs.keyScalingDepth == rhs.keyScalingDepth
+        return lhs.velocityDepth == rhs.velocityDepth 
+            && lhs.pressureDepth == rhs.pressureDepth
+            && lhs.keyScalingDepth == rhs.keyScalingDepth
     }
 }
 
@@ -789,9 +1027,9 @@ public struct TimeModulation: Equatable, CustomStringConvertible {
     }
 
     public static func ==(lhs: TimeModulation, rhs: TimeModulation) -> Bool {
-        return lhs.attackVelocity == rhs.attackVelocity &&
-            lhs.releaseVelocity == rhs.releaseVelocity &&
-            lhs.keyScaling == rhs.keyScaling
+        return lhs.attackVelocity == rhs.attackVelocity 
+            && lhs.releaseVelocity == rhs.releaseVelocity
+            && lhs.keyScaling == rhs.keyScaling
     }
 }
 

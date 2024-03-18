@@ -12,9 +12,9 @@ public struct Drum: Equatable {
         /// - Returns: `true` if instances are equal, `false` if not
         public static func == (lhs: Drum.Common, rhs: Drum.Common) -> Bool {
             return lhs.channel == rhs.channel
-            && lhs.volume == rhs.volume
-            && lhs.velocityDepth == rhs.velocityDepth
-            && lhs.commonChecksum == rhs.commonChecksum
+                && lhs.volume == rhs.volume
+                && lhs.velocityDepth == rhs.velocityDepth
+                && lhs.commonChecksum == rhs.commonChecksum
         }
         
         /// Data size of drum common settings.
@@ -28,8 +28,8 @@ public struct Drum: Equatable {
         /// Initializes the drum patch common settings with default values.
         public init() {
             channel = MIDIChannel(1)
-            volume = Level(100)
-            velocityDepth = Depth(0)
+            volume = 100
+            velocityDepth = 0
             commonChecksum = 0x00
         }
         
@@ -37,7 +37,9 @@ public struct Drum: Equatable {
         /// - Parameter data: The data bytes.
         /// - Returns: A result type with valid `Common` data or an instance of `ParseError`.
         public static func parse(from data: ByteArray) -> Result<Common, ParseError> {
-            guard data.count >= Common.dataSize else {
+            guard 
+                data.count >= Common.dataSize
+            else {
                 return .failure(.notEnoughData(data.count, Common.dataSize))
             }
             
@@ -65,14 +67,6 @@ public struct Drum: Equatable {
 
     /// Source for drum patch.
     public struct Source: Equatable {
-        /// Compares two drum patch sources.
-        public static func == (lhs: Drum.Source, rhs: Drum.Source) -> Bool {
-            return lhs.wave == rhs.wave
-            && lhs.decay == rhs.decay
-            && lhs.tune == rhs.tune
-            && lhs.level == rhs.level
-        }
-        
         /// Data size of this drum source.
         public static let dataSize = 5
         
@@ -84,9 +78,9 @@ public struct Drum: Equatable {
         /// Initializes the drum source with default values.
         public init() {
             wave = Wave(number: 97) // "KICK"
-            decay = Level(0)
-            tune = Depth(0)
-            level = Level(100)
+            decay = 0
+            tune = 0
+            level = 100
         }
 
         /// Initializes the drum source with the specified values.
@@ -123,6 +117,14 @@ public struct Drum: Equatable {
             tempSource.level = Level(Int(data[4]))
             
             return .success(tempSource)
+        }
+        
+        /// Compares two drum patch sources.
+        public static func == (lhs: Drum.Source, rhs: Drum.Source) -> Bool {
+            return lhs.wave == rhs.wave
+                && lhs.decay == rhs.decay
+                && lhs.tune == rhs.tune
+                && lhs.level == rhs.level
         }
     }
 

@@ -23,12 +23,12 @@ public struct Source {
     /// Initializes the source with default settings.
     public init() {
         isActive = false
-        delay = Level(0)
+        delay = 0
         wave = Wave(number: 10)
         keyTrack = true
-        coarse = Coarse(0)
-        fine = Fine(0)
-        fixedKey = Key(note: MIDINote(60))
+        coarse = 0
+        fine = 0
+        fixedKey = Key(note: 60)
         pressureFrequency = true
         vibrato = true
         velocityCurve = .curve1

@@ -21,7 +21,7 @@ public struct Header {
 
     /// Initializes a header with default values.
     public init() {
-        self.channel = MIDIChannel(1)
+        self.channel = 1
         self.function = .onePatchDataDump
         self.substatus1 = 0x00
         self.substatus2 = 0x00
