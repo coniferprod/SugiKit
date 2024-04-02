@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 /// LFO settings.
@@ -134,7 +135,7 @@ public struct Vibrato: Equatable {
         var temp = Vibrato()
         
         b = data.next(&offset)
-        index = Int(b.bitField(start: 4, end: 6))
+        index = Int(b.extractBits(start: 4, length: 2))
         if let vibratoShape = LFO.Shape(index: index) {
             temp.shape = vibratoShape
         }

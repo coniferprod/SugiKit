@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 
@@ -16,37 +17,6 @@ extension String {
 }
 
 extension Byte {
-    /// Returns the bit field from the bit in position `start` up to but not including the bit at position `end`.
-    public func bitField(start: Int, end: Int) -> Byte {
-        guard
-            start >= 0
-        else {
-            print("bit field start must not be negative", to: &standardError)
-            return 0
-        }
-        
-        guard 
-            end >= 0
-        else {
-            print("bit field end must not be negative", to: &standardError)
-            return 0
-        }
-        
-        guard 
-            end < 8
-        else {
-            print("not enough bits to cover bit field end \(end)", to: &standardError)
-            return 0
-        }
-
-        // Convert the byte into a bit string of exactly 8 characters (pad to zero from left as necessary)
-        let allBits = self.bits
-        let fieldBits = allBits[start ..< end]
-
-        let byte = Byte.fromBits(bits: Array(fieldBits))
-        return byte
-    }
-    
     /// Returns the value of the bits from start to end-1 (zero-based bit positions counted from the right)
     public func bitFieldWithShift(start: Int, end: Int) -> Byte {
         guard 
@@ -79,114 +49,19 @@ extension Byte {
     }
 }
 
-extension Byte {
-    /// Converts this byte to a binary string representation.
-    public func toBinary() -> String {
-        return String(self, radix: 2)
-    }
-    
-    /// Converts this byte to a hexadecimal string representation.
-    public func toHex(digits: Int = 2) -> String {
-        return String(format: "%0\(digits)x", self)
-    }
-}
-
-// The Bit enum and the bits -> [Bit] function: https://stackoverflow.com/a/44808203/1016326
-public enum Bit: Byte, CustomStringConvertible {
-    case zero
-    case one
-
-    /// Gets a printable description of this bit.
-    public var description: String {
-        switch self {
-        case .one:
-            return "1"
-        case .zero:
-            return "0"
-        }
-    }
-}
-
-/// Type of an array of bits.
-public typealias BitArray = [Bit]
-
-extension Byte {
-    /// Returns an array of exactly eight `Bit` objects, with bit #0 first
-    public var bits: BitArray {
-        var byte = self
-        var bits = BitArray(repeating: .zero, count: 8)
-        for i in 0..<8 {
-            let currentBit = byte & 0x01
-            if currentBit != 0 {
-                bits[i] = .one
-            }
-
-            byte >>= 1
-        }
-        return bits
-    }
-    
-    /// Returns a `Byte` constructed from an array of `Bit` objects, with bit #0 first.
-    /// If the array has less than eight bits, pad it with zero bits from the left.
-    public static func fromBits(bits: BitArray) -> Byte {
-        var myBits = bits
-        
-        while myBits.count < 8 {
-            myBits.append(.zero)
-        }
-        
-        var byte: Byte = 0
-        for (position, bit) in myBits.enumerated() {
-            if bit == .one {
-                byte |= 1 << position
-            }
-        }
-        
-        return byte
-    }
-}
-
-extension Data {
-    /// Returns a hex dump of the data as a string.
-    public var hexDump: String {
-        var s = ""
-        for d in self {
-            s += d.toHex(digits: 2)
-            s += " "
-        }
-        return s
-    }
-}
-
 extension ByteArray {
-    /// Returns a hex dump of this `ByteArray`.
-    public var hexDump: String {
-        var s = ""
-        var count = 1
-        for b in self {
-            s += b.toHex(digits: 2) + " "
-            count += 1
-            if count == 8 {
-                s += "\n"
-                count = 1
-            }
-        }
-        return s
-
-    }
-    
     /// Returns the byte at the given offset, then increases the offset by one.
     public func next(_ offset: inout Int) -> Byte {
         let b = self[offset]
         offset += 1
         return b
     }
-    
+
     /// Returns a new byte array with `length` bytes starting from `offset`.
     public func slice(from offset: Int, length: Int) -> ByteArray {
         return ByteArray(self[offset ..< offset + length])
     }
-    
+
     /// Returns a new `ByteArray` with every nth bytes of this array.
     public func everyNthByte(n: Int, start: Int = 0) -> ByteArray {
         var result = ByteArray()

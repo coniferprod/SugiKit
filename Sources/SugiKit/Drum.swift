@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 /// Drum patch.
@@ -176,7 +177,7 @@ public struct Drum: Equatable {
             var tempNote = Note()
             
             // Submix / out select is actually bits 4-6 of the first byte
-            let submixValue = Int(data[0].bitField(start: 4, end: 7))
+            let submixValue = Int(data[0].extractBits(start: 4, length: 3))
             tempNote.submix = Submix(index: submixValue)!
             
             let sourceBytes = ByteArray(data[0...9])  // everything but the checksum

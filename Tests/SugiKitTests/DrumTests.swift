@@ -1,6 +1,9 @@
 import XCTest
 @testable import SugiKit
+import ByteKit
 import SyxPack
+
+import enum SugiKit.ParseError  // needed to resolve ambiguous name
 
 final class DrumTests: XCTestCase {
     var bytes = ByteArray()

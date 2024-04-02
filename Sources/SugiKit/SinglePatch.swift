@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 
@@ -104,7 +105,7 @@ public class SinglePatch: HashableClass, Identifiable {
         // source mode = s13 bits 0...1
         b = data.next(&offset)
         
-        index = Int(b.bitField(start: 0, end: 2))
+        index = Int(b.extractBits(start: 0, length: 2))
         if let smode = SourceMode(index: index) {
             temp.sourceMode = smode
         }
@@ -112,7 +113,7 @@ public class SinglePatch: HashableClass, Identifiable {
             return .failure(.invalidData(offset))
         }
 
-        index = Int(b.bitField(start: 2, end: 4))
+        index = Int(b.extractBits(start: 2, length: 2))
         if let pmode = PolyphonyMode(index: index) {
             temp.polyphonyMode = pmode
         }
@@ -131,14 +132,14 @@ public class SinglePatch: HashableClass, Identifiable {
         // Collect the bytes that make up the vibrato settings.
         // First byte comes from bits 4...5 of s14.
         var vibratoBytes = ByteArray()
-        vibratoBytes.append(b.bitField(start: 4, end: 6))
+        vibratoBytes.append(b.extractBits(start: 4, length: 2))
 
         b = data.next(&offset)  // s15
         // Pitch bend = s15 bits 0...3
-        temp.benderRange = BenderRange(Int(b.bitField(start: 0, end: 4)))
+        temp.benderRange = BenderRange(Int(b.extractBits(start: 0, length: 4)))
         
         // Wheel assign = s15 bits 4...5
-        index = Int(b.bitField(start: 4, end: 6))
+        index = Int(b.extractBits(start: 4, length: 2))
         if let wa = WheelAssign(index: index) {
             temp.wheelAssign = wa
         }

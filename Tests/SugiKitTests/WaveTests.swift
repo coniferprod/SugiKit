@@ -1,8 +1,8 @@
 import XCTest
-
-import SyxPack
-
 @testable import SugiKit
+
+import ByteKit
+import SyxPack
 
 
 final class WaveTests: XCTestCase {

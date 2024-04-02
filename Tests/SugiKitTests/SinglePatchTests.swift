@@ -2,6 +2,7 @@ import XCTest
 
 @testable import SugiKit
 
+import ByteKit
 import SyxPack
 
 final class SinglePatchTests: XCTestCase {

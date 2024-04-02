@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 
@@ -66,9 +67,9 @@ public class MultiPatch: HashableClass, Identifiable {
             // channel, velocity switch, and section mute are all in M15
             b = data.next(&offset)
 
-            temp.channel = MIDIChannel(Int(b.bitField(start: 0, end: 4) + 1))
+            temp.channel = MIDIChannel(Int(b.extractBits(start: 0, length: 4) + 1))
 
-            index = Int(b.bitField(start: 4, end: 6))
+            index = Int(b.extractBits(start: 4, length: 2))
             if let vs = VelocitySwitch(index: index) {
                 temp.velocitySwitch = vs
             }

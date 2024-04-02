@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 
@@ -322,7 +323,7 @@ public struct Wave: Equatable {
             highBit = .one
         }
         
-        let lowBits = BitArray(waveNumber.bits.reversed().suffix(from: 1))
+        let lowBits = BitArray(waveNumber.toBitArray().reversed().suffix(from: 1))
         
         return (high: highBit, low: lowBits)
     }
@@ -356,7 +357,7 @@ extension Wave: SystemExclusiveData {
         // Encode wave number as two bytes.
         // First byte is just the top bit, second byte is all the rest.
         let highByte: Byte = ws.high == .one ? 1 : 0
-        let lowByte = Byte.fromBits(bits: ws.low)
+        let lowByte = Byte(bits: ws.low)
         
         buf.append(highByte)
         buf.append(lowByte)

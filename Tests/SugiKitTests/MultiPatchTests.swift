@@ -2,6 +2,7 @@ import XCTest
 
 @testable import SugiKit
 
+import ByteKit
 import SyxPack
 
 final class MultiPatchTests: XCTestCase {
@@ -86,8 +87,8 @@ final class MultiPatchTests: XCTestCase {
     // "0/soft, 1/loud, 2/all". Let's parse it like that and see.
     func testByteM15Parsing() {
         let b: Byte = 0x20
-        let channel = Int(b.bitField(start: 0, end: 4) + 1)
-        let vs = b.bitField(start: 4, end: 6)
+        let channel = Int(b.extractBits(start: 0, length: 4) + 1)
+        let vs = b.extractBits(start: 4, length: 2)
         var velocitySwitch: VelocitySwitch = .all
         switch vs {
         case 0:

@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 
@@ -56,12 +57,13 @@ public struct Source {
         
         // This byte has the wave select high bit in b0,
         // and KS curve = bits 4...6
-        index = Int(b.bitField(start: 4, end: 7))
+        index = Int(b.extractBits(start: 4, length: 3))
         temp.keyScalingCurve = KeyScalingCurve.allCases[index]
 
         // This byte has the wave select low value 0~127 in bits 0...6
         let b2 = data.next(&offset)
         
+        // the wave initializer picks up the right bits
         temp.wave = Wave(highByte: b, lowByte: b2)
 
         b = data.next(&offset)
@@ -112,7 +114,7 @@ extension Source: SystemExclusiveData {
         buf.append(s34)
         
         // s38/s39/s40/s41 wave select l
-        let s38 = Byte.fromBits(bits: ws.low)
+        let s38 = Byte(bits: ws.low)
         buf.append(s38)
     
         // s42/s43/s44/s45 key track and coarse

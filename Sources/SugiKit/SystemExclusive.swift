@@ -1,5 +1,6 @@
 import Foundation
 
+import ByteKit
 import SyxPack
 
 
@@ -80,7 +81,7 @@ public struct Header {
 extension Header: CustomStringConvertible {
     /// Printable description of the System Exclusive header.
     public var description: String {
-        return "Ch: \(channel.value)  Fn: \(function.rawValue.toHex()), Sub1: \(substatus1.toHex()) Sub2: \(substatus2.toHex())"
+        return "Ch: \(channel.value)  Fn: \(function.rawValue.toHexString()), Sub1: \(substatus1.toHexString()) Sub2: \(substatus2.toHexString())"
     }
 }
 

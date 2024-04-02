@@ -2,6 +2,7 @@ import XCTest
 
 @testable import SugiKit
 
+import ByteKit
 import SyxPack
 
 final class BankTests: XCTestCase {
@@ -92,6 +93,22 @@ final class BankTests: XCTestCase {
             var buffer = ByteArray()
             bank.effects.forEach { buffer.append(contentsOf: $0.asData()) }
             XCTAssertEqual(buffer.count, Bank.effectPatchCount * EffectPatch.dataSize)
+        case .failure(let error):
+            XCTFail("\(error)")
+        }
+    }
+    
+    func testParseBankSingle() {
+        let singlePatchData = self.bankData.slice(from: 0, length: SinglePatch.dataSize)
+        
+        switch SinglePatch.parse(from: singlePatchData) {
+        case .success(let singlePatch):
+            switch Bank.parse(from: self.bankData) {
+            case .success(let bank):
+                XCTAssertEqual(singlePatch.filter1, bank.singles[0].filter1)
+            case .failure(let error):
+                XCTFail("\(error)")
+            }
         case .failure(let error):
             XCTFail("\(error)")
         }

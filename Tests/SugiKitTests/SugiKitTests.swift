@@ -1,5 +1,6 @@
 import XCTest
 @testable import SugiKit
+import ByteKit
 import SyxPack
 
 final class SugiKitTests: XCTestCase {
@@ -12,7 +13,7 @@ final class SugiKitTests: XCTestCase {
     
     func testBitField() {
         let b: Byte = 0b0011_0000
-        let field = b.bitField(start: 3, end: 6)  // bits 3, 4, and 5
+        let field = b.extractBits(start: 3, length: 3)  // bits 3, 4, and 5
         XCTAssertEqual(field, 0b0000_0110)
     }
     

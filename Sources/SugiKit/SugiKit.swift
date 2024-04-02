@@ -4,6 +4,7 @@ import Glibc
 import Darwin
 #endif
 
+import ByteKit
 import SyxPack
 
 struct StandardErrorOutputStream: TextOutputStream {
@@ -33,7 +34,7 @@ extension ParseError: CustomStringConvertible {
         case .notEnoughData(let actual, let expected):
             return "Got \(actual) bytes of data, expected \(expected) bytes."
         case .badChecksum(let actual, let expected):
-            return "Computed checksum was \(actual.toHex())H, expected \(expected.toHex())H."
+            return "Computed checksum was \(actual.toHexString())H, expected \(expected.toHexString())H."
         case .invalidData(let offset):
             return "Invalid data at offset \(offset)."
         case .unidentified:
