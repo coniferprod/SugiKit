@@ -199,7 +199,7 @@ public class SinglePatch: HashableClass, Identifiable {
             let sourceData = sourceBytes.everyNthByte(n: 4, start: i)
             switch Source.parse(from: sourceData) {
             case .success(let source):
-                temp.sources.append(source)
+                temp.sources[i] = source
             case .failure(let error):
                 return .failure(error)
             }
@@ -220,7 +220,7 @@ public class SinglePatch: HashableClass, Identifiable {
             let amplifierData = amplifierBytes.everyNthByte(n: 4, start: i)
             switch Amplifier.parse(from: amplifierData) {
             case .success(let amplifier):
-                temp.amplifiers.append(amplifier)
+                temp.amplifiers[i] = amplifier
             case .failure(let error):
                 return .failure(error)
             }
