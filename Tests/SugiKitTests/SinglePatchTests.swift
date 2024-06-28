@@ -224,7 +224,7 @@ final class SinglePatchTests: XCTestCase {
             XCTAssertEqual(source.coarse.value, -12)
             XCTAssertEqual(source.fine.value, -6)
             XCTAssertEqual(source.fixedKey.description, "C-1")
-            XCTAssertEqual(source.pressureFrequency, false)
+            XCTAssertEqual(source.aftertouch, false)
             XCTAssertEqual(source.vibrato, true)
         case .failure(let error):
             XCTFail("\(error)")

@@ -23,7 +23,7 @@ public class SinglePatch: HashableClass, Identifiable {
     public var am34: Bool
         
     public var benderRange: BenderRange  // 0~12 in semitones
-    public var pressFreq: Depth // -50~+50 (0~100 in SysEx)
+    public var aftertouch: Depth // -50~+50 (0~100 in SysEx)
     public var wheelAssign: WheelAssign
     public var wheelDepth: Depth  // -50 ... +50
     public var autoBend: AutoBend
@@ -47,7 +47,7 @@ public class SinglePatch: HashableClass, Identifiable {
         am34 = false
                 
         benderRange = 0
-        pressFreq = 0
+        aftertouch = 0
         wheelAssign = .cutoff
         wheelDepth = 0
         autoBend = AutoBend()
@@ -191,7 +191,7 @@ public class SinglePatch: HashableClass, Identifiable {
         offset += size
 
         b = data.next(&offset)
-        temp.pressFreq = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
+        temp.aftertouch = Depth(Int((b & 0x7f)) - 50) // 0~100 to ±50
 
         size = SinglePatch.sourceCount * Source.dataSize
         let sourceBytes = data.slice(from: offset, length: size)
@@ -289,7 +289,7 @@ public class SinglePatch: HashableClass, Identifiable {
         d.append(Byte(vibrato.pressureDepth.value + 50))  // s22
         d.append(Byte(vibrato.depth.value + 50))  // s23
         d.append(contentsOf: lfo.asData())  // s24 ... s28
-        d.append(Byte(pressFreq.value + 50))  // s29
+        d.append(Byte(aftertouch.value + 50))  // s29
 
         // The source data are interleaved, with one byte from each first,
         // then the second, etc. That's why they are emitted in this slightly
@@ -368,7 +368,7 @@ extension SinglePatch: CustomStringConvertible {
         lines.append("Sources = \(muteString)")
         
         lines.append("Bender range = \(benderRange) semitones")
-        lines.append("Pressure frequency = \(pressFreq)")
+        lines.append("Press>Freq = \(aftertouch)")
         lines.append("Wheel assign = \(wheelAssign)")
         lines.append("Wheel depth = \(wheelDepth)")
 

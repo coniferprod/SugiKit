@@ -16,7 +16,7 @@ public struct Source {
     public var coarse: Coarse  // -24~+24
     public var fine: Fine  // -50~+50
     public var fixedKey: Key  // key represents C-1 to G8
-    public var pressureFrequency: Bool
+    public var aftertouch: Bool
     public var vibrato: Bool
     public var velocityCurve: VelocityCurve
     public var keyScalingCurve: KeyScalingCurve
@@ -30,7 +30,7 @@ public struct Source {
         coarse = 0
         fine = 0
         fixedKey = Key(note: 60)
-        pressureFrequency = true
+        aftertouch = true
         vibrato = true
         velocityCurve = .curve1
         keyScalingCurve = .curve1
@@ -83,7 +83,7 @@ public struct Source {
         temp.fine = Fine(Int((b & 0x7f)) - 50)
 
         b = data.next(&offset)
-        temp.pressureFrequency = b.isBitSet(0)
+        temp.aftertouch = b.isBitSet(0)
         temp.vibrato = b.isBitSet(1)
         index = Int((b >> 2) & 0b111)
         temp.velocityCurve = VelocityCurve.allCases[index]
@@ -135,7 +135,7 @@ extension Source: SystemExclusiveData {
         if vibrato {
             s54.setBit(1)
         }
-        if pressureFrequency {
+        if aftertouch {
             s54.setBit(0)
         }
         buf.append(s54)
@@ -158,7 +158,7 @@ extension Source: CustomStringConvertible {
         lines.append("Key track = \(keyTrack)")
         lines.append("Coarse = \(coarse), Fine = \(fine)")
         lines.append("Fixed key = \(fixedKey)")
-        lines.append("Press. freq = \(pressureFrequency), Vibrato = \(vibrato)")
+        lines.append("Press>Freq = \(aftertouch), Vibrato = \(vibrato)")
         lines.append("Velocity curve = \(velocityCurve)")
         lines.append("Key scaling curve = \(keyScalingCurve)")
         return lines.joined(separator: "\n")
